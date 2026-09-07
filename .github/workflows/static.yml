@@ -26,7 +26,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Pages
         uses: actions/configure-pages@v5
-      - name: Prepare clean ACROW v210 site
+      - name: Prepare clean ACROW v211 site
         shell: python
         run: |
           from pathlib import Path
@@ -36,10 +36,10 @@ jobs:
           shutil.copytree('.', site, ignore=shutil.ignore_patterns('.git','_site'))
           p=site/'index.html'
           s=p.read_text(encoding='utf-8')
-          files=['v198-cloud-sync.js','v199-realtime.js','v201-live-production.js','v202-live-production-fix.js','v203-production-input-fix.js','v204-all-machines-sync.js','v205-production-save-button.js','v206-production-fix.js','v207-production-stable-fix.js','v208-production-stable-fix.js','v209-production-stable-fix.js','v210-production-one-entry-fix.js']
+          files=['v198-cloud-sync.js','v199-realtime.js','v201-live-production.js','v202-live-production-fix.js','v203-production-input-fix.js','v204-all-machines-sync.js','v205-production-save-button.js','v206-production-fix.js','v207-production-stable-fix.js','v208-production-stable-fix.js','v209-production-stable-fix.js','v210-production-one-entry-fix.js','v211-production-one-entry-fix.js']
           for f in files:
               s=re.sub(r'\s*<script[^>]+src=["\']\./'+re.escape(f)+r'["\'][^>]*></script>','',s,flags=re.I)
-          block='\n<script src="./v198-cloud-sync.js"></script>\n<script src="./v210-production-one-entry-fix.js"></script>\n'
+          block='\n<script src="./v198-cloud-sync.js"></script>\n<script src="./v211-production-one-entry-fix.js"></script>\n'
           pos=s.lower().rfind('</body>')
           if pos>=0: s=s[:pos]+block+s[pos:]
           else: s=s.rstrip()+block
