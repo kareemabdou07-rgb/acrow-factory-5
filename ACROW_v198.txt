@@ -1,0 +1,3 @@
+ACROW Factory 5 v198
+Shared password: 5445
+Realtime Firestore synchronization enabled.
