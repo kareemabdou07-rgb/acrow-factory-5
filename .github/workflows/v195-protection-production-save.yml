@@ -1,0 +1,31 @@
+name: v195 Shared Password and Production Save
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'v195-shared-password-production-save' in s:
+              print('v195 already applied')
+              raise SystemExit
+          patch=r'''\n<!-- v195-shared-password-production-save -->\n<style id="v195-shared-password-production-save">\n.v195-password-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:none;align-items:center;justify-content:center;padding:20px}\n.v195-password-box{width:min(420px,94vw);background:#fff;border-radius:16px;padding:24px;box-shadow:0 15px 50px rgba(0,0,0,.35);text-align:center}\n.v195-password-box h3{margin:0 0 14px;font-size:24px}\n.v195-password-box input{width:100%;box-sizing:border-box;font-size:24px;text-align:center;padding:12px;border:2px solid #bbb;border-radius:10px;outline:none}\n.v195-password-actions{display:flex;gap:10px;margin-top:14px}.v195-password-actions button{flex:1;padding:12px;border:0;border-radius:10px;font-size:18px;cursor:pointer}\n.v195-ok{background:#1f7a3a;color:#fff}.v195-cancel{background:#ddd;color:#222}\n.v195-error{min-height:24px;margin-top:8px;color:#b00020;font-size:15px}\n.v195-production-saved{background:#d9f6df!important;border-color:#198754!important;color:#146c43!important;font-weight:800!important;box-shadow:0 0 0 2px rgba(25,135,84,.12)!important}\n</style>\n<div id="v195PasswordBackdrop" class="v195-password-backdrop">\n  <div class="v195-password-box">\n    <h3>الرقم السري</h3>\n    <input id="v195PasswordInput" type="password" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="ادخل الرقم السري">\n    <div id="v195PasswordError" class="v195-error"></div>\n    <div class="v195-password-actions"><button type="button" class="v195-cancel" id="v195PasswordCancel">إلغاء</button><button type="button" class="v195-ok" id="v195PasswordOk">دخول</button></div>\n  </div>\n</div>\n<script id="v195-shared-password-production-save">\n(function(){\n  'use strict';\n  var PASS='5445', unlocked=false, pending=null;\n  function textOf(el){return ((el&&el.innerText)|| (el&&el.textContent)||'').replace(/\\s+/g,' ').trim();}\n  function isProtected(el){\n    var t=textOf(el);\n    return /الخطة الشهرية|الصيانة|التعديلات|طباعة التقارير|التقرير الشامل/.test(t);\n  }\n  function openPass(action){\n    var b=document.getElementById('v195PasswordBackdrop'),i=document.getElementById('v195PasswordInput'),e=document.getElementById('v195PasswordError');\n    pending=action||null; e.textContent=''; i.value=''; b.style.display='flex'; setTimeout(function(){i.focus()},50);\n  }\n  function closePass(){var b=document.getElementById('v195PasswordBackdrop');b.style.display='none';pending=null;}\n  function checkPass(){\n    var i=document.getElementById('v195PasswordInput'),e=document.getElementById('v195PasswordError');\n    if(i.value===PASS){unlocked=true;sessionStorage.setItem('acrow_v195_unlocked','1');var a=pending;closePass();if(a){setTimeout(function(){a()},0)}}\n    else{e.textContent='الرقم السري غير صحيح';i.select();}\n  }\n  function protect(){\n    document.addEventListener('click',function(ev){\n      if(ev.target.closest('#v195PasswordBackdrop')) return;\n      var el=ev.target.closest('button,a,[role="button"]'); if(!el||!isProtected(el)) return;\n      if(unlocked||sessionStorage.getItem('acrow_v195_unlocked')==='1'){unlocked=true;return;}\n      ev.preventDefault();ev.stopImmediatePropagation();\n      openPass(function(){el.click()});\n    },true);\n    document.getElementById('v195PasswordOk').addEventListener('click',checkPass);\n    document.getElementById('v195PasswordCancel').addEventListener('click',closePass);\n    document.getElementById('v195PasswordInput').addEventListener('keydown',function(e){if(e.key==='Enter')checkPass();if(e.key==='Escape')closePass()});\n  }\n  function productionInput(el){\n    if(!el||el.tagName!=='INPUT'||el.type==='button'||el.type==='submit')return false;\n    var p=el.closest('[class*="machine"],[class*="card"],section,div');\n    var root=p||el.parentElement;\n    var t=textOf(root);\n    return /الوردية الأولى|الورديه الاولى|الوردية الثانية|الورديه الثانيه/.test(t) && /إنتاج|انتاج/.test(t) && (el.type==='number'||/انتاج|production/i.test(el.name||'')||/انتاج|production/i.test(el.id||''));\n  }\n  function mark(el){if(!el||!el.value||Number(el.value)<=0)return;el.classList.add('v195-production-saved');el.title='تم الحفظ';}\n  function bindProduction(){\n    document.querySelectorAll('input').forEach(function(el){\n      if(!productionInput(el)||el.dataset.v195bound)return;\n      el.dataset.v195bound='1';\n      el.addEventListener('input',function(){\n        el.classList.remove('v195-production-saved');\n        clearTimeout(el._v195t);\n        el._v195t=setTimeout(function(){if(el.value&&Number(el.value)>=0){mark(el)}},350);\n      });\n      el.addEventListener('change',function(){mark(el)});\n      mark(el);\n    });\n  }\n  function init(){\n    protect();bindProduction();\n    new MutationObserver(function(){bindProduction()}).observe(document.body,{childList:true,subtree:true});\n  }\n  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();\n})();\n</script>\n'''
+          p.write_text(s+patch,encoding='utf-8')
+          PY
+      - name: Commit patched index
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Apply v195 shared password and production saved indicator"
+          git push
