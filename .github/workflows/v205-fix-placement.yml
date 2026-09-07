@@ -1,0 +1,39 @@
+name: v205 fix loader placement
+on:
+  push:
+    branches: ["main"]
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Move loaders to real page body
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          block='<!-- v205-clean-realtime-loaders -->\n<script src="./v198-cloud-sync.js"></script>\n<script src="./v199-realtime.js"></script>\n<script src="./v205-production-save-button.js"></script>\n'
+          s=s.replace(block,'')
+          pos=s.rfind('</body>')
+          if pos < 0:
+              raise SystemExit('No real closing body tag found')
+          s=s[:pos]+block+s[pos:]
+          p.write_text(s,encoding='utf-8')
+      - name: Commit and push
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix v205 loader placement'
+          git push
+      - name: Remove one-time workflow
+        if: success()
+        run: |
+          git rm .github/workflows/v205-fix-placement.yml || true
+          git commit -m 'Remove v205 placement fixer' || true
+          git push || true
