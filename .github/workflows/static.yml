@@ -27,13 +27,33 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Prepare ACROW v205 site
+        shell: python
         run: |
-          mkdir -p _site
-          rsync -a --exclude '.git' --exclude '_site' ./ _site/
-          cat >> _site/index.html <<'EOF'
-          <script src="./v198-cloud-sync.js"></script>
-          <script src="./v205-production-save-button.js"></script>
-          EOF
+          from pathlib import Path
+          import re
+          src = Path('index.html').read_text(encoding='utf-8')
+          # Remove every experimental loader and any existing clean loader copy.
+          src = re.sub(r'\s*<!--\s*v20[1-4][^>]*-->\s*<script[^>]+src=["\']\./v20[1-4][^"\']+["\'][^>]*></script>', '', src, flags=re.I)
+          src = re.sub(r'\s*<script[^>]+src=["\']\./v20[1-4][^"\']+["\'][^>]*></script>', '', src, flags=re.I)
+          src = re.sub(r'\s*<!--\s*v205-clean-realtime-loaders\s*-->\s*', '\n', src, flags=re.I)
+          src = re.sub(r'\s*<script[^>]+src=["\']\./v198-cloud-sync\.js["\'][^>]*></script>', '', src, flags=re.I)
+          src = re.sub(r'\s*<script[^>]+src=["\']\./v199-realtime\.js["\'][^>]*></script>', '', src, flags=re.I)
+          src = re.sub(r'\s*<script[^>]+src=["\']\./v205-production-save-button\.js["\'][^>]*></script>', '', src, flags=re.I)
+          block = '\n<!-- v205-clean-realtime-loaders -->\n<script src="./v198-cloud-sync.js"></script>\n<script src="./v199-realtime.js"></script>\n<script src="./v205-production-save-button.js"></script>\n'
+          pos = src.lower().rfind('</body>')
+          if pos >= 0:
+              src = src[:pos] + block + src[pos:]
+          else:
+              src += block
+          site = Path('_site')
+          site.mkdir(exist_ok=True)
+          import shutil
+          for item in Path('.').iterdir():
+              if item.name not in {'.git', '_site'}:
+                  target = site / item.name
+                  if item.is_dir(): shutil.copytree(item, target, dirs_exist_ok=True)
+                  else: shutil.copy2(item, target)
+          (site / 'index.html').write_text(src, encoding='utf-8')
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
