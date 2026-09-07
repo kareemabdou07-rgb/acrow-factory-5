@@ -1,0 +1,38 @@
+name: v199 Realtime Loader
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Inject v199 realtime script
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- v199-realtime-loader -->'
+          tag=marker+'\n<script src="./v199-realtime.js"></script>\n'
+          s=s.replace(tag,'')
+          pos=s.rfind('</body>')
+          if pos < 0:
+              raise SystemExit('index.html has no closing body tag')
+          s=s[:pos]+tag+s[pos:]
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Activate v199 real-time sync"
+          git pull --rebase origin main
+          git push origin HEAD:main
