@@ -25,8 +25,6 @@
       btn.dataset.busy='1';
       var typed=input.value;
       if(typed===''){btn.dataset.busy='';return;}
-      /* Keep the production field focused while the native app handler commits it.
-         This makes v198 defer an incoming old snapshot during the short commit window. */
       try{input.focus();}catch(x){}
       try{input.dispatchEvent(new Event('change',{bubbles:true}));}catch(x){}
       setTimeout(function(){
@@ -36,7 +34,7 @@
             btn.textContent='تم التثبيت'; btn.classList.add('v207-saved');
             setTimeout(function(){
               if(btn&&btn.isConnected){btn.textContent='تثبيت';btn.classList.remove('v207-saved');btn.dataset.busy='';}
-            },1800);
+            },5000);
           }).catch(function(){btn.dataset.busy='';});
         },220);
       },350);
