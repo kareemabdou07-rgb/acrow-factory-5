@@ -3197,10 +3197,6 @@ function printFaultDetails(machine, fault, meta={}){
   const w=window.open('','_blank','width=900,height=750');
   if(!w){ alert('السماح بفتح نافذة الطباعة مطلوب من المتصفح'); return; }
   w.document.write(`<!doctype html><html dir="rtl"><head><meta charset="utf-8"><title>تفاصيل عطل الصيانة</title><style>body{font-family:Arial,sans-serif;padding:28px;color:#111}h1{text-align:center;margin-bottom:25px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.item{border:1px solid #bbb;padding:12px;border-radius:8px}.wide{grid-column:1/-1}b{display:block;margin-bottom:6px}button{padding:9px 16px;margin-top:20px}@media print{button{display:none}}</style></head><body><h1>تفاصيل عطل الصيانة</h1><div class="grid"><div class="item"><b>الماكينة</b>${machine?.name||'—'} (${machine?.id||'—'})</div><div class="item"><b>القسم</b>${machine?.deptName||machine?.dept||'—'}</div><div class="item"><b>نوع العطل</b>${reasonCodeLabel(fault.reason||'—')}</div><div class="item"><b>الحالة</b>${fault.endTime?'تم الإصلاح':'قائم الآن'}</div><div class="item"><b>التاريخ</b>${date||'—'}</div><div class="item"><b>اليوم</b>${day}</div><div class="item"><b>الوردية</b>${meta.shift?shiftLabel(meta.shift):'—'}</div><div class="item"><b>وقت التسجيل</b>${fault.time||'—'}</div><div class="item"><b>وقت البداية</b>${start}</div><div class="item"><b>وقت النهاية</b>${end}</div><div class="item"><b>مدة التوقف</b>${mins} دقيقة</div><div class="item"><b>وقت الإصلاح</b>${fault.repairedAt||fault.endTime||'—'}</div><div class="item wide"><b>الوصف التفصيلي</b>${fault.description||'لا يوجد وصف مسجل'}</div><div class="item wide"><b>الملاحظات</b>${fault.notes||'لا توجد ملاحظات إضافية'}</div></div><button onclick="window.print()">طباعة التقرير</button>
-<!-- v205-clean-realtime-loaders -->
-<script src="./v198-cloud-sync.js"></script>
-<script src="./v199-realtime.js"></script>
-<script src="./v205-production-save-button.js"></script>
 </body></html>`);w.document.close();w.focus();setTimeout(()=>w.print(),300);
 }
 
@@ -4774,6 +4770,10 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 </script>
+<!-- v205-clean-realtime-loaders -->
+<script src="./v198-cloud-sync.js"></script>
+<script src="./v199-realtime.js"></script>
+<script src="./v205-production-save-button.js"></script>
 </body>
 
 </html>
