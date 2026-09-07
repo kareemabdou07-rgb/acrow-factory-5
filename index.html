@@ -4987,3 +4987,30 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
   setInterval(bind,500);
 })();
 </script>
+
+
+<!-- v194: fix blue screen after login; final splash guard -->
+<style id="v194-login-screen-fix">
+body.v194-app-open #acrowSplash, body.v194-app-open #acrowSplash.hidden, #acrowSplash.v194-off{display:none !important;visibility:hidden !important;opacity:0 !important;pointer-events:none !important;z-index:-1 !important;}
+body.v194-app-open .topbar,body.v194-app-open .container,body.v194-app-open #departments,body.v194-app-open .summary{visibility:visible !important;opacity:1 !important;}
+</style>
+<script id="v194-login-screen-fix-js">
+(function(){
+ function open(){
+  var b=document.body,s=document.getElementById('acrowSplash');
+  if(!b||!s)return;
+  b.classList.remove('splash-open'); b.classList.add('v139-app-open','v194-app-open');
+  s.classList.add('hidden','v139-off','v194-off'); s.setAttribute('aria-hidden','true');
+  s.style.setProperty('display','none','important'); s.style.setProperty('visibility','hidden','important');
+  s.style.setProperty('opacity','0','important'); s.style.setProperty('pointer-events','none','important'); s.style.setProperty('z-index','-1','important');
+  var t=document.querySelector('.topbar'),c=document.querySelector('.container'),d=document.getElementById('departments');
+  if(t)t.style.setProperty('display','block','important'); if(c)c.style.setProperty('display','block','important'); if(d)d.style.setProperty('display','block','important');
+  try{if(typeof render==='function')render();}catch(e){console.error(e);} try{if(typeof renderReport==='function')renderReport();}catch(e){}
+ }
+ function bind(){var b=document.getElementById('enterSystemBtn');if(!b||b.dataset.v194Bound==='1')return;b.dataset.v194Bound='1';b.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();open();return false;},true);}
+ document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('#enterSystemBtn'):null;if(b){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();open();}},true);
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+ setInterval(function(){bind();var b=document.body,s=document.getElementById('acrowSplash');if(b&&b.classList.contains('v194-app-open')){b.classList.remove('splash-open');if(s){s.classList.add('hidden','v139-off','v194-off');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');s.style.setProperty('z-index','-1','important');}}},100);
+})();
+</script>
+
