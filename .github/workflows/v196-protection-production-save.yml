@@ -1,0 +1,30 @@
+name: v196 Protection Patch Runner
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply v196 patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'v196-shared-password-production-save' in s:
+              print('v196 already applied')
+              raise SystemExit
+          patch=r'''\n<!-- v196-shared-password-production-save -->\n<style id="v196-shared-password-production-save">\n.v196-password-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100000;display:none;align-items:center;justify-content:center;padding:20px}.v196-password-box{width:min(420px,94vw);background:#fff;border-radius:16px;padding:24px;box-shadow:0 15px 50px rgba(0,0,0,.35);text-align:center}.v196-password-box h3{margin:0 0 14px;font-size:24px}.v196-password-box input{width:100%;box-sizing:border-box;font-size:24px;text-align:center;padding:12px;border:2px solid #bbb;border-radius:10px;outline:none}.v196-password-actions{display:flex;gap:10px;margin-top:14px}.v196-password-actions button{flex:1;padding:12px;border:0;border-radius:10px;font-size:18px}.v196-ok{background:#1f7a3a;color:#fff}.v196-cancel{background:#ddd;color:#222}.v196-error{min-height:24px;margin-top:8px;color:#b00020;font-size:15px}.v196-production-saved{background:#d9f6df!important;border-color:#198754!important;color:#146c43!important;font-weight:800!important;box-shadow:0 0 0 2px rgba(25,135,84,.12)!important}\n</style>\n<div id="v196PasswordBackdrop" class="v196-password-backdrop"><div class="v196-password-box"><h3>الرقم السري</h3><input id="v196PasswordInput" type="password" inputmode="numeric" autocomplete="off" placeholder="ادخل الرقم السري"><div id="v196PasswordError" class="v196-error"></div><div class="v196-password-actions"><button type="button" class="v196-cancel" id="v196PasswordCancel">إلغاء</button><button type="button" class="v196-ok" id="v196PasswordOk">دخول</button></div></div></div>\n<script id="v196-shared-password-production-save">\n(function(){'use strict';var PASS='5445',unlocked=false,pending=null;function tx(e){return((e&&e.innerText)||(e&&e.textContent)||'').replace(/\\s+/g,' ').trim()}function prot(e){return /الخطة الشهرية|الصيانة|التعديلات|طباعة التقارير|التقرير الشامل/.test(tx(e))}function op(a){pending=a||null;var b=document.getElementById('v196PasswordBackdrop'),i=document.getElementById('v196PasswordInput'),er=document.getElementById('v196PasswordError');er.textContent='';i.value='';b.style.display='flex';setTimeout(function(){i.focus()},40)}function cl(){document.getElementById('v196PasswordBackdrop').style.display='none';pending=null}function ck(){var i=document.getElementById('v196PasswordInput'),er=document.getElementById('v196PasswordError');if(i.value===PASS){unlocked=true;sessionStorage.setItem('acrow_v196_unlocked','1');var a=pending;cl();if(a)setTimeout(a,0)}else{er.textContent='الرقم السري غير صحيح';i.select()}}function bindProtection(){document.addEventListener('click',function(ev){if(ev.target.closest('#v196PasswordBackdrop'))return;var el=ev.target.closest('button,a,[role="button"]');if(!el||!prot(el))return;if(unlocked||sessionStorage.getItem('acrow_v196_unlocked')==='1'){unlocked=true;return}ev.preventDefault();ev.stopImmediatePropagation();op(function(){el.click()})},true);document.getElementById('v196PasswordOk').onclick=ck;document.getElementById('v196PasswordCancel').onclick=cl;document.getElementById('v196PasswordInput').onkeydown=function(e){if(e.key==='Enter')ck();if(e.key==='Escape')cl()}}function prod(el){if(!el||el.tagName!=='INPUT'||el.type!=='number')return false;var r=el.closest('[class*="machine"],[class*="card"],section,div')||el.parentElement,t=tx(r);return /الوردية الأولى|الورديه الاولى|الوردية الثانية|الورديه الثانيه/.test(t)&&/إنتاج|انتاج/.test(t)}function mark(el){if(el&&el.value!==''&&Number(el.value)>=0)el.classList.add('v196-production-saved')}function bindProd(){document.querySelectorAll('input[type="number"]').forEach(function(el){if(!prod(el)||el.dataset.v196)return;el.dataset.v196='1';el.addEventListener('input',function(){el.classList.remove('v196-production-saved');clearTimeout(el._v196);el._v196=setTimeout(function(){mark(el)},400)});el.addEventListener('change',function(){mark(el)});mark(el)})}function init(){bindProtection();bindProd();new MutationObserver(bindProd).observe(document.body,{childList:true,subtree:true})}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init()})();\n</script>\n'''
+          p.write_text(s+patch,encoding='utf-8')
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Apply v196 shared password and production saved indicator"
+          git push
