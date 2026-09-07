@@ -1,0 +1,45 @@
+name: v205 inject clean realtime loaders
+on:
+  push:
+    branches: ["main"]
+permissions:
+  contents: write
+jobs:
+  inject:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install v198 v199 v205 loaders cleanly
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          # Remove every experimental production loader that could interrupt typing.
+          s=re.sub(r'\s*<!--\s*v20[1-4][^>]*-->\s*<script[^>]+src=["\']\./v20[1-4][^"\']+["\'][^>]*></script>','',s,flags=re.I)
+          s=re.sub(r'\s*<script[^>]+src=["\']\./v20[1-4][^"\']+["\'][^>]*></script>','',s,flags=re.I)
+          # Remove old copies of the three intended loaders, then add one clean set.
+          s=re.sub(r'\s*<!--\s*v198[^>]*-->\s*<script[^>]+src=["\']\./v198-cloud-sync\.js["\'][^>]*></script>','',s,flags=re.I)
+          s=re.sub(r'\s*<!--\s*v199[^>]*-->\s*<script[^>]+src=["\']\./v199-realtime\.js["\'][^>]*></script>','',s,flags=re.I)
+          s=re.sub(r'\s*<!--\s*v205[^>]*-->\s*<script[^>]+src=["\']\./v205-production-save-button\.js["\'][^>]*></script>','',s,flags=re.I)
+          marker='<!-- v205-clean-realtime-loaders -->\n<script src="./v198-cloud-sync.js"></script>\n<script src="./v199-realtime.js"></script>\n<script src="./v205-production-save-button.js"></script>\n'
+          if '</body>' not in s:
+              raise SystemExit('index.html has no closing body tag')
+          s=s.replace('</body>',marker+'</body>',1)
+          p.write_text(s,encoding='utf-8')
+      - name: Commit index
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Activate v205 clean production save sync'
+          git push
+      - name: Remove one-time injector
+        if: success()
+        run: |
+          git rm .github/workflows/v205-inject.yml || true
+          git commit -m 'Remove one-time v205 injector' || true
+          git push || true
