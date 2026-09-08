@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — production green + in-app password guard v8 */
+/* ACROW Factory 5 — production green + in-app password guard v9 */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-green-v8';
+var STYLE_ID='acrow-production-green-v9';
 function setupStyle(){
  if(document.getElementById(STYLE_ID)) return;
  var s=document.createElement('style'); s.id=STYLE_ID;
@@ -15,7 +15,7 @@ function saveInput(input){try{var id=String(input.dataset.machine||'').trim();if
 document.addEventListener('input',function(e){var input=e.target&&e.target.closest?e.target.closest('input.actual-input'):null;if(!input)return;paint(input);saveInput(input);try{if(typeof updateSummaryOnly==='function')updateSummaryOnly();}catch(x){}try{if(typeof renderReport==='function')renderReport();}catch(x){}},true);
 document.addEventListener('change',function(e){var input=e.target&&e.target.closest?e.target.closest('input.actual-input'):null;if(input){paint(input);saveInput(input);}},true);
 
-var PASSWORD='55555';
+var PASSWORD='5445';
 var IDS=['planStatusBtn','maintenanceBtn','adminMenuBtn','jumpToAnalysisBtn'];
 var TITLES={planStatusBtn:'الخطة الشهرية',maintenanceBtn:'الصيانة',adminMenuBtn:'صفحة التعديل',jumpToAnalysisBtn:'التقارير'};
 var pendingId=null;
