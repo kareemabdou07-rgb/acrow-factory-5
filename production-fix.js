@@ -1,11 +1,11 @@
-/* ACROW Factory 5 — production green + hard password guard v6 */
+/* ACROW Factory 5 — production green + in-app password guard v7 */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-green-v6';
+var STYLE_ID='acrow-production-green-v7';
 function setupStyle(){
  if(document.getElementById(STYLE_ID)) return;
  var s=document.createElement('style'); s.id=STYLE_ID;
- s.textContent='input.actual-input.acrow-fixed{background:#b9f3d1!important;border:3px solid #159957!important;color:#063b22!important;box-shadow:none!important;} .machine-card.acrow-production-done{background:linear-gradient(135deg,#123d2b,#102d22)!important;border-color:#159957!important;box-shadow:0 0 0 2px rgba(21,153,87,.18),inset 0 0 18px rgba(21,153,87,.08)!important;} .machine-card.acrow-production-done .mc-name{color:#b9f3d1!important;}';
+ s.textContent='input.actual-input.acrow-fixed{background:#b9f3d1!important;border:3px solid #159957!important;color:#063b22!important;box-shadow:none!important;} .machine-card.acrow-production-done{background:linear-gradient(135deg,#123d2b,#102d22)!important;border-color:#159957!important;box-shadow:0 0 0 2px rgba(21,153,87,.18),inset 0 0 18px rgba(21,153,87,.08)!important;} .machine-card.acrow-production-done .mc-name{color:#b9f3d1!important;} .acrow-lock-overlay{position:fixed;inset:0;background:rgba(0,0,0,.58);display:flex;align-items:center;justify-content:center;padding:18px;z-index:2147483000;box-sizing:border-box;} .acrow-lock-box{width:min(480px,100%);background:var(--panel,#fff);color:var(--text,#111);border:1px solid rgba(0,0,0,.12);border-radius:16px;padding:22px;box-shadow:0 18px 60px rgba(0,0,0,.3);box-sizing:border-box;} .acrow-lock-box h3{margin:0 0 7px;font-size:20px;} .acrow-lock-sub{font-size:12px;opacity:.75;margin-bottom:14px;} .acrow-lock-box input{width:100%;box-sizing:border-box;padding:12px;border:1px solid #bbb;border-radius:10px;font-size:16px;margin-bottom:9px;} .acrow-lock-error{display:none;color:#c62828;font-size:12px;margin-bottom:9px;} .acrow-lock-actions{display:flex;gap:8px;justify-content:flex-end;} .acrow-lock-actions button{padding:10px 18px;border-radius:9px;border:1px solid #bbb;cursor:pointer;font-size:14px;} .acrow-lock-enter{background:#111;color:#fff;border-color:#111!important;}';
  document.head.appendChild(s);
 }
 function disableGoogleTranslate(){try{document.documentElement.classList.add('notranslate');document.body.classList.add('notranslate');if(!document.querySelector('meta[name="google"]')){var m=document.createElement('meta');m.name='google';m.content='notranslate';document.head.appendChild(m);}}catch(e){}}
@@ -17,24 +17,41 @@ document.addEventListener('change',function(e){var input=e.target&&e.target.clos
 
 var PASSWORD='55555';
 var IDS=['planStatusBtn','maintenanceBtn','adminMenuBtn','jumpToAnalysisBtn'];
-function passwordOK(){var p=window.prompt('أدخل كلمة المرور');if(p===null)return false;if(String(p)!==PASSWORD){window.alert('كلمة المرور غير صحيحة');return false;}return true;}
-function openById(id,el){
- if(!passwordOK())return;
+var TITLES={planStatusBtn:'الخطة الشهرية',maintenanceBtn:'الصيانة',adminMenuBtn:'صفحة التعديل',jumpToAnalysisBtn:'التقارير'};
+var pendingId=null;
+function ensureLock(){
+ if(document.getElementById('acrowLockOverlay'))return;
+ var o=document.createElement('div');o.id='acrowLockOverlay';o.className='acrow-lock-overlay';o.style.display='none';
+ o.innerHTML='<div class="acrow-lock-box" role="dialog" aria-modal="true"><h3 id="acrowLockTitle">صفحة التعديل</h3><div class="acrow-lock-sub">محمية بكلمة مرور — أدخل الرمز للدخول</div><input type="password" id="acrowLockInput" placeholder="كلمة المرور" autocomplete="off"><div id="acrowLockError" class="acrow-lock-error">كلمة المرور غلط</div><div class="acrow-lock-actions"><button type="button" id="acrowLockCancel">إلغاء</button><button type="button" id="acrowLockEnter" class="acrow-lock-enter">دخول</button></div></div>';
+ document.body.appendChild(o);
+ var input=o.querySelector('#acrowLockInput');
+ o.querySelector('#acrowLockCancel').onclick=function(){closeLock();};
+ o.querySelector('#acrowLockEnter').onclick=function(){unlock();};
+ input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();unlock();}if(e.key==='Escape'){e.preventDefault();closeLock();}});
+ o.addEventListener('click',function(e){if(e.target===o)closeLock();});
+}
+function closeLock(){var o=document.getElementById('acrowLockOverlay');if(o)o.style.display='none';pendingId=null;}
+function showLock(id){ensureLock();pendingId=id;var o=document.getElementById('acrowLockOverlay');var t=document.getElementById('acrowLockTitle');var i=document.getElementById('acrowLockInput');var er=document.getElementById('acrowLockError');t.textContent=TITLES[id]||'الدخول';i.value='';er.style.display='none';o.style.display='flex';setTimeout(function(){i.focus();},60);}
+function unlock(){var i=document.getElementById('acrowLockInput');if(!i)return;if(String(i.value)!==PASSWORD){document.getElementById('acrowLockError').style.display='block';i.value='';i.focus();return;}var id=pendingId;closeLock();openProtected(id);}
+function openProtected(id){
  if(id==='planStatusBtn'&&typeof window.openMonthlyPlan==='function'){window.openMonthlyPlan();return;}
  if(id==='maintenanceBtn'&&typeof window.openMaintenanceView==='function'){window.openMaintenanceView();return;}
- if(id==='adminMenuBtn'&&typeof window.openAdminModal==='function'){window.openAdminModal();return;}
- if(id==='jumpToAnalysisBtn'){var sec=document.getElementById('analysisSection');if(sec){sec.style.display='';sec.scrollIntoView({behavior:'smooth',block:'start'});}try{if(typeof renderReport==='function')renderReport();}catch(e){}}
+ if(id==='adminMenuBtn'&&typeof window.openAdminModal==='function'){
+  window.openAdminModal();
+  setTimeout(function(){var lock=document.getElementById('adminLockView'),settings=document.getElementById('adminSettingsView');if(lock&&settings){lock.style.display='none';settings.style.display='';}},0);
+  return;
+ }
+ if(id==='jumpToAnalysisBtn'){var sec=document.getElementById('analysisSection');if(sec){sec.style.display='';sec.scrollIntoView({behavior:'smooth',block:'start');}try{if(typeof renderReport==='function')renderReport();}catch(e){}}
 }
 function installGuards(){
+ ensureLock();
  IDS.forEach(function(id){
-  var el=document.getElementById(id); if(!el||el.dataset.acrowGuard==='1')return;
+  var el=document.getElementById(id);if(!el||el.dataset.acrowGuard==='1')return;
   el.dataset.acrowGuard='1';
-  var old=el.onclick;
-  el.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}openById(id,el);return false;};
-  if(old) el.dataset.acrowHadOld='1';
+  el.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}showLock(id);return false;};
  });
 }
-function captureGuard(e){var el=e.target&&e.target.closest?e.target.closest('#planStatusBtn,#maintenanceBtn,#adminMenuBtn,#jumpToAnalysisBtn'):null;if(!el)return;e.preventDefault();e.stopImmediatePropagation();openById(el.id,el);}
+function captureGuard(e){var el=e.target&&e.target.closest?e.target.closest('#planStatusBtn,#maintenanceBtn,#adminMenuBtn,#jumpToAnalysisBtn'):null;if(!el)return;if(el.closest('#acrowLockOverlay'))return;e.preventDefault();e.stopImmediatePropagation();showLock(el.id);}
 function start(){setupStyle();disableGoogleTranslate();paintAll();installGuards();document.addEventListener('click',captureGuard,true);var o=new MutationObserver(function(){paintAll();installGuards();});o.observe(document.body,{childList:true,subtree:true});setTimeout(installGuards,300);setTimeout(installGuards,1000);setTimeout(installGuards,2000);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
