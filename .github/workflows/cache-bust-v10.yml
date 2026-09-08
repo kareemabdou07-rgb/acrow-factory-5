@@ -1,0 +1,26 @@
+name: ACROW cache bust v10
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  cache-bust:
+    if: github.event.head_commit.message != 'chore: cache bust production fix v10'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update production-fix script URL
+        run: |
+          grep -q 'production-fix.js?v=10' index.html || sed -i 's#\./production-fix.js#./production-fix.js?v=10#' index.html
+      - name: Commit cache-busting change
+        run: |
+          if git diff --quiet -- index.html; then
+            echo 'No change needed'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'chore: cache bust production fix v10'
+          git push
