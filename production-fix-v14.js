@@ -21,3 +21,4 @@ function captureGuard(e){var el=e.target&&e.target.closest?e.target.closest('#pl
 function start(){setupStyle();paintAll();installGuards();document.addEventListener('click',captureGuard,true);var o=new MutationObserver(function(){paintAll();installGuards();});o.observe(document.body,{childList:true,subtree:true});setTimeout(installGuards,300);setTimeout(installGuards,1000);setTimeout(installGuards,2000);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
+/* stable deployment trigger — keep v14 behavior intact */
