@@ -1,0 +1,41 @@
+name: ACROW production تثبيت button
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch production confirmation
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          old='''  .actual-input:focus{background:#fff8c7 !important;border-color:#c99f00 !important;box-shadow:0 0 0 3px rgba(242,194,0,.25) !important;}\n</style>'''
+          new='''  .actual-input:focus{background:#fff8c7 !important;border-color:#c99f00 !important;box-shadow:0 0 0 3px rgba(242,194,0,.25) !important;}\n  .actual-input.production-fixed{background:var(--good-dim)!important;border:3px solid var(--good)!important;color:var(--good)!important;}\n  .production-fix-btn{min-width:76px;background:linear-gradient(135deg,#176b45,#25a66d);border:1px solid var(--good);color:#fff;padding:7px 10px;border-radius:7px;font-family:'Tajawal';font-size:12px;font-weight:800;cursor:pointer;}\n  .production-fix-btn.fixed{background:var(--good)!important;color:#07101b!important;border-color:var(--good)!important;}\n</style>'''
+          if old not in s: raise SystemExit('CSS anchor not found')
+          s=s.replace(old,new,1)
+          old='''          <input type="number" min="0" placeholder="0" value="${rec.actual ?? ''}" data-machine="${m.id}" class="actual-input" ${isDown?'disabled':''}>\n        </div>'''
+          new='''          <input type="number" min="0" placeholder="0" value="${rec.actual ?? ''}" data-machine="${m.id}" class="actual-input ${rec.productionFixed ? 'production-fixed' : ''}" ${isDown?'disabled':''}>\n          <button type="button" class="production-fix-btn ${rec.productionFixed ? 'fixed' : ''}" data-fix-production="${m.id}">${rec.productionFixed ? 'تم التثبيت' : 'تثبيت'}</button>\n        </div>'''
+          if old not in s: raise SystemExit('production input anchor not found')
+          s=s.replace(old,new,1)
+          old='''  document.querySelectorAll('.actual-input').forEach(inp=>{\n    inp.addEventListener('input', ()=>{\n      const machineId = inp.dataset.machine;\n      const rec = getRecord(dateInput.value, currentShift, machineId);\n      rec.actual = inp.value === '' ? null : Number(inp.value);\n      saveStore();\n      updateMachineCard(machineId);\n      updateSummaryOnly();\n      renderReport();\n    });\n  });'''
+          new='''  document.querySelectorAll('.actual-input').forEach(inp=>{\n    inp.addEventListener('input', ()=>{\n      const machineId = inp.dataset.machine;\n      const rec = getRecord(dateInput.value, currentShift, machineId);\n      rec.actual = inp.value === '' ? null : Number(inp.value);\n      rec.productionFixed = false;\n      inp.classList.remove('production-fixed');\n      const fixBtn = inp.parentElement.querySelector('[data-fix-production]');\n      if(fixBtn){ fixBtn.classList.remove('fixed'); fixBtn.textContent='تثبيت'; }\n      saveStore();\n      updateMachineCard(machineId);\n      updateSummaryOnly();\n      renderReport();\n    });\n  });\n  document.querySelectorAll('[data-fix-production]').forEach(btn=>{\n    btn.addEventListener('click', ()=>{\n      const machineId = btn.dataset.fixProduction;\n      const rec = getRecord(dateInput.value, currentShift, machineId);\n      if(rec.actual === null || rec.actual === '') return;\n      rec.productionFixed = true;\n      saveStore();\n      const inp = btn.parentElement.querySelector('.actual-input');\n      if(inp) inp.classList.add('production-fixed');\n      btn.classList.add('fixed');\n      btn.textContent='تم التثبيت';\n    });\n  });'''
+          if old not in s: raise SystemExit('binding anchor not found')
+          s=s.replace(old,new,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name "ACROW Factory Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git commit -m "ACROW Factory: add production تثبيت button and fixed color" || exit 0
+          git push
+      - name: Remove patch workflow after success
+        run: |
+          git rm .github/workflows/production-fix.yml
+          git commit -m "Remove one-time production fix workflow"
+          git push
