@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — production green + in-app password guard v9 */
+/* ACROW Factory 5 — production green + in-app password guard v10 */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-green-v9';
+var STYLE_ID='acrow-production-green-v10';
 function setupStyle(){
  if(document.getElementById(STYLE_ID)) return;
  var s=document.createElement('style'); s.id=STYLE_ID;
@@ -17,8 +17,9 @@ document.addEventListener('change',function(e){var input=e.target&&e.target.clos
 
 var PASSWORD='5445';
 var IDS=['planStatusBtn','maintenanceBtn','adminMenuBtn','jumpToAnalysisBtn'];
-var TITLES={planStatusBtn:'الخطة الشهرية',maintenanceBtn:'الصيانة',adminMenuBtn:'صفحة التعديل',jumpToAnalysisBtn:'التقارير'};
+var TITLES={planStatusBtn:'الخطة الشهرية',maintenanceBtn:'الصيانة',adminMenuBtn:'صفحة التعديل',jumpToAnalysisBtn:'التقارير',textReportPrint:'طباعة التقارير',textReports:'التقارير'};
 var pendingId=null;
+var pendingEl=null;
 function ensureLock(){
  if(document.getElementById('acrowLockOverlay'))return;
  var o=document.createElement('div');o.id='acrowLockOverlay';o.className='acrow-lock-overlay';o.style.display='none';
@@ -30,9 +31,9 @@ function ensureLock(){
  input.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();unlock();}if(e.key==='Escape'){e.preventDefault();closeLock();}});
  o.addEventListener('click',function(e){if(e.target===o)closeLock();});
 }
-function closeLock(){var o=document.getElementById('acrowLockOverlay');if(o)o.style.display='none';pendingId=null;}
-function showLock(id){ensureLock();pendingId=id;var o=document.getElementById('acrowLockOverlay');var t=document.getElementById('acrowLockTitle');var i=document.getElementById('acrowLockInput');var er=document.getElementById('acrowLockError');t.textContent=TITLES[id]||'الدخول';i.value='';er.style.display='none';o.style.display='flex';setTimeout(function(){i.focus();},60);}
-function unlock(){var i=document.getElementById('acrowLockInput');if(!i)return;if(String(i.value)!==PASSWORD){document.getElementById('acrowLockError').style.display='block';i.value='';i.focus();return;}var id=pendingId;closeLock();openProtected(id);}
+function closeLock(){var o=document.getElementById('acrowLockOverlay');if(o)o.style.display='none';pendingId=null;pendingEl=null;}
+function showLock(id,el){ensureLock();pendingId=id;pendingEl=el||null;var o=document.getElementById('acrowLockOverlay');var t=document.getElementById('acrowLockTitle');var i=document.getElementById('acrowLockInput');var er=document.getElementById('acrowLockError');t.textContent=TITLES[id]||'الدخول';i.value='';er.style.display='none';o.style.display='flex';setTimeout(function(){i.focus();},60);}
+function unlock(){var i=document.getElementById('acrowLockInput');if(!i)return;if(String(i.value)!==PASSWORD){document.getElementById('acrowLockError').style.display='block';i.value='';i.focus();return;}var id=pendingId,el=pendingEl;closeLock();if(id==='textReportPrint'||id==='textReports'){if(el){el.dataset.acrowUnlocked='1';el.click();setTimeout(function(){try{delete el.dataset.acrowUnlocked;}catch(e){}},300);}return;}openProtected(id);}
 function openProtected(id){
  if(id==='planStatusBtn'&&typeof window.openMonthlyPlan==='function'){window.openMonthlyPlan();return;}
  if(id==='maintenanceBtn'&&typeof window.openMaintenanceView==='function'){window.openMaintenanceView();return;}
@@ -51,7 +52,17 @@ function installGuards(){
   el.onclick=function(e){if(e){e.preventDefault();e.stopPropagation();}showLock(id);return false;};
  });
 }
-function captureGuard(e){var el=e.target&&e.target.closest?e.target.closest('#planStatusBtn,#maintenanceBtn,#adminMenuBtn,#jumpToAnalysisBtn'):null;if(!el)return;if(el.closest('#acrowLockOverlay'))return;e.preventDefault();e.stopImmediatePropagation();showLock(el.id);}
+function captureGuard(e){
+ var el=e.target&&e.target.closest?e.target.closest('#planStatusBtn,#maintenanceBtn,#adminMenuBtn,#jumpToAnalysisBtn'):null;
+ if(el){if(el.closest('#acrowLockOverlay'))return;e.preventDefault();e.stopImmediatePropagation();showLock(el.id);return;}
+ var textEl=e.target&&e.target.closest?e.target.closest('button,a,[role="button"]'):null;
+ if(!textEl||textEl.closest('#acrowLockOverlay'))return;
+ if(textEl.dataset.acrowUnlocked==='1'){delete textEl.dataset.acrowUnlocked;return;}
+ if(textEl.id&&IDS.indexOf(textEl.id)>=0)return;
+ var text=(textEl.textContent||'').replace(/\s+/g,' ').trim();
+ if(text==='طباعة التقارير'){e.preventDefault();e.stopImmediatePropagation();showLock('textReportPrint',textEl);return;}
+ if(text==='التقارير'){e.preventDefault();e.stopImmediatePropagation();showLock('textReports',textEl);return;}
+}
 function start(){setupStyle();disableGoogleTranslate();paintAll();installGuards();document.addEventListener('click',captureGuard,true);var o=new MutationObserver(function(){paintAll();installGuards();});o.observe(document.body,{childList:true,subtree:true});setTimeout(installGuards,300);setTimeout(installGuards,1000);setTimeout(installGuards,2000);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
