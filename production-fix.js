@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — production green + in-app password guard v7 */
+/* ACROW Factory 5 — production green + in-app password guard v8 */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-green-v7';
+var STYLE_ID='acrow-production-green-v8';
 function setupStyle(){
  if(document.getElementById(STYLE_ID)) return;
  var s=document.createElement('style'); s.id=STYLE_ID;
@@ -22,7 +22,7 @@ var pendingId=null;
 function ensureLock(){
  if(document.getElementById('acrowLockOverlay'))return;
  var o=document.createElement('div');o.id='acrowLockOverlay';o.className='acrow-lock-overlay';o.style.display='none';
- o.innerHTML='<div class="acrow-lock-box" role="dialog" aria-modal="true"><h3 id="acrowLockTitle">صفحة التعديل</h3><div class="acrow-lock-sub">محمية بكلمة مرور — أدخل الرمز للدخول</div><input type="password" id="acrowLockInput" placeholder="كلمة المرور" autocomplete="off"><div id="acrowLockError" class="acrow-lock-error">كلمة المرور غلط</div><div class="acrow-lock-actions"><button type="button" id="acrowLockCancel">إلغاء</button><button type="button" id="acrowLockEnter" class="acrow-lock-enter">دخول</button></div></div>';
+ o.innerHTML='<div class="acrow-lock-box" role="dialog" aria-modal="true"><h3 id="acrowLockTitle">صفحة التعديل</h3><div class="acrow-lock-sub">محمية بكلمة مرور — أدخل الرمز للدخول</div><input type="text" id="acrowLockInput" name="acrow_access_code" inputmode="numeric" pattern="[0-9]*" placeholder="كلمة المرور" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false" style="-webkit-text-security:disc;"><div id="acrowLockError" class="acrow-lock-error">كلمة المرور غلط</div><div class="acrow-lock-actions"><button type="button" id="acrowLockCancel">إلغاء</button><button type="button" id="acrowLockEnter" class="acrow-lock-enter">دخول</button></div></div>';
  document.body.appendChild(o);
  var input=o.querySelector('#acrowLockInput');
  o.querySelector('#acrowLockCancel').onclick=function(){closeLock();};
