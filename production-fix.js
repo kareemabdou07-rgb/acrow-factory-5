@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — stable production entry v7: yellow before entry, solid green after entry */
+/* ACROW Factory 5 — production entry v8: yellow before entry, full production box solid green after entry */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-stable-style-v7';
+var STYLE_ID='acrow-production-stable-style-v8';
 function style(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
@@ -9,6 +9,9 @@ function style(){
 .actual-input.acrow-fixed,.actual-input.acrow-fixed:focus{background:#b9f3d1!important;border:3px solid #159957!important;color:#063b22!important;box-shadow:none!important;}
 .acrow-production-row{display:flex!important;align-items:center!important;gap:8px!important;width:100%!important;}
 .acrow-production-row .actual-input{flex:1 1 auto!important;min-width:0!important;}
+.acrow-production-row.acrow-production-done{background:#b9f3d1!important;border:3px solid #159957!important;border-radius:10px!important;padding:6px!important;}
+.acrow-production-row.acrow-production-done .production-label{color:#063b22!important;}
+.acrow-production-row.acrow-production-done .actual-input{background:#b9f3d1!important;border-color:#159957!important;color:#063b22!important;}
 .acrow-production-row .production-fix-btn-v2{display:none!important;}
 `;
  document.head.appendChild(s);
@@ -16,7 +19,9 @@ function style(){
 function rec(id){try{return typeof getRecord==='function'&&typeof dateInput!=='undefined'?getRecord(dateInput.value,currentShift,id):null}catch(e){return null}}
 function paint(input,r){
  var has=String(input.value||'').trim()!=='';
+ var row=input.closest('.mc-row')||input.parentElement;
  input.classList.toggle('acrow-fixed',has);
+ if(row)row.classList.toggle('acrow-production-done',has);
  input.style.setProperty('background-color',has?'#b9f3d1':'#fff3b0','important');
  input.style.setProperty('border-color',has?'#159957':'#e0ad00','important');
  input.style.setProperty('color',has?'#063b22':'#4a3900','important');
