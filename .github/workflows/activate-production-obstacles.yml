@@ -31,3 +31,4 @@ jobs:
           git add index.html
           git diff --cached --quiet || git commit -m 'Activate production obstacles safely'
           git push
+          # trigger deployment after activation
