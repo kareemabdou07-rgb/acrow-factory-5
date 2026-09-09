@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — stable production entry v3: green immediately on entry */
+/* ACROW Factory 5 — stable production entry v4: no green flashing */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-stable-style-v3';
+var STYLE_ID='acrow-production-stable-style-v4';
 function style(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
@@ -17,7 +17,7 @@ function rec(id){try{return typeof getRecord==='function'&&typeof dateInput!=='u
 function paint(input,r){
  var has=input.value!=='';
  input.classList.toggle('acrow-fixed',has);
- if(r) r.productionFixed=has;
+ if(r)r.productionFixed=has;
 }
 function decorate(){
  style();
@@ -34,11 +34,31 @@ document.addEventListener('input',function(e){
  if(r){
   r.actual=input.value===''?null:Number(input.value);
   r.productionFixed=input.value!=='';
+ }
+ paint(input,r);
+},true);
+
+document.addEventListener('blur',function(e){
+ var input=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!input)return;
+ var r=rec(String(input.dataset.machine||'').trim());
+ if(r){
+  r.actual=input.value===''?null:Number(input.value);
+  r.productionFixed=input.value!=='';
+  try{saveStore()}catch(x){}
+ }
+},true);
+
+document.addEventListener('change',function(e){
+ var input=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!input)return;
+ var r=rec(String(input.dataset.machine||'').trim());
+ if(r){
+  r.actual=input.value===''?null:Number(input.value);
+  r.productionFixed=input.value!=='';
   try{saveStore()}catch(x){}
  }
  paint(input,r);
- try{if(typeof updateSummaryOnly==='function')updateSummaryOnly();if(typeof renderReport==='function')renderReport()}catch(x){}
 },true);
-function start(){style();decorate();setTimeout(decorate,300);setTimeout(decorate,1000);}
+
+function start(){style();decorate();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
