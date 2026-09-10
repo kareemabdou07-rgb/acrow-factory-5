@@ -1,9 +1,9 @@
-/* ACROW Factory 5 v67 — reliable fault delete */
+/* ACROW Factory 5 v68 — repair and delete fault buttons */
 (function(){
 'use strict';
-if(window.__acrowFaultDeleteFixActive)return;
-window.__acrowFaultDeleteFixActive=true;
-var STYLE_ID='acrow-fault-delete-fix-v67';
+if(window.__acrowFaultRepairDeleteV68)return;
+window.__acrowFaultRepairDeleteV68=true;
+var STYLE_ID='acrow-fault-repair-delete-v68';
 function style(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
@@ -12,14 +12,22 @@ function style(){
 `;
  document.head.appendChild(s);
 }
+function norm(v){return String(v==null?'':v).replace(/\s+/g,' ').trim();}
+function info(btn){var item=btn.closest('.fault-item');if(!item)return null;var r=item.querySelector('.f-reason'),m=item.querySelector('.f-mins');return {item:item,reason:norm(r?r.textContent:''),mins:norm(m?m.textContent:'')};}
+function isFault(o){return o&&typeof o==='object'&&!Array.isArray(o)&&(o.reason!=null||o.category!=null||o.description!=null||o.details!=null)&&(o.minutes!=null||o.mins!=null||o.duration!=null||o.start!=null||o.startTime!=null);}
+function match(o,x){if(!isFault(o)||!x)return false;var r=norm(o.reason||o.category||o.description||o.details),m=norm(o.minutes!=null?o.minutes:o.mins!=null?o.mins:o.duration);if(x.reason&&r&&r!==x.reason&&r.indexOf(x.reason)<0&&x.reason.indexOf(r)<0)return false;if(x.mins&&m&&x.mins!==m&&x.mins.indexOf(m)<0&&m.indexOf(x.mins)<0)return false;return !!(x.reason&&r)||!!(x.mins&&m);}
+function machineId(){var a=['currentFaultMachine','faultMachineId','selectedFaultMachine','selectedMachineId','currentMachine','selectedMachine'];for(var i=0;i<a.length;i++){try{var v=window[a[i]];if(v&&typeof v==='object')v=v.id||v.machineId||v.code||v.machine;if(v!=null&&norm(v))return norm(v);}catch(e){}}return '';}
+function eachFaultArray(record,fn){if(!record||typeof record!=='object')return false;var keys=['faults','failures','maintenanceFaults','maintenanceFailures','faultRecords','faultList'];for(var k=0;k<keys.length;k++){var a=record[keys[k]];if(Array.isArray(a)&&fn(a))return true;}return false;}
+function deep(obj,fn,depth){if(!obj||typeof obj!=='object'||depth>7)return false;if(Array.isArray(obj)){if(fn(obj))return true;for(var i=0;i<obj.length;i++)if(deep(obj[i],fn,depth+1))return true;return false;}var ks=Object.keys(obj);for(var j=0;j<ks.length;j++)if(deep(obj[ks[j]],fn,depth+1))return true;return false;}
+function getRecordSafe(){try{if(typeof getRecord==='function'&&typeof dateInput!=='undefined'&&typeof currentShift!=='undefined'){var id=machineId();if(id)return getRecord(dateInput.value,currentShift,id);}}catch(e){}return null;}
 function save(){try{if(typeof saveStore==='function')saveStore();}catch(e){}}
-function redraw(){save();['renderMaintenance','renderFaults','renderFailures','render','renderDashboard'].forEach(function(n){try{if(typeof window[n]==='function')window[n]();}catch(e){}});}
-function getInfo(btn){var item=btn.closest('.fault-item');if(!item)return null;var reason=item.querySelector('.f-reason');var mins=item.querySelector('.f-mins');return {item:item,reason:String(reason?reason.textContent:'').replace(/\s+/g,' ').trim(),mins:String(mins?mins.textContent:'').replace(/\s+/g,' ').trim()};}
-function match(o,info){if(!o||typeof o!=='object')return false;var reason=String(o.reason||o.category||o.description||o.details||'').replace(/\s+/g,' ').trim();var mins=String(o.minutes!=null?o.minutes:o.mins!=null?o.mins:o.duration!=null?o.duration:'').replace(/\s+/g,' ').trim();return (!!info.reason&&reason===info.reason)|| (!!info.mins&&mins===info.mins);}
-function removeIn(obj,info,depth){if(!obj||typeof obj!=='object'||depth>7)return false;if(Array.isArray(obj)){for(var i=0;i<obj.length;i++){if(match(obj[i],info)){obj.splice(i,1);return true;}}for(var j=0;j<obj.length;j++){if(removeIn(obj[j],info,depth+1))return true;}return false;}var keys=Object.keys(obj);for(var k=0;k<keys.length;k++){var v=obj[keys[k]];if(Array.isArray(v)&&/fault|failure|maintenance/i.test(keys[k])){for(var p=0;p<v.length;p++){if(match(v[p],info)){v.splice(p,1);return true;}}}}for(var q=0;q<keys.length;q++){if(removeIn(obj[keys[q]],info,depth+1))return true;}return false;}
-function clickDelete(btn){var info=getInfo(btn);if(!info)return;var removed=false;try{if(typeof getRecord==='function'&&typeof dateInput!=='undefined'&&typeof currentShift!=='undefined'){var id=window.selectedMachineId||window.currentMachineId||window.currentFaultMachine||window.faultMachineId||'';if(typeof id==='object')id=id.id||id.machineId||id.code||'';if(id){var r=getRecord(dateInput.value,currentShift,String(id));removed=removeIn(r,info,0);}}}catch(e){}if(!removed){try{if(window.store)removed=removeIn(window.store,info,0);}catch(e){}}if(!removed){try{var raw=localStorage.getItem('acrow_factory_5');if(raw){var data=JSON.parse(raw);if(removeIn(data,info,0)){localStorage.setItem('acrow_factory_5',JSON.stringify(data));removed=true;}}}catch(e){}}if(removed){info.item.remove();redraw();}}
-document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('.f-del'):null;if(!b)return;e.preventDefault();e.stopImmediatePropagation();clickDelete(b);},true);
+function redraw(){save();['renderMaintenance','renderFaults','renderFailures','render','renderDashboard','rebuildMachines'].forEach(function(n){try{if(typeof window[n]==='function')window[n]();}catch(e){}});}
+function deleteFault(btn){var x=info(btn),removed=false;if(!x)return;var rec=getRecordSafe();if(rec)removed=eachFaultArray(rec,function(a){for(var i=0;i<a.length;i++){if(match(a[i],x)){a.splice(i,1);return true;}}return false;});if(!removed&&window.store)removed=deep(window.store,function(a){for(var i=0;i<a.length;i++){if(match(a[i],x)){a.splice(i,1);return true;}}return false;},0);if(!removed){try{var raw=localStorage.getItem('acrow_factory_5');if(raw){var d=JSON.parse(raw);if(deep(d,function(a){for(var i=0;i<a.length;i++){if(match(a[i],x)){a.splice(i,1);return true;}}return false;},0)){localStorage.setItem('acrow_factory_5',JSON.stringify(d));removed=true;}}}catch(e){}}if(removed){try{x.item.remove();}catch(e){}redraw();}}
+function repairFault(btn){var x=info(btn),changed=false;if(!x)return;var now=new Date(),iso=now.toISOString();function repair(o){if(!match(o,x)||o.repaired===true||o.resolved===true)return false;o.repaired=true;o.resolved=true;o.fixed=true;o.status='repaired';o.endTime=o.endTime||iso;o.end=o.end||iso;o.endedAt=o.endedAt||iso;o.repairedAt=iso;o.repairTime=iso;var st=o.startTime||o.start||o.startedAt;if(st){var t=Date.parse(st);if(!isNaN(t)){var mins=Math.max(0,Math.round((now.getTime()-t)/60000));if(o.minutes!=null)o.minutes=mins;if(o.mins!=null)o.mins=mins;if(o.duration!=null)o.duration=mins;if(o.duration==null&&o.minutes==null&&o.mins==null)o.duration=mins;}}return true;}
+var rec=getRecordSafe();if(rec)changed=deep(rec,function(a){for(var i=0;i<a.length;i++)if(repair(a[i]))return true;return false;},0);if(!changed&&window.store)changed=deep(window.store,function(a){for(var i=0;i<a.length;i++)if(repair(a[i]))return true;return false;},0);if(!changed){try{var raw=localStorage.getItem('acrow_factory_5');if(raw){var d=JSON.parse(raw);if(deep(d,function(a){for(var i=0;i<a.length;i++)if(repair(a[i]))return true;return false;},0)){localStorage.setItem('acrow_factory_5',JSON.stringify(d));changed=true;}}}catch(e){}}if(changed)redraw();}
+function click(e){var b=e.target&&e.target.closest?e.target.closest('button,a,.mc-btn'):null;if(!b)return;var item=b.closest&&b.closest('.fault-item');if(!item)return;var t=norm(b.textContent);if(b.classList.contains('f-del')||/^(حذف|حذف العطل|مسح)$/.test(t)){e.preventDefault();e.stopImmediatePropagation();deleteFault(b);return;}if(/تم\s*الإصلاح|تم\s*الاصلاح|إصلاح|اصلاح/.test(t)){setTimeout(function(){repairFault(b);},0);}}
 function init(){style();document.querySelectorAll('.f-del').forEach(function(b){b.type='button';b.style.pointerEvents='auto';});}
+document.addEventListener('click',click,true);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 new MutationObserver(init).observe(document.documentElement,{childList:true,subtree:true});
 })();
