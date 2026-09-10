@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — production entry v66: lock production, target and fault controls */
+/* ACROW Factory 5 — v67: reliable fault delete button */
 (function(){
 'use strict';
 var STYLE_ID='acrow-production-stable-style-v65';
@@ -23,20 +23,7 @@ function style(){
  document.head.appendChild(s);
 }
 function rec(id){try{return typeof getRecord==='function'&&typeof dateInput!=='undefined'?getRecord(dateInput.value,currentShift,id):null}catch(e){return null}}
-function paint(input,r){
- var has=String(input.value||'').trim()!=='';
- var row=input.closest('.mc-row')||input.parentElement;
- input.classList.toggle('acrow-fixed',has);
- input.setAttribute('data-production-done',has?'1':'0');
- if(row){row.classList.add('acrow-production-row');row.classList.toggle('acrow-production-done',has);}
- input.style.setProperty('background',has?'#b9f3d1':'#fff3b0','important');
- input.style.setProperty('background-color',has?'#b9f3d1':'#fff3b0','important');
- input.style.setProperty('background-image','none','important');
- input.style.setProperty('border-color',has?'#159957':'#e0ad00','important');
- input.style.setProperty('color',has?'#063b22':'#4a3900','important');
- if(has)input.style.setProperty('box-shadow','inset 0 0 0 9999px #b9f3d1','important');else input.style.setProperty('box-shadow','none','important');
- if(r)r.productionFixed=has;
-}
+function paint(input,r){var has=String(input.value||'').trim()!=='';var row=input.closest('.mc-row')||input.parentElement;input.classList.toggle('acrow-fixed',has);input.setAttribute('data-production-done',has?'1':'0');if(row){row.classList.add('acrow-production-row');row.classList.toggle('acrow-production-done',has);}input.style.setProperty('background',has?'#b9f3d1':'#fff3b0','important');input.style.setProperty('background-color',has?'#b9f3d1':'#fff3b0','important');input.style.setProperty('background-image','none','important');input.style.setProperty('border-color',has?'#159957':'#e0ad00','important');input.style.setProperty('color',has?'#063b22':'#4a3900','important');if(has)input.style.setProperty('box-shadow','inset 0 0 0 9999px #b9f3d1','important');else input.style.setProperty('box-shadow','none','important');if(r)r.productionFixed=has;}
 function decorate(root){style();(root||document).querySelectorAll('.actual-input').forEach(function(input){paint(input,rec(String(input.dataset.machine||'').trim()));});}
 document.addEventListener('input',function(e){var input=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!input)return;e.stopImmediatePropagation();var r=rec(String(input.dataset.machine||'').trim());if(r){r.actual=input.value===''?null:Number(input.value);r.productionFixed=input.value!=='';}paint(input,r);},true);
 document.addEventListener('change',function(e){var input=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!input)return;var r=rec(String(input.dataset.machine||'').trim());if(r){r.actual=input.value===''?null:Number(input.value);r.productionFixed=input.value!=='';try{saveStore()}catch(x){}}paint(input,r);},true);
@@ -44,5 +31,5 @@ document.addEventListener('blur',function(e){var input=e.target&&e.target.closes
 function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(function(list){list.forEach(function(m){m.addedNodes&&m.addedNodes.forEach(function(n){if(n.nodeType===1)decorate(n);});});});ob.observe(document.body,{childList:true,subtree:true});}
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
-(function loadFaultDeleteFix(){if(window.__acrowFaultDeleteFixLoaded)return;window.__acrowFaultDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=66';s.async=false;document.head.appendChild(s);})();
+(function loadFaultDeleteFix(){if(window.__acrowFaultDeleteFixLoaded)return;window.__acrowFaultDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=67';s.async=false;document.head.appendChild(s);})();
 })();
