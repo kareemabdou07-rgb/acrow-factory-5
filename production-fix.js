@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — production entry v65: lock production, target and fault controls */
+/* ACROW Factory 5 — production entry v66: lock production, target and fault controls */
 (function(){
 'use strict';
 var STYLE_ID='acrow-production-stable-style-v65';
@@ -44,4 +44,5 @@ document.addEventListener('blur',function(e){var input=e.target&&e.target.closes
 function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(function(list){list.forEach(function(m){m.addedNodes&&m.addedNodes.forEach(function(n){if(n.nodeType===1)decorate(n);});});});ob.observe(document.body,{childList:true,subtree:true});}
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+(function loadFaultDeleteFix(){if(window.__acrowFaultDeleteFixLoaded)return;window.__acrowFaultDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=66';s.async=false;document.head.appendChild(s);})();
 })();
