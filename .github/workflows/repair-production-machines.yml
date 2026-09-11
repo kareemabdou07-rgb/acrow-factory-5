@@ -1,0 +1,95 @@
+name: Repair daily production machine cards
+
+on:
+  workflow_run:
+    workflows: ["Deploy static content to Pages"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-repair
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject machine-card repair
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<script id="acrow-production-machine-cards-repair-v2">'
+          if marker not in s:
+              js=r'''<script id="acrow-production-machine-cards-repair-v2">
+          (function(){
+            function repair(){
+              try{
+                if(typeof window.store==='undefined'||!window.store)return false;
+                if(typeof window.rebuildMachines!=='function')return false;
+                if(window.__acrowProductionCardsRepairV2)return true;
+                var original=window.rebuildMachines;
+                function ensure(){
+                  original.apply(this,arguments);
+                  if(!Array.isArray(window.MACHINES))return;
+                  var by={};
+                  window.MACHINES.forEach(function(m){if(m&&m.id!=null)by[String(m.id)]=m;});
+                  var ds=Array.isArray(window.DEPARTMENTS)?window.DEPARTMENTS:[];
+                  function deptFor(name){
+                    var t=String(name||'').toLowerCase();
+                    if(/ledger|ring/.test(t))return 'ledger';
+                    if(/cup|kablock/.test(t))return 'kablock';
+                    if(/hand|welding|لحام/.test(t))return 'fola_manual';
+                    if(/drill|مثقاب|متقاب/.test(t))return 'drill';
+                    if(/saw|منشار/.test(t))return 'saw';
+                    if(/sort|فرز/.test(t))return 'sorting';
+                    return 'sorting';
+                  }
+                  (Array.isArray(store.machines)?store.machines:[]).forEach(function(x){
+                    if(!x)return;
+                    var id=String(x.number||x.code||x.id||x.machine||'').trim();
+                    if(!/^\d+$/.test(id)||by[id])return;
+                    var name=String(x.name||x.type||x.machineName||id).trim();
+                    var dept=deptFor(name+' '+String(x.type||''));
+                    var d=ds.find(function(q){return q.id===dept;});
+                    window.MACHINES.push({id:id,name:name,dept:dept,deptName:d?d.name:dept,target:d&&d.target!=null?d.target:0});
+                    by[id]=window.MACHINES[window.MACHINES.length-1];
+                  });
+                }
+                window.rebuildMachines=ensure;
+                ensure();
+                window.__acrowProductionCardsRepairV2=true;
+                setTimeout(function(){try{if(typeof render==='function')render();}catch(e){}},100);
+                return true;
+              }catch(e){return false;}
+            }
+            var n=0;
+            function boot(){if(repair()||++n>60)clearInterval(t);}
+            var t=setInterval(boot,500);
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+          })();
+          </script>'''
+              s=s.replace('</head>',js+'\n</head>',1)
+              p.write_text(s,encoding='utf-8')
+          PY
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+      - name: Deploy repaired Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
