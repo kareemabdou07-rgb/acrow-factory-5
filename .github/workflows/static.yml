@@ -129,6 +129,48 @@ jobs:
               s = s.replace('</head>', js + '\n</head>', 1)
               p.write_text(s, encoding='utf-8')
           PY
+      - name: Inject daily production machine selector repair
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<script id="acrow-daily-production-machine-selector-v1">'
+          if marker not in s:
+              js = r'''<script id="acrow-daily-production-machine-selector-v1">
+          (function(){
+            function repair(){
+              try{
+                if(typeof store==='undefined' || !store || !store.settings) return false;
+                if(typeof rebuildMachines==='function') rebuildMachines();
+                if(typeof MACHINES==='undefined' || !Array.isArray(MACHINES) || !MACHINES.length) return false;
+                if(!Array.isArray(store.favorites)) store.favorites=[];
+                var seen=new Set(store.favorites.map(String));
+                MACHINES.forEach(function(m){if(m && m.id!=null) seen.add(String(m.id));});
+                store.favorites=Array.from(seen);
+                if(typeof saveStore==='function') saveStore();
+                if(typeof renderMachineSelectList==='function') renderMachineSelectList();
+                var modal=document.getElementById('machineSelectModal');
+                var list=document.getElementById('machineSelectList');
+                if(!list) return false;
+                if(!list.children.length){
+                  list.innerHTML=MACHINES.map(function(m){
+                    var id=String(m.id), name=String(m.name||id);
+                    return '<label class="fav-checkbox-row"><input type="checkbox" data-machine-id="'+id.replace(/"/g,'&quot;')+'" checked> <span>'+id+' — '+name+'</span></label>';
+                  }).join('');
+                }
+                return true;
+              }catch(e){return false;}
+            }
+            var n=0;
+            function boot(){if(repair() || ++n>=40) clearInterval(t);}
+            var t=setInterval(boot,500);
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+          })();
+          </script>'''
+              s = s.replace('</head>', js + '\n</head>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
