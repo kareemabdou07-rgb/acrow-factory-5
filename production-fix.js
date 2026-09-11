@@ -1,12 +1,13 @@
-/* ACROW Factory 5 — v75: fixed custom-machine production cards + barcode loader */
+/* ACROW Factory 5 — v76: one machine per fixed production card */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-stable-style-v74';
+var STYLE_ID='acrow-production-stable-style-v76';
 function style(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
-.machine-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))!important;gap:12px!important;align-items:start!important;width:100%!important;box-sizing:border-box!important;}
-.machine-card{min-width:0!important;width:100%!important;max-width:none!important;box-sizing:border-box!important;overflow:hidden!important;position:relative!important;}
+/* Each machine MUST occupy its own independent row/card. No two machines share a grid cell. */
+.machine-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-flow:row!important;gap:12px!important;align-items:start!important;width:100%!important;box-sizing:border-box!important;}
+.machine-grid>.machine-card{grid-column:1!important;grid-row:auto!important;min-width:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important;position:relative!important;clear:both!important;}
 .machine-card *{box-sizing:border-box!important;}
 .mc-top{min-width:0!important;display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:8px!important;}
 .mc-top>*{min-width:0!important;max-width:100%!important;}
@@ -30,7 +31,7 @@ function style(){
 .acrow-custom-row span{width:26px;height:26px;border-radius:6px;background:var(--bg-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--text-dim);flex:none;}
 .acrow-custom-row input{width:100%;min-width:0;background:var(--bg-2);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:7px;font-family:'Tajawal';font-size:13px;font-weight:700;box-sizing:border-box;}
 .acrow-custom-row input:focus{outline:none;border-color:var(--accent);}
-@media(max-width:600px){.machine-grid{grid-template-columns:1fr!important;}.machine-card{width:100%!important;}.acrow-custom-grid{grid-template-columns:1fr;}}
+@media(max-width:600px){.machine-grid{grid-template-columns:1fr!important;}.machine-grid>.machine-card{width:100%!important;}.acrow-custom-grid{grid-template-columns:1fr;}}
 `;
  document.head.appendChild(s);
 }
@@ -43,6 +44,6 @@ document.addEventListener('blur',function(e){var input=e.target&&e.target.closes
 function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(function(list){list.forEach(function(m){m.addedNodes&&m.addedNodes.forEach(function(n){if(n.nodeType===1)decorate(n);});});});ob.observe(document.body,{childList:true,subtree:true});}
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
-(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=75';s.async=false;document.head.appendChild(s);})();
-(function loadCustomMachines(){if(window.__acrowCustomMachinesV75Loaded)return;window.__acrowCustomMachinesV75Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=75';s.async=false;document.head.appendChild(s);})();
+(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=76';s.async=false;document.head.appendChild(s);})();
+(function loadCustomMachines(){if(window.__acrowCustomMachinesV76Loaded)return;window.__acrowCustomMachinesV76Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=75';s.async=false;document.head.appendChild(s);})();
 })();
