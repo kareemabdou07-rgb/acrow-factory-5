@@ -30,15 +30,15 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          marker='<script id="acrow-production-machine-cards-repair-v3">'
+          marker='<script id="acrow-production-machine-cards-repair-v4">'
           if marker not in s:
-              js=r'''<script id="acrow-production-machine-cards-repair-v3">
+              js=r'''<script id="acrow-production-machine-cards-repair-v4">
           (function(){
             function repair(){
               try{
                 if(typeof window.store==='undefined'||!window.store)return false;
                 if(typeof window.MACHINES==='undefined'||!Array.isArray(window.MACHINES))return false;
-                if(window.__acrowProductionCardsRepairV3)return true;
+                if(window.__acrowProductionCardsRepairV4)return true;
                 var ds=Array.isArray(window.DEPARTMENTS)?window.DEPARTMENTS:[];
                 var originalRender=window.render;
                 if(typeof originalRender!=='function')return false;
@@ -69,11 +69,6 @@ jobs:
                   }
                   (Array.isArray(window.store.machines)?window.store.machines:[]).forEach(add);
                   (Array.isArray(window.store.machineCustom)?window.store.machineCustom:[]).forEach(add);
-                  (Array.isArray(window.store.favorites)?window.store.favorites:[]).forEach(function(id){
-                    id=String(id);
-                    if(by[id])return;
-                    add({id:id,name:'ماكينة '+id});
-                  });
                   var known=[
                     ['1712','منشار RSA'],['982','متقاب/مثقاب'],['961','متقاب'],['263','مثقاب'],['882','مثقاب'],
                     ['1522','Ledgers/Ring'],['999','Ledgers/Ring'],['5004','Ledgers/Ring'],['5003','Ledgers/Ring'],['1521','Ledgers/Ring'],['998','Ledgers/Ring'],
@@ -84,11 +79,14 @@ jobs:
                     ['954','منشار'],['1713','متقاب متعدد'],['112','فريم كوباية'],['114','فريم كوباية'],['477','فارمه يدوي'],['1504','فارمه يدوي'],['712','فارمه يدوي'],['710','فارمه يدوي'],['122','فارمه يدوي'],['454','فارمه يدوي'],['713','فارمه يدوي'],['115','فارمه يدوي'],['117','فارمه يدوي'],['711','فارمه يدوي'],['456','فارمه يدوي'],['1501','ماكينه يدوي'],['120','ماكينه يدوي']
                   ];
                   known.forEach(function(k){add({id:k[0],name:k[1]});});
+                  var allIds=window.MACHINES.map(function(m){return String(m.id);}).filter(Boolean);
+                  window.store.favorites=Array.from(new Set(allIds));
                 }
                 window.render=function(){ensureMachines();return originalRender.apply(this,arguments);};
                 ensureMachines();
-                window.__acrowProductionCardsRepairV3=true;
+                window.__acrowProductionCardsRepairV4=true;
                 setTimeout(function(){try{window.render();}catch(e){}},100);
+                setTimeout(function(){try{if(typeof window.renderMachineSelectList==='function')window.renderMachineSelectList();}catch(e){}},250);
                 return true;
               }catch(e){return false;}
             }
