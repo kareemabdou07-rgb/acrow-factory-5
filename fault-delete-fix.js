@@ -38,11 +38,11 @@ new MutationObserver(init).observe(document.documentElement,{childList:true,subt
    if(!window.store||!Array.isArray(store.machines))return [];
    var out=[],seen={};
    store.machines.forEach(function(m){
-    var id=norm(m.number||m.code||m.id||m.machine||'');
+    var id,name;
+    if(typeof m==='string'){id=norm(m);name=id;}
+    else {id=norm(m&& (m.number||m.code||m.id||m.machine)||'');name=norm(m&& (m.name||m.type||m.machineName||id));}
     if(!id||seen[id])return;
-    seen[id]=1;
-    var name=norm(m.name||m.type||m.machineName||id);
-    out.push({id:id,name:name||id});
+    seen[id]=1;out.push({id:id,name:name||id});
    });
    return out;
   }catch(e){return []}
@@ -57,21 +57,31 @@ new MutationObserver(init).observe(document.documentElement,{childList:true,subt
   document.querySelectorAll('select').forEach(function(s){
    if(!looksLikeMachineSelect(s))return;
    var existing={};Array.prototype.forEach.call(s.options,function(o){existing[norm(o.value)]=1;});
-   data.forEach(function(m){
-    if(existing[m.id])return;
-    var o=document.createElement('option');o.value=m.id;o.textContent=m.id+' — '+m.name;s.appendChild(o);existing[m.id]=1;
-   });
+   data.forEach(function(m){if(existing[m.id])return;var o=document.createElement('option');o.value=m.id;o.textContent=m.id+' — '+m.name;s.appendChild(o);existing[m.id]=1;});
   });
+ }
+ function syncPlanAndMachineLists(){
+  syncMachineSelectors();
+  try{
+   var data=machineData();
+   document.querySelectorAll('input[type="checkbox"],button').forEach(function(el){
+    var txt=norm(el.parentElement&&el.parentElement.textContent||el.textContent||'');
+    if(!/ماكين|مكن|خطة|إنتاج|انتاج|machine|plan/i.test(txt))return;
+    data.forEach(function(m){
+     var hit=false;
+     if(norm(el.value)===m.id)hit=true;
+     if(norm(el.getAttribute('data-machine'))===m.id)hit=true;
+     if(hit)return;
+    });
+   });
+  }catch(e){}
  }
  function afterRebuild(){
   try{if(typeof window.rebuildMachines==='function')window.rebuildMachines();}catch(e){}
-  setTimeout(syncMachineSelectors,30);
-  setTimeout(syncMachineSelectors,150);
-  setTimeout(syncMachineSelectors,500);
-  setTimeout(syncMachineSelectors,1000);
+  setTimeout(syncPlanAndMachineLists,30);setTimeout(syncPlanAndMachineLists,150);setTimeout(syncPlanAndMachineLists,500);setTimeout(syncPlanAndMachineLists,1000);
  }
- function boot(){syncMachineSelectors();setTimeout(afterRebuild,700);setTimeout(syncMachineSelectors,1500);setInterval(syncMachineSelectors,2000);}
+ function boot(){syncPlanAndMachineLists();setTimeout(afterRebuild,700);setTimeout(syncPlanAndMachineLists,1500);setInterval(syncPlanAndMachineLists,2000);}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- if(window.MutationObserver)new MutationObserver(function(){setTimeout(syncMachineSelectors,20);}).observe(document.documentElement,{childList:true,subtree:true});
+ if(window.MutationObserver)new MutationObserver(function(){setTimeout(syncPlanAndMachineLists,20);}).observe(document.documentElement,{childList:true,subtree:true});
 })();
 })();
