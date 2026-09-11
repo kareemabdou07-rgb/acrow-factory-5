@@ -30,4 +30,48 @@ function init(){style();document.querySelectorAll('.f-del').forEach(function(b){
 document.addEventListener('click',click,true);
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 new MutationObserver(init).observe(document.documentElement,{childList:true,subtree:true});
+
+/* ACROW: keep user-added machines in every machine selector after rebuilds */
+(function(){
+ function machineData(){
+  try{
+   if(!window.store||!Array.isArray(store.machines))return [];
+   var out=[],seen={};
+   store.machines.forEach(function(m){
+    var id=norm(m.number||m.code||m.id||m.machine||'');
+    if(!id||seen[id])return;
+    seen[id]=1;
+    var name=norm(m.name||m.type||m.machineName||id);
+    out.push({id:id,name:name||id});
+   });
+   return out;
+  }catch(e){return []}
+ }
+ function looksLikeMachineSelect(s){
+  var t=norm((s.id||'')+' '+(s.name||'')+' '+(s.className||'')+' '+(s.getAttribute('aria-label')||'')+' '+(s.getAttribute('data-label')||'')).toLowerCase();
+  if(/machine|ماكين|ماكينه|مكن|اختيار|خطة|plan|انتاج|إنتاج/.test(t))return true;
+  return Array.prototype.some.call(s.options||[],function(o){return /^(USR\d+|\d+)$/.test(norm(o.value||o.textContent));});
+ }
+ function syncMachineSelectors(){
+  var data=machineData();if(!data.length)return;
+  document.querySelectorAll('select').forEach(function(s){
+   if(!looksLikeMachineSelect(s))return;
+   var existing={};Array.prototype.forEach.call(s.options,function(o){existing[norm(o.value)]=1;});
+   data.forEach(function(m){
+    if(existing[m.id])return;
+    var o=document.createElement('option');o.value=m.id;o.textContent=m.id+' — '+m.name;s.appendChild(o);existing[m.id]=1;
+   });
+  });
+ }
+ function afterRebuild(){
+  try{if(typeof window.rebuildMachines==='function')window.rebuildMachines();}catch(e){}
+  setTimeout(syncMachineSelectors,30);
+  setTimeout(syncMachineSelectors,150);
+  setTimeout(syncMachineSelectors,500);
+  setTimeout(syncMachineSelectors,1000);
+ }
+ function boot(){syncMachineSelectors();setTimeout(afterRebuild,700);setTimeout(syncMachineSelectors,1500);setInterval(syncMachineSelectors,2000);}
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+ if(window.MutationObserver)new MutationObserver(function(){setTimeout(syncMachineSelectors,20);}).observe(document.documentElement,{childList:true,subtree:true});
+})();
 })();
