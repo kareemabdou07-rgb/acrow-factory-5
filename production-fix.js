@@ -1,4 +1,7 @@
-/* ACROW Factory 5 — v68: stable production + repair/delete fault buttons + merged machine list */
+/* ACROW Factory 5 — Merged Strong v1
+   Production + Factory 5 reference machine master.
+   Stability-first: this layer augments the existing production app; it does not replace Firebase, reports or calculations.
+*/
 (function(){
 'use strict';
 var STYLE_ID='acrow-production-stable-style-v65';
@@ -26,18 +29,23 @@ function rec(id){try{return typeof getRecord==='function'&&typeof dateInput!=='u
 function paint(input,r){var has=String(input.value||'').trim()!=='';var row=input.closest('.mc-row')||input.parentElement;input.classList.toggle('acrow-fixed',has);input.setAttribute('data-production-done',has?'1':'0');if(row){row.classList.add('acrow-production-row');row.classList.toggle('acrow-production-done',has);}input.style.setProperty('background',has?'#b9f3d1':'#fff3b0','important');input.style.setProperty('background-color',has?'#b9f3d1':'#fff3b0','important');input.style.setProperty('background-image','none','important');input.style.setProperty('border-color',has?'#159957':'#e0ad00','important');input.style.setProperty('color',has?'#063b22':'#4a3900','important');if(has)input.style.setProperty('box-shadow','inset 0 0 0 9999px #b9f3d1','important');else input.style.setProperty('box-shadow','none','important');if(r)r.productionFixed=has;}
 function decorate(root){style();(root||document).querySelectorAll('.actual-input').forEach(function(input){paint(input,rec(String(input.dataset.machine||'').trim()));});}
 
-/* Unified machine list: production project + Factory 5 reference project. */
+/* One master list: every machine found in the production app + Factory 5 reference app.
+   Fields are: number, name/stage, zone, section. The production app keeps its own targets/records. */
 var MERGED_MACHINES=[
- ['1712','منشار RSA'],['982','متقاب/مثقاب'],['961','متقاب'],['263','مثقاب'],['882','مثقاب'],
- ['1522','Ledgers/Ring'],['999','Ledgers/Ring'],['5004','Ledgers/Ring'],['5003','Ledgers/Ring'],['1521','Ledgers/Ring'],['998','Ledgers/Ring'],
- ['997','Ring Vertical'],['996','Ring Vertical'],['5006','Ring Vertical'],
- ['5005','Cup Lock Vertical'],['450','Cup Lock Vertical'],['1524','Cup Lock Vertical'],['1523','Cup Lock Vertical'],
- ['5008','فوله اوتوماتيك'],['402','Hand welding'],['455','Hand welding'],['118','Hand welding'],['116','Hand welding'],['404','Hand welding'],['1502','منطقة الفرز'],
- ['279','مكبس'],['225','مكبس'],['956','مكبس'],['284','مكبس'],['1107','مكبس تخريم'],['1324','مكبس تشكيل'],['1313','مكنه تشكيل'],['1320','مكنه تشكيل'],['147','مكنه تشكيل'],
- ['986','متقاب'],['1306','متقاب'],['963','متقاب'],['1317','متقاب'],['1318','متقاب'],['964','متقاب'],['954','منشار'],['1713','متقاب متعدد'],
- ['112','فريم كوباية'],['114','فريم كوباية'],['477','فارمه يدوي'],['1504','فارمه يدوي'],['712','فارمه يدوي'],['710','فارمه يدوي'],['122','فارمه يدوي'],['454','فارمه يدوي'],['713','فارمه يدوي'],['115','فارمه يدوي'],['117','فارمه يدوي'],['711','فارمه يدوي'],['456','فارمه يدوي'],['1501','ماكينه يدوي'],['120','ماكينه يدوي']
+ ['1712','منشار RSA','منطقة 1','تجهيزات منطقة 1'],['982','متقاب/مثقاب','منطقة 1','تجهيزات منطقة 1'],['961','متقاب','منطقة 1','تجهيزات منطقة 1'],['263','مثقاب','منطقة 1','تجهيزات منطقة 1'],['882','مثقاب','منطقة 1','تجهيزات منطقة 1'],
+ ['1522','Ledgers/Ring','منطقة 1','لحام منطقة 1'],['999','Ledgers/Ring','منطقة 1','لحام منطقة 1'],['5004','Ledgers/Ring','منطقة 1','لحام منطقة 1'],['5003','Ledgers/Ring','منطقة 1','لحام منطقة 1'],['1521','Ledgers/Ring','منطقة 1','لحام منطقة 1'],['998','Ledgers/Ring','منطقة 1','لحام منطقة 1'],
+ ['997','Ring Vertical','منطقة 1','لحام منطقة 1'],['996','Ring Vertical','منطقة 1','لحام منطقة 1'],['5006','Ring Vertical','منطقة 1','لحام منطقة 1'],
+ ['5005','Cup Lock Vertical','منطقة 1','لحام منطقة 1'],['450','Cup Lock Vertical','منطقة 1','لحام منطقة 1'],['1524','Cup Lock Vertical','منطقة 1','لحام منطقة 1'],['1523','Cup Lock Vertical','منطقة 1','لحام منطقة 1'],
+ ['5008','فوله اوتوماتيك','منطقة 1','لحام منطقة 1'],['116','فوله يدوي','منطقة 1','لحام منطقة 1'],['404','فوله يدوي','منطقة 1','لحام منطقة 1'],['118','فوله يدوي','منطقة 1','لحام منطقة 1'],['455','فوله يدوي','منطقة 1','لحام منطقة 1'],['402','فوله يدوي','منطقة 1','لحام منطقة 1'],['1502','منطقة الفرز','منطقة 1','لحام منطقة 1'],
+ ['279','مكبس','منطقة 2','تجهيزات منطقة 2'],['225','مكبس','منطقة 2','تجهيزات منطقة 2'],['956','مكبس','منطقة 2','تجهيزات منطقة 2'],['284','مكبس','منطقة 2','تجهيزات منطقة 2'],['1107','مكبس تخريم','منطقة 2','تجهيزات منطقة 2'],['1324','مكبس تشكيل','منطقة 2','تجهيزات منطقة 2'],['1313','ماكينة تشكيل','منطقة 2','تجهيزات منطقة 2'],['1320','ماكينة تشكيل','منطقة 2','تجهيزات منطقة 2'],['147','ماكينة تشكيل','منطقة 2','تجهيزات منطقة 2'],
+ ['986','متقاب','منطقة 2','تجهيزات منطقة 2'],['1306','متقاب','منطقة 2','تجهيزات منطقة 2'],['963','متقاب','منطقة 2','تجهيزات منطقة 2'],['1317','متقاب','منطقة 2','تجهيزات منطقة 2'],['1318','متقاب','منطقة 2','تجهيزات منطقة 2'],['964','متقاب','منطقة 2','تجهيزات منطقة 2'],['954','منشار','منطقة 2','تجهيزات منطقة 2'],['1713','متقاب متعدد','منطقة 2','تجهيزات منطقة 2'],
+ ['112','فريم كوباية','منطقة 2','لحام منطقة 2'],['114','فريم كوباية','منطقة 2','لحام منطقة 2'],['477','فارمه يدوي','منطقة 2','لحام منطقة 2'],['1504','فارمه يدوي','منطقة 2','لحام منطقة 2'],['712','فارمه يدوي','منطقة 2','لحام منطقة 2'],['710','فارمه يدوي','منطقة 2','لحام منطقة 2'],['122','فارمه يدوي','منطقة 2','لحام منطقة 2'],['454','فارمه يدوي','منطقة 2','لحام منطقة 2'],['713','فارمه يدوي','منطقة 2','لحام منطقة 2'],['115','فارمه يدوي','منطقة 2','لحام منطقة 2'],['117','فارمه يدوي','منطقة 2','لحام منطقة 2'],['711','فارمه يدوي','منطقة 2','لحام منطقة 2'],['456','فارمه يدوي','منطقة 2','لحام منطقة 2'],['1501','ماكينة يدوي','منطقة 2','لحام منطقة 2'],['120','ماكينة يدوي','منطقة 2','لحام منطقة 2']
 ];
 var mergedNumbers=MERGED_MACHINES.map(function(x){return String(x[0]);});
+var machineMap={};MERGED_MACHINES.forEach(function(m){machineMap[m[0]]={number:m[0],name:m[1],zone:m[2],section:m[3],stage:m[1]};});
+window.ACROW_MERGED_MACHINE_MASTER=machineMap;
+window.ACROW_MERGED_MACHINE_LIST=MERGED_MACHINES;
+
 function mergeMachineOptions(){
  try{
   document.querySelectorAll('select').forEach(function(sel){
@@ -45,18 +53,19 @@ function mergeMachineOptions(){
    var looksMachine=/machine|ماكين|ماكينه|مكن|اختيار/.test(txt)||Array.prototype.some.call(sel.options,function(o){return mergedNumbers.indexOf(String(o.value||o.textContent).trim())>=0;});
    if(!looksMachine)return;
    var existing={};Array.prototype.forEach.call(sel.options,function(o){existing[String(o.value||o.textContent).trim()]=true;});
-   MERGED_MACHINES.forEach(function(m){if(!existing[m[0]]){var o=document.createElement('option');o.value=m[0];o.textContent=m[0]+' — '+m[1];sel.appendChild(o);}});
-  });
-  document.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
-   var t=(cb.value||cb.dataset.machine||'').trim();if(mergedNumbers.indexOf(t)>=0)cb.dataset.mergedMachine='1';
+   MERGED_MACHINES.forEach(function(m){if(!existing[m[0]]){var o=document.createElement('option');o.value=m[0];o.textContent=m[0]+' — '+m[1]+' — '+m[2];sel.appendChild(o);}});
   });
  }catch(e){console.warn('machine list merge failed',e);}
 }
 function mergeMachineStore(){
  try{
   if(window.store&&Array.isArray(window.store.machines)){
-   var seen={};store.machines.forEach(function(m){seen[String(m.number||m.id||m.machine||'')]=true;});
-   MERGED_MACHINES.forEach(function(m){if(!seen[m[0]])store.machines.push({number:m[0],name:m[1],zone:'منطقة 1'});});
+   var seen={};store.machines.forEach(function(m){seen[String(m.number||m.id||m.machine||'')]=m;});
+   MERGED_MACHINES.forEach(function(m){
+    var old=seen[m[0]];
+    if(old){old.name=old.name||m[1];old.zone=m[2];old.section=m[3];old.stage=old.stage||m[1];}
+    else store.machines.push({number:m[0],name:m[1],zone:m[2],section:m[3],stage:m[1]});
+   });
    try{if(typeof saveStore==='function')saveStore();}catch(e){}
   }
  }catch(e){console.warn('machine store merge failed',e);}
