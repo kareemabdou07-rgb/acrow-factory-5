@@ -24,6 +24,69 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Inject final entry repair into the published HTML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<script id="acrow-entry-repair-v171">'
+          if marker not in s:
+              js = r'''<script id="acrow-entry-repair-v171">
+          (function(){
+            function hide(){
+              var s=document.getElementById('acrowSplash');
+              if(!s)return;
+              s.classList.add('hidden','v171-off');
+              s.setAttribute('aria-hidden','true');
+              s.style.setProperty('display','none','important');
+              s.style.setProperty('visibility','hidden','important');
+              s.style.setProperty('opacity','0','important');
+              s.style.setProperty('pointer-events','none','important');
+              s.style.setProperty('z-index','-1','important');
+            }
+            function enter(e){
+              if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}
+              window.__acrowEntered171=true;
+              document.body.classList.remove('splash-open');
+              document.body.classList.add('v171-app-open');
+              document.body.style.setProperty('overflow','auto','important');
+              hide();
+              try{if(typeof render==='function')render();}catch(x){console.error(x);}
+              try{if(typeof renderReport==='function')renderReport();}catch(x){}
+              window.scrollTo(0,0);
+              return false;
+            }
+            function bind(){
+              var b=document.getElementById('enterSystemBtn')||document.getElementById('enterBtn')||document.getElementById('loginBtn')||document.getElementById('splashEnterBtn');
+              if(!b)return;
+              b.onclick=enter;
+              b.disabled=false;
+              b.removeAttribute('disabled');
+              b.style.setProperty('pointer-events','auto','important');
+              b.style.setProperty('touch-action','manipulation','important');
+              if(b.dataset.v171!=='1'){
+                b.dataset.v171='1';
+                b.addEventListener('click',enter,true);
+                b.addEventListener('touchend',enter,true);
+              }
+            }
+            document.addEventListener('click',function(e){
+              var b=e.target&&e.target.closest?e.target.closest('#enterSystemBtn,#enterBtn,#loginBtn,#splashEnterBtn,#acrowSplash button'):null;
+              if(b)enter(e);
+            },true);
+            function guard(){
+              bind();
+              if(window.__acrowEntered171)hide();
+            }
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',guard);else guard();
+            if(window.MutationObserver)new MutationObserver(guard).observe(document.documentElement,{childList:true,subtree:true});
+            setInterval(guard,100);
+          })();
+          </script>'''
+              s = s.replace('</head>', js + '\n</head>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
