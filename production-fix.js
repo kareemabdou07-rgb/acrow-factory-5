@@ -1,11 +1,10 @@
-/* ACROW Factory 5 — v76: one machine per fixed production card */
+/* ACROW Factory 5 — v77: one machine per fixed production card + visible custom machines */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-stable-style-v76';
+var STYLE_ID='acrow-production-stable-style-v77';
 function style(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
-/* Each machine MUST occupy its own independent row/card. No two machines share a grid cell. */
 .machine-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-auto-flow:row!important;gap:12px!important;align-items:start!important;width:100%!important;box-sizing:border-box!important;}
 .machine-grid>.machine-card{grid-column:1!important;grid-row:auto!important;min-width:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;overflow:hidden!important;position:relative!important;clear:both!important;}
 .machine-card *{box-sizing:border-box!important;}
@@ -45,5 +44,5 @@ function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 (function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=76';s.async=false;document.head.appendChild(s);})();
-(function loadCustomMachines(){if(window.__acrowCustomMachinesV76Loaded)return;window.__acrowCustomMachinesV76Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=75';s.async=false;document.head.appendChild(s);})();
+(function loadCustomMachines(){if(window.__acrowCustomMachinesV77Loaded)return;window.__acrowCustomMachinesV77Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=77';s.async=false;document.head.appendChild(s);})();
 })();
