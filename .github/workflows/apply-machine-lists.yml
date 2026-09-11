@@ -16,38 +16,55 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Apply one-time machine list migration
+      - name: Apply daily production machine list migration
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p = Path('production-fix.js')
           s = p.read_text(encoding='utf-8')
-          marker = 'ACROW_SAFE_MACHINE_LIST_V1'
+          marker = 'ACROW_SAFE_MACHINE_LIST_V2'
           if marker not in s:
               patch = r'''
-/* ACROW_SAFE_MACHINE_LIST_V1: one-time migration only. Adds the existing machine list to today's production and monthly-plan selections without changing other app logic. */
+/* ACROW_SAFE_MACHINE_LIST_V2: put the full existing machine list into today's production selection without changing the UI. */
 (function(){
   function apply(){
     try{
-      if(!window.store || !window.store.settings || !Array.isArray(window.MACHINES)) return false;
-      if(store.settings.__acrowSafeMachineListV1) return true;
-      var ids = MACHINES.map(function(m){ return String(m.id); });
-      if(Array.isArray(store.favorites)){
-        var fav = new Set(store.favorites.map(String));
-        ids.forEach(function(id){ fav.add(id); });
-        store.favorites = Array.from(fav);
-      } else {
-        store.favorites = ids.slice();
+      if(!window.store) return false;
+      var ids = [];
+      var names = {};
+      if(Array.isArray(window.MERGED_MACHINES)){
+        window.MERGED_MACHINES.forEach(function(m){
+          var id=String(m[0]||'').trim(); if(!id)return;
+          ids.push(id); names[id]=String(m[1]||id);
+        });
       }
-      var plan = new Set(Array.isArray(store.settings.planMachineIds) ? store.settings.planMachineIds.map(String) : []);
-      ids.forEach(function(id){ plan.add(id); });
-      store.settings.planMachineIds = Array.from(plan);
-      store.settings.planStatusMachineIds = Array.from(plan);
-      store.settings.__acrowSafeMachineListV1 = true;
-      if(typeof saveStore === 'function') saveStore();
-      try{ if(typeof renderMachineSelectList === 'function') renderMachineSelectList(); }catch(e){}
-      try{ if(typeof renderPlanMachineSelectList === 'function') renderPlanMachineSelectList(); }catch(e){}
-      try{ if(typeof render === 'function') render(); }catch(e){}
+      if(Array.isArray(store.machines)){
+        store.machines.forEach(function(m){
+          var id=String(m.number||m.code||m.id||m.machine||'').trim(); if(!id)return;
+          if(ids.indexOf(id)<0) ids.push(id);
+          if(!names[id]) names[id]=String(m.name||m.type||m.machineName||id);
+        });
+      }
+      if(!ids.length) return false;
+      if(!store.machineCustom) store.machineCustom={};
+      ids.forEach(function(id){
+        if(!store.machineCustom[id]) store.machineCustom[id]={id:id,name:names[id]||id,dept:'sorting',deptName:'منطقة الفرز',target:null};
+      });
+      try{ if(typeof window.rebuildMachines==='function') window.rebuildMachines(); }catch(e){}
+      var machineIds=Array.isArray(window.MACHINES)?window.MACHINES.map(function(m){return String(m.id);}).filter(Boolean):ids.slice();
+      var fav=new Set(Array.isArray(store.favorites)?store.favorites.map(String):[]);
+      machineIds.forEach(function(id){fav.add(id);});
+      store.favorites=Array.from(fav);
+      var plan=new Set(Array.isArray(store.settings&&store.settings.planMachineIds)?store.settings.planMachineIds.map(String):[]);
+      machineIds.forEach(function(id){plan.add(id);});
+      if(!store.settings) store.settings={};
+      store.settings.planMachineIds=Array.from(plan);
+      store.settings.planStatusMachineIds=Array.from(plan);
+      store.settings.__acrowSafeMachineListV2=true;
+      if(typeof saveStore==='function') saveStore();
+      try{ if(typeof renderMachineSelectList==='function') renderMachineSelectList(); }catch(e){}
+      try{ if(typeof renderPlanMachineSelectList==='function') renderPlanMachineSelectList(); }catch(e){}
+      try{ if(typeof render==='function') render(); }catch(e){}
       return true;
     }catch(e){ return false; }
   }
@@ -55,7 +72,7 @@ jobs:
     var tries=0;
     var t=setInterval(function(){
       tries++;
-      if(apply() || tries>=20) clearInterval(t);
+      if(apply() || tries>=30) clearInterval(t);
     },500);
     apply();
   }
@@ -73,6 +90,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Add machines to daily production and monthly plan"
+            git commit -m "Add full machine list to daily production"
             git push
           fi
