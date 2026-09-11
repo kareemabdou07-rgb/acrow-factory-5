@@ -171,6 +171,57 @@ jobs:
               s = s.replace('</head>', js + '\n</head>', 1)
               p.write_text(s, encoding='utf-8')
           PY
+      - name: Inject selected machines into the daily production cards
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<script id="acrow-selected-production-machines-v1">'
+          if marker not in s:
+              js = r'''<script id="acrow-selected-production-machines-v1">
+          (function(){
+            var core=[
+              ['1712','منشار RSA','saw'],['982','متقاب/مثقاب','drill'],['961','متقاب','drill'],['263','مثقاب','drill'],['882','مثقاب','drill'],
+              ['1522','Ledgers/Ring','ledger'],['999','Ledgers/Ring','ledger'],['5004','Ledgers/Ring','ledger'],['5003','Ledgers/Ring','ledger'],['1521','Ledgers/Ring','ledger'],['998','Ledgers/Ring','ledger'],
+              ['997','Ring Vertical','range'],['996','Ring Vertical','range'],['5006','Ring Vertical','range'],
+              ['5005','Cup Lock Vertical','kablock'],['450','Cup Lock Vertical','kablock'],['1524','Cup Lock Vertical','kablock'],['1523','Cup Lock Vertical','kablock'],
+              ['402','Hand welding','fola_manual'],['455','Hand welding','fola_manual'],['118','Hand welding','fola_manual'],['116','Hand welding','fola_manual'],['404','Hand welding','fola_manual'],['1502','منطقة الفرز','sorting']
+            ];
+            function addMissing(){
+              try{
+                if(typeof store==='undefined'||!store)return false;
+                if(typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return false;
+                var by={}; MACHINES.forEach(function(m){if(m&&m.id!=null)by[String(m.id)]=m;});
+                function add(id,name,dept){
+                  id=String(id); if(by[id])return;
+                  var d=(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS))?DEPARTMENTS.find(function(x){return x.id===dept;}):null;
+                  var m={id:id,name:name,dept:dept,target:d&&d.target!=null?d.target:0,zone:'منطقة 1'};
+                  MACHINES.push(m); by[id]=m;
+                }
+                core.forEach(function(x){add(x[0],x[1],x[2]);});
+                if(Array.isArray(store.machineCustom)){}
+                Object.values(store.machineCustom||{}).forEach(function(m){
+                  if(!m||m.id==null)return;
+                  var id=String(m.id), name=String(m.name||m.type||id);
+                  if(by[id])return;
+                  var t=(name+' '+String(m.type||'')).toLowerCase(), dept='sorting';
+                  if(/ledger|ring/.test(t))dept='ledger'; else if(/cup|kablock/.test(t))dept='kablock'; else if(/hand|لحام/.test(t))dept='fola_manual'; else if(/drill|مثقاب|متقاب/.test(t))dept='drill'; else if(/saw|منشار/.test(t))dept='saw';
+                  add(id,name,dept);
+                });
+                if(typeof render==='function')render();
+                return true;
+              }catch(e){return false;}
+            }
+            var n=0;
+            function boot(){if(addMissing()||++n>=50)clearInterval(t);}
+            var t=setInterval(boot,500);
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+          })();
+          </script>'''
+              s = s.replace('</head>', js + '\n</head>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
