@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v72: first-touch fault trigger + larger fault buttons */
+/* ACROW Factory 5 — v73: first-touch fault trigger + larger fault buttons + 10 custom machine slots */
 (function(){
 'use strict';
 var STYLE_ID='acrow-production-stable-style-v65';
@@ -19,6 +19,13 @@ function style(){
 .acrow-production-row .production-label{color:#063b22!important;}
 .acrow-production-row .actual-input{background:#b9f3d1!important;background-image:none!important;border-color:#159957!important;color:#063b22!important;}
 .acrow-production-row .production-fix-btn-v2{display:none!important;}
+.acrow-custom-title{margin:18px 0 10px;padding-top:14px;border-top:1px solid var(--border);font-size:14px;font-weight:800;color:var(--accent);}
+.acrow-custom-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:10px;}
+.acrow-custom-row{display:flex;align-items:center;gap:7px;}
+.acrow-custom-row span{width:26px;height:26px;border-radius:6px;background:var(--bg-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--text-dim);flex:none;}
+.acrow-custom-row input{width:100%;background:var(--bg-2);border:1px solid var(--border);color:var(--text);padding:9px 10px;border-radius:7px;font-family:'Tajawal';font-size:13px;font-weight:700;box-sizing:border-box;}
+.acrow-custom-row input:focus{outline:none;border-color:var(--accent);}
+@media(max-width:600px){.acrow-custom-grid{grid-template-columns:1fr;}}
 `;
  document.head.appendChild(s);
 }
@@ -31,5 +38,6 @@ document.addEventListener('blur',function(e){var input=e.target&&e.target.closes
 function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(function(list){list.forEach(function(m){m.addedNodes&&m.addedNodes.forEach(function(n){if(n.nodeType===1)decorate(n);});});});ob.observe(document.body,{childList:true,subtree:true});}
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
-(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=72';s.async=false;document.head.appendChild(s);})();
+(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=73';s.async=false;document.head.appendChild(s);})();
+(function loadCustomMachines(){if(window.__acrowCustomMachinesV73Loaded)return;window.__acrowCustomMachinesV73Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=73';s.async=false;document.head.appendChild(s);})();
 })();
