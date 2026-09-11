@@ -1,0 +1,27 @@
+name: ACROW Login Cache Fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache bust production fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          s=s.replace('<script src="./production-fix.js"></script>','<script src="./production-fix.js?v=171"></script>',1)
+          p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name "ACROW Factory 5"
+          git config user.email "kareemabdou07-rgb@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "ACROW Factory 5 v171 - cache bust login fix"
+          git push
