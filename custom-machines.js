@@ -1,8 +1,8 @@
-/* ACROW Factory 5 v78 — custom machines always visible; renamed machines start with clean production history */
+/* ACROW Factory 5 v79 — custom machines: name + machine type */
 (function(){
 'use strict';
-if(window.__acrowCustomMachinesV78)return;
-window.__acrowCustomMachinesV78=true;
+if(window.__acrowCustomMachinesV79)return;
+window.__acrowCustomMachinesV79=true;
 var IDS=Array.from({length:10},function(_,i){return 'USR'+String(i+1).padStart(2,'0');});
 var DEFAULT_DEPT='sorting';
 function migrateCodes(){
@@ -14,7 +14,8 @@ function migrateCodes(){
    if(c&&c.name){
      if(!c.code){c.code=id;changed=true;}
      if(!c.barcode){c.barcode=id;changed=true;}
-     if(!c.dept || c.dept==='custom'){c.dept=DEFAULT_DEPT;c.deptName='منطقة الفرز';changed=true;}
+     if(!c.dept||c.dept==='custom'){c.dept=DEFAULT_DEPT;c.deptName='منطقة الفرز';changed=true;}
+     if(c.type===undefined){c.type='';changed=true;}
    }
  });
  if(changed){try{saveStore();}catch(e){}}
@@ -22,35 +23,38 @@ function migrateCodes(){
 function clearMachineRecords(machineId){
  if(typeof store==='undefined'||!store||!store.records)return;
  var suffix='_'+String(machineId);
- Object.keys(store.records).forEach(function(key){
-   if(key.endsWith(suffix)) delete store.records[key];
- });
+ Object.keys(store.records).forEach(function(key){if(key.endsWith(suffix))delete store.records[key];});
 }
 function saveAll(){
  if(typeof store==='undefined'||!store)return;
- store.machineCustom=store.machineCustom||{}; store.machineDisabled=store.machineDisabled||{};
+ store.machineCustom=store.machineCustom||{};store.machineDisabled=store.machineDisabled||{};
  var deptEl=document.getElementById('newMachineDept'),dept=deptEl?String(deptEl.value||'').trim():'';
  var d=(typeof DEPARTMENTS!=='undefined'&&DEPARTMENTS.find)?DEPARTMENTS.find(function(x){return x.id===dept;}):null;
  if(!dept||dept==='custom'){dept=DEFAULT_DEPT;d=(typeof DEPARTMENTS!=='undefined'&&DEPARTMENTS.find)?DEPARTMENTS.find(function(x){return x.id===DEFAULT_DEPT;}):null;}
  IDS.forEach(function(id){
-   var el=document.querySelector('[data-custom-machine-name="'+id+'"]');if(!el)return;
-   var name=String(el.value||'').trim();
+   var el=document.querySelector('[data-custom-machine-name="'+id+'"]');
+   var typeEl=document.querySelector('[data-custom-machine-type="'+id+'"]');
+   if(!el)return;
+   var name=String(el.value||'').trim(),type=typeEl?String(typeEl.value||'').trim():'';
    var old=store.machineCustom[id];
    if(name){
-     /* The slot IDs are stable. If the user changes the machine name in a slot,
-        it is a different machine for production purposes, so never carry the
-        previous machine's production/fault/obstacle records into the new one. */
-     if(old&&old.name&&old.name!==name) clearMachineRecords(id);
-     store.machineCustom[id]={id:id,code:id,barcode:id,name:name,dept:dept,deptName:d&&d.name?d.name:'منطقة الفرز',target:null};
+     if(old&&old.name&&old.name!==name)clearMachineRecords(id);
+     store.machineCustom[id]={id:id,code:id,barcode:id,name:name,type:type,dept:dept,deptName:d&&d.name?d.name:'منطقة الفرز',target:null};
      delete store.machineDisabled[id];
-   }else{
-     delete store.machineCustom[id];store.machineDisabled[id]=true;
-   }
+   }else{delete store.machineCustom[id];store.machineDisabled[id]=true;}
  });
- try{saveStore();}catch(e){} try{rebuildMachines();}catch(e){} try{renderMachineManager();}catch(e){} try{render();}catch(e){} try{renderReport();}catch(e){} try{renderDashboard();}catch(e){} setTimeout(inject,30);
+ try{saveStore();}catch(e){}try{rebuildMachines();}catch(e){}try{renderMachineManager();}catch(e){}try{render();}catch(e){}try{renderReport();}catch(e){}try{renderDashboard();}catch(e){}setTimeout(inject,30);
 }
-function inject(){var modal=document.getElementById('machineManagerModal'),list=document.getElementById('machineManagerList');if(!modal||!list)return;if(document.getElementById('acrow-custom-machines-v78')){refreshValues();return;}var box=document.createElement('div');box.id='acrow-custom-machines-v78';box.innerHTML='<div class="acrow-custom-title">10 خانات ماكينات إضافية ثابتة — تظهر مع منطقة الفرز إذا لم تختَر إدارة أخرى — ولكل ماكينة كود وباركود ثابت</div><div class="acrow-custom-grid">'+IDS.map(function(id,i){return '<div class="acrow-custom-row"><span>'+String(i+1)+'</span><input type="text" data-custom-machine-name="'+id+'" placeholder="اكتب اسم الماكينة هنا"><small style="display:block;min-width:52px;text-align:center;font-family:var(--mono);font-weight:800;color:var(--accent);">'+id+'</small></div>';}).join('')+'</div><button type="button" id="acrow-custom-save-v78" class="btn-primary">حفظ الماكينات الإضافية</button>';list.parentNode.insertBefore(box,list);document.getElementById('acrow-custom-save-v78').addEventListener('click',saveAll);refreshValues();}
-function refreshValues(){migrateCodes();IDS.forEach(function(id){var el=document.querySelector('[data-custom-machine-name="'+id+'"]');var c=typeof store!=='undefined'&&store.machineCustom?store.machineCustom[id]:null;if(el&&document.activeElement!==el)el.value=c&&c.name?c.name:'';});}
+function inject(){
+ var modal=document.getElementById('machineManagerModal'),list=document.getElementById('machineManagerList');
+ if(!modal||!list)return;
+ if(document.getElementById('acrow-custom-machines-v79')){refreshValues();return;}
+ var box=document.createElement('div');box.id='acrow-custom-machines-v79';
+ box.innerHTML='<div class="acrow-custom-title">10 خانات ماكينات إضافية — لكل ماكينة اسم ونوع ماكينة مستقل</div><div class="acrow-custom-grid">'+IDS.map(function(id,i){return '<div class="acrow-custom-row"><span>'+String(i+1)+'</span><input type="text" data-custom-machine-name="'+id+'" placeholder="اسم الماكينة"><input type="text" data-custom-machine-type="'+id+'" placeholder="نوع الماكينة"><small style="display:block;min-width:52px;text-align:center;font-family:var(--mono);font-weight:800;color:var(--accent);">'+id+'</small></div>';}).join('')+'</div><button type="button" id="acrow-custom-save-v79" class="btn-primary">حفظ الماكينات الإضافية</button>';
+ list.parentNode.insertBefore(box,list);
+ document.getElementById('acrow-custom-save-v79').addEventListener('click',saveAll);refreshValues();
+}
+function refreshValues(){migrateCodes();IDS.forEach(function(id){var el=document.querySelector('[data-custom-machine-name="'+id+'"]'),te=document.querySelector('[data-custom-machine-type="'+id+'"]'),c=typeof store!=='undefined'&&store.machineCustom?store.machineCustom[id]:null;if(el&&document.activeElement!==el)el.value=c&&c.name?c.name:'';if(te&&document.activeElement!==te)te.value=c&&c.type?c.type:'';});}
 function watch(){if(!window.MutationObserver)return;new MutationObserver(function(){inject();}).observe(document.body,{childList:true,subtree:true});}
 function start(){migrateCodes();inject();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
