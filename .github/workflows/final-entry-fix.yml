@@ -1,0 +1,58 @@
+name: ACROW Final Entry Fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  fix-entry:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Append final entry repair
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='ACROW_FACTORY5_FINAL_ENTRY_FIX_V171'
+          if marker not in s:
+              s += r'''
+
+<!-- ACROW_FACTORY5_FINAL_ENTRY_FIX_V171 -->
+<script>
+(function(){
+  function enter(e){
+    if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}
+    var s=document.getElementById('acrowSplash');
+    if(s){s.classList.add('hidden','v171-off');s.setAttribute('aria-hidden','true');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');s.style.setProperty('z-index','-1','important');}
+    document.body.classList.remove('splash-open','v139-app-open','v128-app-open');
+    document.body.classList.add('v171-app-open');
+    document.body.style.setProperty('overflow','auto','important');
+    ['.topbar','.container','#summaryStrip','#departments'].forEach(function(sel){var x=document.querySelector(sel);if(x){x.style.setProperty('display','block','important');x.style.setProperty('visibility','visible','important');x.style.setProperty('opacity','1','important');}});
+    try{if(typeof render==='function')render();}catch(x){}
+    try{if(typeof renderReport==='function')renderReport();}catch(x){}
+    return false;
+  }
+  function bind(){
+    var b=document.getElementById('enterSystemBtn')||document.getElementById('enterBtn')||document.getElementById('loginBtn')||document.getElementById('splashEnterBtn');
+    if(!b)return;
+    b.onclick=enter;b.disabled=false;b.removeAttribute('disabled');b.style.setProperty('pointer-events','auto','important');b.style.setProperty('touch-action','manipulation','important');
+    if(!b.dataset.v171){b.dataset.v171='1';b.addEventListener('click',enter,true);b.addEventListener('touchend',enter,true);}
+  }
+  function guard(){if(document.body.classList.contains('v171-app-open'))enter();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+  if(window.MutationObserver)new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(bind,200);setInterval(guard,150);
+})();
+</script>
+'''
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit final entry repair
+        run: |
+          git config user.name "ACROW Factory 5"
+          git config user.email "kareemabdou07-rgb@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "ACROW Factory 5 v171 - final entry fix"
+          git push
