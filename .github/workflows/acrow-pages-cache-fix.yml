@@ -9,21 +9,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Version Firebase script URL
+      - name: Fix entry button in index
         run: |
           python - <<'PY'
           from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          old = '<script src="./firebase-realtime.js"></script>'
-          new = '<script src="./firebase-realtime.js?v=166"></script>'
-          if old in s and new not in s:
-              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- ACROW_ENTRY_FIX_V171 -->'
+          script='''\n<script>\n(function(){\n  function openNow(e){\n    if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}\n    var s=document.getElementById('acrowSplash');\n    if(s){s.classList.add('hidden');s.setAttribute('aria-hidden','true');['display','visibility','opacity','pointer-events'].forEach(function(k){s.style.setProperty(k,k==='display'?'none':k==='visibility'?'hidden':k==='opacity'?'0':'none','important');});s.style.setProperty('z-index','-1','important');}\n    document.body.classList.remove('splash-open','v139-app-open','v128-app-open');\n    document.body.classList.add('v171-app-open');\n    document.body.style.setProperty('overflow','auto','important');\n    try{if(typeof render==='function')render();}catch(x){}\n  }\n  function bind(){\n    var s=document.getElementById('acrowSplash');\n    if(!s)return;\n    var nodes=s.querySelectorAll('button,a,input[type=button],input[type=submit]');\n    for(var i=0;i<nodes.length;i++){\n      var b=nodes[i];\n      var t=(b.textContent||b.value||'').replace(/\\s+/g,' ').trim();\n      if(/اضغط للدخول|دخول|ادخل|ابدأ|فتح/.test(t)){b.onclick=openNow;b.disabled=false;b.removeAttribute('disabled');b.style.setProperty('pointer-events','auto','important');b.style.setProperty('touch-action','manipulation','important');if(!b.dataset.v171){b.dataset.v171='1';b.addEventListener('click',openNow,true);b.addEventListener('touchend',openNow,true);}}\n    }\n  }\n  bind();\n  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);\n  if(window.MutationObserver)new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});\n  setInterval(bind,100);\n  setInterval(function(){if(document.body.classList.contains('v171-app-open')){var s=document.getElementById('acrowSplash');if(s)s.style.setProperty('display','none','important');}},100);\n})();\n</script>\n'''
+          if marker not in s:
+              s=s.replace('</body>',marker+script+'</body>',1)
+          p.write_text(s,encoding='utf-8')
           PY
-      - name: Commit cache-busting change
+      - name: Commit entry fix
         run: |
           git config user.name "ACROW Factory 5"
           git config user.email "kareemabdou07-rgb@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "ACROW Factory 5 v167 - cache bust Firebase entry fix"
+          git diff --cached --quiet || git commit -m "ACROW Factory 5 v171 - force entry button fix"
           git push
