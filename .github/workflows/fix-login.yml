@@ -1,0 +1,32 @@
+name: ACROW login fix
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/login-fix-trigger'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch login button
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- ACROW LOGIN HARD FIX 2026-09-11 -->'
+          if marker not in s:
+              patch='''\n<!-- ACROW LOGIN HARD FIX 2026-09-11 -->\n<style>\n#acrowSplash #enterSystemBtn{position:relative!important;z-index:2147483647!important;pointer-events:auto!important;touch-action:manipulation!important;}\n#acrowSplash.acrow-entry-hidden{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;z-index:-2147483648!important;}\n</style>\n<script>\n(function(){\n  function enter(e){\n    if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}\n    var s=document.getElementById('acrowSplash');\n    if(s){s.classList.add('hidden','acrow-entry-hidden');s.setAttribute('aria-hidden','true');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');s.style.setProperty('z-index','-2147483648','important');}\n    document.body.classList.remove('splash-open');\n    document.body.style.setProperty('overflow','auto','important');\n    try{if(typeof render==='function')render();}catch(x){}\n    return false;\n  }\n  function bind(){var b=document.getElementById('enterSystemBtn');if(!b)return;if(b.dataset.acrowHardFix==='1')return;b.dataset.acrowHardFix='1';b.onclick=enter;b.addEventListener('click',enter,true);}\n  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();\n  setInterval(bind,500);\n})();\n</script>\n'''
+              s=s.replace('</body>',patch+'</body>')
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit fix
+        run: |
+          git config user.name 'ACROW Fix Bot'
+          git config user.email 'actions@github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Fix ACROW login button - 2026-09-11'
+          git push
