@@ -15,16 +15,29 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          marker='<!-- ACROW_ENTRY_FIX_V171 -->'
-          script='''\n<script>\n(function(){\n  function openNow(e){\n    if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}\n    var s=document.getElementById('acrowSplash');\n    if(s){s.classList.add('hidden');s.setAttribute('aria-hidden','true');['display','visibility','opacity','pointer-events'].forEach(function(k){s.style.setProperty(k,k==='display'?'none':k==='visibility'?'hidden':k==='opacity'?'0':'none','important');});s.style.setProperty('z-index','-1','important');}\n    document.body.classList.remove('splash-open','v139-app-open','v128-app-open');\n    document.body.classList.add('v171-app-open');\n    document.body.style.setProperty('overflow','auto','important');\n    try{if(typeof render==='function')render();}catch(x){}\n  }\n  function bind(){\n    var s=document.getElementById('acrowSplash');\n    if(!s)return;\n    var nodes=s.querySelectorAll('button,a,input[type=button],input[type=submit]');\n    for(var i=0;i<nodes.length;i++){\n      var b=nodes[i];\n      var t=(b.textContent||b.value||'').replace(/\\s+/g,' ').trim();\n      if(/اضغط للدخول|دخول|ادخل|ابدأ|فتح/.test(t)){b.onclick=openNow;b.disabled=false;b.removeAttribute('disabled');b.style.setProperty('pointer-events','auto','important');b.style.setProperty('touch-action','manipulation','important');if(!b.dataset.v171){b.dataset.v171='1';b.addEventListener('click',openNow,true);b.addEventListener('touchend',openNow,true);}}\n    }\n  }\n  bind();\n  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);\n  if(window.MutationObserver)new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});\n  setInterval(bind,100);\n  setInterval(function(){if(document.body.classList.contains('v171-app-open')){var s=document.getElementById('acrowSplash');if(s)s.style.setProperty('display','none','important');}},100);\n})();\n</script>\n'''
+          marker='<!-- ACROW_LOGIN_HARD_FIX_20260911 -->'
           if marker not in s:
-              s=s.replace('</body>',marker+script+'</body>',1)
-          p.write_text(s,encoding='utf-8')
+              patch='''
+<!-- ACROW_LOGIN_HARD_FIX_20260911 -->
+<style>
+#acrowSplash #enterSystemBtn{position:fixed!important;left:50%!important;transform:translateX(-50%)!important;z-index:2147483647!important;pointer-events:auto!important;touch-action:manipulation!important;cursor:pointer!important;}
+#acrowSplash.acrow-hard-hidden{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;z-index:-2147483648!important;}
+</style>
+<script>
+(function(){
+ function enter(e){if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}var s=document.getElementById('acrowSplash');if(s){s.classList.add('hidden','acrow-hard-hidden');s.setAttribute('aria-hidden','true');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');s.style.setProperty('z-index','-2147483648','important');}document.body.classList.remove('splash-open');document.body.classList.add('v171-app-open','v139-app-open');document.body.style.setProperty('overflow','auto','important');try{if(typeof render==='function')render();}catch(x){}try{if(typeof renderReport==='function')renderReport();}catch(x){}return false;}
+ function bind(){var b=document.getElementById('enterSystemBtn');if(!b)return;b.disabled=false;b.removeAttribute('disabled');b.onclick=enter;if(b.dataset.acrowHardBound!=='1'){b.dataset.acrowHardBound='1';b.addEventListener('click',enter,true);b.addEventListener('touchend',enter,true);}}
+ function init(){bind();setInterval(bind,250);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+'''
+              s=s.replace('</body>',patch+'</body>',1)
+              p.write_text(s,encoding='utf-8')
           PY
       - name: Commit entry fix
         run: |
           git config user.name "ACROW Factory 5"
           git config user.email "kareemabdou07-rgb@users.noreply.github.com"
           git add index.html
-          git diff --cached --quiet || git commit -m "ACROW Factory 5 v171 - force entry button fix"
+          git diff --cached --quiet || git commit -m "ACROW Factory 5 - hard fix login button"
           git push
