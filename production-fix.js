@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — v77: one machine per fixed production card + visible custom machines */
+/* ACROW Factory 5 — v78: one machine per fixed production card + isolated custom machine records */
 (function(){
 'use strict';
-var STYLE_ID='acrow-production-stable-style-v77';
+var STYLE_ID='acrow-production-stable-style-v78';
 function style(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
@@ -44,5 +44,5 @@ function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 (function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=76';s.async=false;document.head.appendChild(s);})();
-(function loadCustomMachines(){if(window.__acrowCustomMachinesV77Loaded)return;window.__acrowCustomMachinesV77Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=77';s.async=false;document.head.appendChild(s);})();
+(function loadCustomMachines(){if(window.__acrowCustomMachinesV78Loaded)return;window.__acrowCustomMachinesV78Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=78';s.async=false;document.head.appendChild(s);})();
 })();
