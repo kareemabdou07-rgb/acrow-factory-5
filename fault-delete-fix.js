@@ -21,3 +21,75 @@ function click(e){var b=e.target&&e.target.closest?e.target.closest('button,a,.m
 function init(){style();document.querySelectorAll('.f-del').forEach(function(b){b.type='button';b.style.pointerEvents='auto'})}
 document.addEventListener('click',click,true);if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();new MutationObserver(init).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+/* ACROW FIX: keep the daily-production chooser synchronized with every machine
+   created by the Machine Manager, including machines stored in machineCustom,
+   customMachines, or machines. This does not change the monthly-plan logic. */
+(function(){
+'use strict';
+function clean(v){return String(v==null?'':v).replace(/\s+/g,' ').trim()}
+function add(out,seen,m,key){
+  if(m==null)return;
+  if(typeof m==='string'||typeof m==='number')m={id:String(m),name:String(m)};
+  if(typeof m!=='object')return;
+  var id=clean(m.number||m.code||m.id||m.machine||key||'');
+  if(!id||seen[id])return;
+  var name=clean(m.name||m.type||m.machineName||m.title||id)||id;
+  seen[id]=1;out.push({id:id,name:name});
+}
+function collect(){
+  var out=[],seen={};
+  try{
+    if(window.store){
+      ['machines','machineCustom','customMachines'].forEach(function(k){
+        var v=store[k];
+        if(Array.isArray(v))v.forEach(function(m){add(out,seen,m)});
+        else if(v&&typeof v==='object')Object.keys(v).forEach(function(k2){add(out,seen,v[k2],k2)});
+      });
+    }
+  }catch(e){}
+  return out;
+}
+function syncGlobal(){
+  var data=collect();
+  if(!data.length)return;
+  try{
+    if(Array.isArray(window.MACHINES)){
+      data.forEach(function(m){
+        var found=MACHINES.some(function(x){return clean(x&&x.id)===m.id});
+        if(!found)MACHINES.push({id:m.id,name:m.name,dept:'sorting',deptName:'منطقة الفرز',target:null});
+      });
+    }
+  }catch(e){}
+}
+function inject(){
+  syncGlobal();
+  var box=document.getElementById('machineSelectList');
+  if(!box)return;
+  var data=collect();
+  if(!data.length)return;
+  var existing={};
+  box.querySelectorAll('.fav-checkbox').forEach(function(c){existing[clean(c.getAttribute('data-machine')||c.value)]=1});
+  var missing=data.filter(function(m){return !existing[m.id]});
+  if(!missing.length)return;
+  var group=box.querySelector('.acrow-custom-machines-group');
+  if(!group){
+    group=document.createElement('div');
+    group.className='acrow-custom-machines-group';
+    var title=document.createElement('div');
+    title.className='fav-group-title';
+    title.textContent='الماكينات المضافة';
+    group.appendChild(title);
+    box.appendChild(group);
+  }
+  missing.forEach(function(m){
+    var label=document.createElement('label');label.className='fav-checkbox-row';
+    var cb=document.createElement('input');cb.type='checkbox';cb.className='fav-checkbox';cb.setAttribute('data-machine',m.id);cb.value=m.id;
+    try{if(window.store&&Array.isArray(store.favorites)&&store.favorites.indexOf(m.id)>=0)cb.checked=true}catch(e){}
+    label.appendChild(cb);label.appendChild(document.createTextNode(' '+m.id+' — '+m.name));group.appendChild(label);
+  });
+}
+function boot(){inject();setTimeout(inject,100);setTimeout(inject,300);setTimeout(inject,700);setTimeout(inject,1500);setTimeout(inject,3000);setInterval(inject,2000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+if(window.MutationObserver)new MutationObserver(function(){setTimeout(inject,40)}).observe(document.documentElement,{childList:true,subtree:true});
+})();
