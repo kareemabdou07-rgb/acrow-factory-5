@@ -33,4 +33,38 @@ function refreshValues(){migrateCodes();IDS.forEach(function(id){var c=typeof st
 function watch(){if(!window.MutationObserver)return;new MutationObserver(function(){inject();}).observe(document.body,{childList:true,subtree:true});}
 function start(){migrateCodes();inject();try{rebuildMachines();}catch(e){}try{render();}catch(e){}watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
+
+/* v163 — force the real opening button to enter the application */
+(function(){
+  function openApp(e){
+    if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}
+    var s=document.getElementById('acrowSplash');
+    if(s){s.classList.add('hidden','v163-off');s.setAttribute('aria-hidden','true');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');s.style.setProperty('z-index','-1','important');}
+    document.body.classList.remove('splash-open','v139-app-open','v128-app-open','v162-app-open');
+    document.body.classList.add('v163-app-open');
+    document.body.style.setProperty('overflow','auto','important');
+    ['.topbar','.container','#summaryStrip','#departments'].forEach(function(sel){var x=document.querySelector(sel);if(x){x.style.setProperty('display','block','important');x.style.setProperty('visibility','visible','important');x.style.setProperty('opacity','1','important');}});
+    try{if(typeof render==='function')render();}catch(err){console.error(err);}
+    try{if(typeof renderReport==='function')renderReport();}catch(err){}
+    if(window.scrollTo)window.scrollTo(0,0);
+    return false;
+  }
+  function forceBind(){
+    var b=document.getElementById('enterSystemBtn');
+    if(!b)b=document.getElementById('enterBtn');
+    if(!b)b=document.getElementById('loginBtn');
+    if(!b)b=document.getElementById('splashEnterBtn');
+    if(!b)return;
+    b.onclick=openApp;
+    b.style.setProperty('pointer-events','auto','important');
+    b.disabled=false;
+    if(b.dataset.v163Listener!=='1'){
+      b.dataset.v163Listener='1';
+      b.addEventListener('click',openApp,true);
+    }
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',forceBind);else forceBind();
+  if(window.MutationObserver)new MutationObserver(forceBind).observe(document.body,{childList:true,subtree:true});
+  setInterval(forceBind,300);
+})();
 })();
