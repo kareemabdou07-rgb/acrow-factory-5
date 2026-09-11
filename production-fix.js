@@ -58,4 +58,45 @@ function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 (function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=76';s.async=false;document.head.appendChild(s);})();
 (function loadCustomMachines(){if(window.__acrowCustomMachinesV80Loaded)return;window.__acrowCustomMachinesV80Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=80';s.async=false;document.head.appendChild(s);})();
+
+/* v171 — force the actual splash text/button to open the app */
+(function(){
+  function openApp(e){
+    if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}
+    var splash=document.getElementById('acrowSplash');
+    if(splash){splash.classList.add('hidden');splash.setAttribute('aria-hidden','true');splash.style.setProperty('display','none','important');splash.style.setProperty('visibility','hidden','important');splash.style.setProperty('opacity','0','important');splash.style.setProperty('pointer-events','none','important');}
+    document.body.classList.add('v171-app-open');
+    document.body.classList.remove('splash-open','v139-app-open','v128-app-open','v162-app-open','v163-app-open','v166-app-open');
+    document.body.style.setProperty('overflow','auto','important');
+    try{if(typeof render==='function')render();}catch(x){}
+    return false;
+  }
+  function textOf(el){return String((el&&((el.innerText||el.textContent)||el.value))||'').replace(/\s+/g,' ').trim();}
+  function bind(){
+    var splash=document.getElementById('acrowSplash');
+    if(!splash)return;
+    var all=splash.querySelectorAll('button,input,a,[role="button"],div,span');
+    for(var i=0;i<all.length;i++){
+      var el=all[i],t=textOf(el);
+      if(t && (t.indexOf('اضغط للدخول')!==-1 || t==='دخول' || t==='ادخل' || t==='ابدأ')){
+        el.style.setProperty('pointer-events','auto','important');
+        el.onclick=openApp;
+        if(el.dataset.v171!=='1'){el.dataset.v171='1';el.addEventListener('click',openApp,true);el.addEventListener('touchend',openApp,true);}
+      }
+    }
+  }
+  document.addEventListener('click',function(e){
+    var el=e.target;
+    var splash=document.getElementById('acrowSplash');
+    if(splash && splash.contains(el)){
+      var t=textOf(el);
+      var p=el.parentElement;
+      if(t.indexOf('اضغط للدخول')!==-1 || (p&&textOf(p).indexOf('اضغط للدخول')!==-1))openApp(e);
+    }
+  },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+  if(window.MutationObserver)new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(bind,200);
+  setInterval(function(){if(document.body.classList.contains('v171-app-open')){var s=document.getElementById('acrowSplash');if(s)s.style.setProperty('display','none','important');}},100);
+})();
 })();
