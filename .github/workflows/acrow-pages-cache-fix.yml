@@ -1,0 +1,29 @@
+name: ACROW Pages Cache Fix
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  cache-fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version Firebase script URL
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          old = '<script src="./firebase-realtime.js"></script>'
+          new = '<script src="./firebase-realtime.js?v=166"></script>'
+          if old in s and new not in s:
+              p.write_text(s.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit cache-busting change
+        run: |
+          git config user.name "ACROW Factory 5"
+          git config user.email "kareemabdou07-rgb@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet || git commit -m "ACROW Factory 5 v167 - cache bust Firebase entry fix"
+          git push
