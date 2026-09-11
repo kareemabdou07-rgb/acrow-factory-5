@@ -30,47 +30,65 @@ jobs:
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
-          marker='<script id="acrow-production-machine-cards-repair-v2">'
+          marker='<script id="acrow-production-machine-cards-repair-v3">'
           if marker not in s:
-              js=r'''<script id="acrow-production-machine-cards-repair-v2">
+              js=r'''<script id="acrow-production-machine-cards-repair-v3">
           (function(){
             function repair(){
               try{
                 if(typeof window.store==='undefined'||!window.store)return false;
-                if(typeof window.rebuildMachines!=='function')return false;
-                if(window.__acrowProductionCardsRepairV2)return true;
-                var original=window.rebuildMachines;
-                function ensure(){
-                  original.apply(this,arguments);
-                  if(!Array.isArray(window.MACHINES))return;
+                if(typeof window.MACHINES==='undefined'||!Array.isArray(window.MACHINES))return false;
+                if(window.__acrowProductionCardsRepairV3)return true;
+                var ds=Array.isArray(window.DEPARTMENTS)?window.DEPARTMENTS:[];
+                var originalRender=window.render;
+                if(typeof originalRender!=='function')return false;
+                function deptFor(name){
+                  var t=String(name||'').toLowerCase();
+                  if(/ledger|ring/.test(t))return 'ledger';
+                  if(/cup|kablock/.test(t))return 'kablock';
+                  if(/hand|welding|لحام/.test(t))return 'fola_manual';
+                  if(/drill|مثقاب|متقاب/.test(t))return 'drill';
+                  if(/saw|منشار/.test(t))return 'saw';
+                  if(/sort|فرز/.test(t))return 'sorting';
+                  if(/press|مكبس/.test(t))return 'press';
+                  if(/form|فارمه|فريم/.test(t))return 'forming';
+                  return 'sorting';
+                }
+                function ensureMachines(){
                   var by={};
                   window.MACHINES.forEach(function(m){if(m&&m.id!=null)by[String(m.id)]=m;});
-                  var ds=Array.isArray(window.DEPARTMENTS)?window.DEPARTMENTS:[];
-                  function deptFor(name){
-                    var t=String(name||'').toLowerCase();
-                    if(/ledger|ring/.test(t))return 'ledger';
-                    if(/cup|kablock/.test(t))return 'kablock';
-                    if(/hand|welding|لحام/.test(t))return 'fola_manual';
-                    if(/drill|مثقاب|متقاب/.test(t))return 'drill';
-                    if(/saw|منشار/.test(t))return 'saw';
-                    if(/sort|فرز/.test(t))return 'sorting';
-                    return 'sorting';
-                  }
-                  (Array.isArray(store.machines)?store.machines:[]).forEach(function(x){
+                  function add(x){
                     if(!x)return;
                     var id=String(x.number||x.code||x.id||x.machine||'').trim();
                     if(!/^\d+$/.test(id)||by[id])return;
                     var name=String(x.name||x.type||x.machineName||id).trim();
                     var dept=deptFor(name+' '+String(x.type||''));
                     var d=ds.find(function(q){return q.id===dept;});
-                    window.MACHINES.push({id:id,name:name,dept:dept,deptName:d?d.name:dept,target:d&&d.target!=null?d.target:0});
-                    by[id]=window.MACHINES[window.MACHINES.length-1];
+                    var m={id:id,name:name,dept:dept,deptName:d?d.name:dept,target:d&&d.target!=null?d.target:0};
+                    window.MACHINES.push(m); by[id]=m;
+                  }
+                  (Array.isArray(window.store.machines)?window.store.machines:[]).forEach(add);
+                  (Array.isArray(window.store.machineCustom)?window.store.machineCustom:[]).forEach(add);
+                  (Array.isArray(window.store.favorites)?window.store.favorites:[]).forEach(function(id){
+                    id=String(id);
+                    if(by[id])return;
+                    add({id:id,name:'ماكينة '+id});
                   });
+                  var known=[
+                    ['1712','منشار RSA'],['982','متقاب/مثقاب'],['961','متقاب'],['263','مثقاب'],['882','مثقاب'],
+                    ['1522','Ledgers/Ring'],['999','Ledgers/Ring'],['5004','Ledgers/Ring'],['5003','Ledgers/Ring'],['1521','Ledgers/Ring'],['998','Ledgers/Ring'],
+                    ['997','Ring Vertical'],['996','Ring Vertical'],['5006','Ring Vertical'],['5005','Cup Lock Vertical'],['450','Cup Lock Vertical'],['1524','Cup Lock Vertical'],['1523','Cup Lock Vertical'],
+                    ['5008','فوله اوتوماتيك'],['402','Hand welding'],['455','Hand welding'],['118','Hand welding'],['116','Hand welding'],['404','Hand welding'],
+                    ['1502','منطقة الفرز'],['279','مكبس'],['225','مكبس'],['956','مكبس'],['284','مكبس'],['1107','مكبس تخريم'],['1324','مكبس تشكيل'],
+                    ['1313','مكنه تشكيل'],['1320','مكنه تشكيل'],['147','مكنه تشكيل'],['986','متقاب'],['1306','متقاب'],['963','متقاب'],['1317','متقاب'],['1318','متقاب'],['964','متقاب'],
+                    ['954','منشار'],['1713','متقاب متعدد'],['112','فريم كوباية'],['114','فريم كوباية'],['477','فارمه يدوي'],['1504','فارمه يدوي'],['712','فارمه يدوي'],['710','فارمه يدوي'],['122','فارمه يدوي'],['454','فارمه يدوي'],['713','فارمه يدوي'],['115','فارمه يدوي'],['117','فارمه يدوي'],['711','فارمه يدوي'],['456','فارمه يدوي'],['1501','ماكينه يدوي'],['120','ماكينه يدوي']
+                  ];
+                  known.forEach(function(k){add({id:k[0],name:k[1]});});
                 }
-                window.rebuildMachines=ensure;
-                ensure();
-                window.__acrowProductionCardsRepairV2=true;
-                setTimeout(function(){try{if(typeof render==='function')render();}catch(e){}},100);
+                window.render=function(){ensureMachines();return originalRender.apply(this,arguments);};
+                ensureMachines();
+                window.__acrowProductionCardsRepairV3=true;
+                setTimeout(function(){try{window.render();}catch(e){}},100);
                 return true;
               }catch(e){return false;}
             }
