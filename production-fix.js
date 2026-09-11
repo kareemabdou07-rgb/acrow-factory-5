@@ -59,3 +59,30 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 (function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=76';s.async=false;document.head.appendChild(s);})();
 (function loadCustomMachines(){if(window.__acrowCustomMachinesV80Loaded)return;window.__acrowCustomMachinesV80Loaded=true;var s=document.createElement('script');s.src='custom-machines.js?v=80';s.async=false;document.head.appendChild(s);})();
 })();
+
+/* v162 — final direct fix for the ACROW opening button */
+(function(){
+  function forceEntry(){
+    var b=document.getElementById('enterSystemBtn');
+    var s=document.getElementById('acrowSplash');
+    if(!b)return;
+    if(b.dataset.v162==='1')return;
+    b.dataset.v162='1';
+    b.onclick=function(e){
+      if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}
+      if(s){s.classList.add('hidden');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');}
+      document.body.classList.remove('splash-open','v139-app-open');
+      document.body.classList.add('v162-app-open');
+      document.body.style.setProperty('overflow','auto','important');
+      var top=document.querySelector('.topbar'),cont=document.querySelector('.container'),sum=document.querySelector('.summary'),dep=document.getElementById('departments');
+      [top,cont,sum,dep].forEach(function(x){if(x){x.style.setProperty('display','block','important');x.style.setProperty('visibility','visible','important');x.style.setProperty('opacity','1','important');}});
+      try{if(typeof render==='function')render();}catch(x){}
+      try{if(typeof renderReport==='function')renderReport();}catch(x){}
+      if(window.scrollTo)window.scrollTo(0,0);
+      return false;
+    };
+    b.addEventListener('click',b.onclick,true);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',forceEntry);else forceEntry();
+  setTimeout(forceEntry,100);setTimeout(forceEntry,500);setInterval(forceEntry,1000);
+})();
