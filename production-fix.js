@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v70: exact first-touch repair/delete fault buttons */
+/* ACROW Factory 5 — v71: first-touch fault trigger */
 (function(){
 'use strict';
 var STYLE_ID='acrow-production-stable-style-v65';
@@ -17,7 +17,7 @@ function style(){
 .mc-bottom>.mc-btn.has-faults{width:110px!important;min-width:110px!important;max-width:110px!important;flex:none!important;box-sizing:border-box!important;overflow:hidden!important;white-space:nowrap!important;}
 .acrow-production-row.acrow-production-done{background:#b9f3d1!important;border:3px solid #159957!important;border-radius:10px!important;padding:0!important;box-shadow:none!important;}
 .acrow-production-row.acrow-production-done .production-label{color:#063b22!important;}
-.acrow-production-row.acrow-production-done .actual-input{background:#b9f3d1!important;background-image:none!important;border-color:#159957!important;color:#063b22!important;}
+.acrow-production-row .actual-input{background:#b9f3d1!important;background-image:none!important;border-color:#159957!important;color:#063b22!important;}
 .acrow-production-row .production-fix-btn-v2{display:none!important;}
 `;
  document.head.appendChild(s);
@@ -31,5 +31,5 @@ document.addEventListener('blur',function(e){var input=e.target&&e.target.closes
 function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(function(list){list.forEach(function(m){m.addedNodes&&m.addedNodes.forEach(function(n){if(n.nodeType===1)decorate(n);});});});ob.observe(document.body,{childList:true,subtree:true});}
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
-(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=70';s.async=false;document.head.appendChild(s);})();
+(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=71';s.async=false;document.head.appendChild(s);})();
 })();
