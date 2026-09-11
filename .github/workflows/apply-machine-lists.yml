@@ -1,0 +1,78 @@
+name: Apply machine lists
+
+on:
+  push:
+    paths:
+      - ".github/acrow-machine-list-trigger"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Apply one-time machine list migration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('production-fix.js')
+          s = p.read_text(encoding='utf-8')
+          marker = 'ACROW_SAFE_MACHINE_LIST_V1'
+          if marker not in s:
+              patch = r'''
+/* ACROW_SAFE_MACHINE_LIST_V1: one-time migration only. Adds the existing machine list to today's production and monthly-plan selections without changing other app logic. */
+(function(){
+  function apply(){
+    try{
+      if(!window.store || !window.store.settings || !Array.isArray(window.MACHINES)) return false;
+      if(store.settings.__acrowSafeMachineListV1) return true;
+      var ids = MACHINES.map(function(m){ return String(m.id); });
+      if(Array.isArray(store.favorites)){
+        var fav = new Set(store.favorites.map(String));
+        ids.forEach(function(id){ fav.add(id); });
+        store.favorites = Array.from(fav);
+      } else {
+        store.favorites = ids.slice();
+      }
+      var plan = new Set(Array.isArray(store.settings.planMachineIds) ? store.settings.planMachineIds.map(String) : []);
+      ids.forEach(function(id){ plan.add(id); });
+      store.settings.planMachineIds = Array.from(plan);
+      store.settings.planStatusMachineIds = Array.from(plan);
+      store.settings.__acrowSafeMachineListV1 = true;
+      if(typeof saveStore === 'function') saveStore();
+      try{ if(typeof renderMachineSelectList === 'function') renderMachineSelectList(); }catch(e){}
+      try{ if(typeof renderPlanMachineSelectList === 'function') renderPlanMachineSelectList(); }catch(e){}
+      try{ if(typeof render === 'function') render(); }catch(e){}
+      return true;
+    }catch(e){ return false; }
+  }
+  function boot(){
+    var tries=0;
+    var t=setInterval(function(){
+      tries++;
+      if(apply() || tries>=20) clearInterval(t);
+    },500);
+    apply();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+})();
+'''
+              p.write_text(s + '\n' + patch, encoding='utf-8')
+          PY
+
+      - name: Commit migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add production-fix.js
+          if git diff --cached --quiet; then
+            echo "No changes needed"
+          else
+            git commit -m "Add machines to daily production and monthly plan"
+            git push
+          fi
