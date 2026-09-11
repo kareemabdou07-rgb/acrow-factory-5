@@ -87,6 +87,48 @@ jobs:
               s = s.replace('</head>', js + '\n</head>', 1)
               p.write_text(s, encoding='utf-8')
           PY
+      - name: Inject safe machine-list migration into the published HTML
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = '<script id="acrow-safe-machine-list-v1">'
+          if marker not in s:
+              js = r'''<script id="acrow-safe-machine-list-v1">
+          (function(){
+            function apply(){
+              try{
+                if(typeof store==='undefined' || !store || !store.settings) return false;
+                if(typeof MACHINES==='undefined' || !Array.isArray(MACHINES) || !MACHINES.length) return false;
+                if(store.settings.__acrowSafeMachineListV1) return true;
+                var ids=MACHINES.map(function(m){return String(m.id);});
+                var fav=Array.isArray(store.favorites)?new Set(store.favorites.map(String)):new Set();
+                ids.forEach(function(id){fav.add(id);});
+                store.favorites=Array.from(fav);
+                var plan=new Set(Array.isArray(store.settings.planMachineIds)?store.settings.planMachineIds.map(String):[]);
+                ids.forEach(function(id){plan.add(id);});
+                store.settings.planMachineIds=Array.from(plan);
+                store.settings.planStatusMachineIds=Array.from(plan);
+                store.settings.__acrowSafeMachineListV1=true;
+                if(typeof saveStore==='function')saveStore();
+                try{if(typeof renderMachineSelectList==='function')renderMachineSelectList();}catch(e){}
+                try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
+                try{if(typeof render==='function')render();}catch(e){}
+                return true;
+              }catch(e){return false;}
+            }
+            var tries=0;
+            function boot(){
+              if(apply() || ++tries>=30){clearInterval(timer);}
+            }
+            var timer=setInterval(boot,500);
+            if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+          })();
+          </script>'''
+              s = s.replace('</head>', js + '\n</head>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
