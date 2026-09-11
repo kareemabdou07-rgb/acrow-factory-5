@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v69: first-touch repair/delete fault buttons */
+/* ACROW Factory 5 — v70: exact first-touch repair/delete fault buttons */
 (function(){
 'use strict';
 var STYLE_ID='acrow-production-stable-style-v65';
@@ -31,5 +31,5 @@ document.addEventListener('blur',function(e){var input=e.target&&e.target.closes
 function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(function(list){list.forEach(function(m){m.addedNodes&&m.addedNodes.forEach(function(n){if(n.nodeType===1)decorate(n);});});});ob.observe(document.body,{childList:true,subtree:true});}
 function start(){style();decorate();watch();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
-(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=69';s.async=false;document.head.appendChild(s);})();
+(function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteFixLoaded)return;window.__acrowFaultRepairDeleteFixLoaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=70';s.async=false;document.head.appendChild(s);})();
 })();
