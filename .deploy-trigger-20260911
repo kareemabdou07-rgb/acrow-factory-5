@@ -1,1 +1,2 @@
 Fresh deployment trigger 2026-09-11: publish the current production-fix machine list to the live ACROW Factory 5 site. No application logic changed.
+Retry: machine list only.
