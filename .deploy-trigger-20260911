@@ -1,0 +1,1 @@
+Trigger a fresh clean Pages deployment so the daily production machine-card repair can publish without reusing the failed run artifact.
