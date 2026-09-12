@@ -1,0 +1,41 @@
+name: Inject 10s production button fix
+
+on:
+  push:
+    paths:
+      - 'production-buttons-10s-fix.js'
+      - '.github/workflows/inject-10s-production-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Inject script tag into index
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="./production-buttons-10s-fix.js?v=1"></script>'
+          if tag not in s:
+              marker = '<script src="./production-fix.js"></script>'
+              if marker in s:
+                  s = s.replace(marker, marker + '\n' + tag, 1)
+              else:
+                  s = s.replace('</body>', tag + '\n</body>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit injection
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git diff --cached --quiet || git commit -m 'Load 10s production button fix [skip ci]'
+          git push
