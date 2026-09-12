@@ -23,14 +23,12 @@ function showBigFaultScreenButton(){
     if(old)old.remove();
     var box=document.createElement('div');
     box.id='bigFaultScreenButton';
-    box.style.cssText='position:fixed;top:92px;left:14px;right:14px;z-index:99990;background:#10263a;border:2px solid #0879d1;border-radius:16px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.35);direction:rtl;text-align:center;font-family:Tajawal,Arial,sans-serif;';
-    box.innerHTML='<div style="font-size:14px;font-weight:800;color:#d9e8f5;margin-bottom:9px">شاشة الأعطال</div><button id="bigFaultOpenBtn" style="width:100%;min-height:62px;border:0;border-radius:12px;background:#0879d1;color:#fff;font-family:inherit;font-size:22px;font-weight:900;cursor:pointer">شاشة الأعطال</button>';
+    box.style.cssText='position:fixed;top:76px;left:10px;right:10px;z-index:99990;background:#10263a;border:2px solid #0879d1;border-radius:16px;padding:10px;box-shadow:0 12px 35px rgba(0,0,0,.35);direction:rtl;text-align:center;font-family:Tajawal,Arial,sans-serif;';
+    box.innerHTML='<button id="bigFaultOpenBtn" style="width:100%;min-height:68px;border:0;border-radius:12px;background:#0879d1;color:#fff;font-family:inherit;font-size:24px;font-weight:900;cursor:pointer">شاشة الأعطال</button>';
     document.body.appendChild(box);
     document.getElementById('bigFaultOpenBtn').onclick=function(){window.location.href='fault-screen.html?v=220';};
-  },600);
+  },250);
 }
-
-/* اختيار شاشة الأعطال من زر إدارة الأعطال في القائمة الرئيسية */
 function installFaultScreenChoice(){
   var btn=document.getElementById('maintenanceBtn');
   if(!btn || btn.dataset.faultChoiceBound==='1') return;
@@ -50,5 +48,22 @@ function installFaultScreenChoice(){
     overlay.addEventListener('click',function(ev){if(ev.target===overlay)overlay.remove();});
   },true);
 }
+/* ضمان ظهور الزر الكبير كل مرة يتم فيها فتح إدارة الأعطال من داخل البرنامج */
+(function(){
+  var tries=0;
+  var timer=setInterval(function(){
+    tries++;
+    if(typeof openMaintenanceView==='function' && !window.__acrowFaultViewWrapped){
+      var original=openMaintenanceView;
+      window.openMaintenanceView=function(){
+        var r=original.apply(this,arguments);
+        showBigFaultScreenButton();
+        return r;
+      };
+      window.__acrowFaultViewWrapped=true;
+    }
+    if(tries>40)clearInterval(timer);
+  },250);
+})();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installFaultScreenChoice);else installFaultScreenChoice();
 })();
