@@ -1,60 +1,75 @@
-/* ACROW Factory 5 — mobile production keyboard hard lock v2 */
+/* ACROW Factory 5 — mobile production keyboard stable lock v3 */
 (function(){
 'use strict';
 var machine='';
 var value='';
-var restoring=false;
-var STYLE_ID='acrow-production-keyboard-hard-lock-v2';
+var STYLE_ID='acrow-production-keyboard-stable-v3';
+var recovering=false;
+var recoveryTimer=0;
 function style(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;
- s.textContent='.actual-input{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important;}'+'.actual-input:focus{scroll-margin-bottom:260px!important;}body.acrow-prod-keyboard-lock{overflow-anchor:none!important;}';
+ s.textContent='.actual-input{touch-action:manipulation!important;-webkit-tap-highlight-color:transparent!important;-webkit-user-select:text!important;user-select:text!important;}'+'.actual-input:focus{scroll-margin-bottom:220px!important;}';
  document.head.appendChild(s);
 }
-function inputFor(){
+function isInput(el){return !!(el&&el.classList&&el.classList.contains('actual-input'));}
+function findInput(){
  if(!machine)return null;
  var a=document.querySelectorAll('.actual-input');
  for(var i=0;i<a.length;i++)if(String(a[i].dataset.machine||'').trim()===machine)return a[i];
  return null;
 }
-function focus(el){
- if(!el||restoring)return;
- restoring=true;
+function restoreOnce(){
+ if(recovering||!machine)return;
+ var active=document.activeElement;
+ if(isInput(active))return;
+ var el=findInput();
+ if(!el)return;
+ recovering=true;
  try{
   if(String(el.value||'')!==value)el.value=value;
   el.focus({preventScroll:true});
   var p=String(el.value||'').length;
   try{el.setSelectionRange(p,p);}catch(e){}
  }catch(e){}
- setTimeout(function(){restoring=false;},30);
-}
-function keep(){
- if(!machine||restoring)return;
- var el=inputFor();
- if(!el)return;
- if(String(el.value||'')!==value)el.value=value;
- if(document.activeElement!==el)focus(el);
-}
-function burst(){
- if(!machine)return;
- [0,30,80,150,250,400,650,900,1300,1800].forEach(function(ms){setTimeout(function(){keep();},ms);});
+ setTimeout(function(){recovering=false;},120);
 }
 function remember(el){
- if(!el||!el.closest||!el.closest('.actual-input'))return;
+ if(!isInput(el))return;
  machine=String(el.dataset.machine||'').trim();
  value=String(el.value||'');
- document.body.classList.add('acrow-prod-keyboard-lock');
- try{el.setAttribute('inputmode','numeric');el.setAttribute('autocomplete','off');el.setAttribute('enterkeyhint','done');}catch(e){}
+ try{
+  el.setAttribute('inputmode','numeric');
+  el.setAttribute('autocomplete','off');
+  el.setAttribute('enterkeyhint','done');
+ }catch(e){}
 }
 function boot(){
  style();
- document.addEventListener('focusin',function(e){var el=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!el)return;remember(el);burst();},true);
- document.addEventListener('input',function(e){var el=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!el)return;remember(el);value=String(el.value||'');burst();},true);
- document.addEventListener('change',function(e){var el=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!el)return;remember(el);value=String(el.value||'');burst();},true);
- document.addEventListener('blur',function(e){var el=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(!el||restoring)return;remember(el);burst();},true);
- if(window.MutationObserver)new MutationObserver(function(){if(machine)burst();}).observe(document.body,{childList:true,subtree:true});
- window.addEventListener('resize',function(){if(machine)burst();},true);
- if(window.visualViewport)window.visualViewport.addEventListener('resize',function(){if(machine)burst();},true);
+ document.addEventListener('focusin',function(e){
+  var el=e.target;
+  if(!isInput(el))return;
+  remember(el);
+ },true);
+ document.addEventListener('input',function(e){
+  var el=e.target;
+  if(!isInput(el))return;
+  remember(el);
+ },true);
+ document.addEventListener('change',function(e){
+  var el=e.target;
+  if(!isInput(el))return;
+  remember(el);
+ },true);
+ /* Do NOT refocus on blur or viewport resize: that causes Android keyboards to flicker. */
+ if(window.MutationObserver){
+  new MutationObserver(function(){
+   if(!machine||recovering)return;
+   if(isInput(document.activeElement))return;
+   clearTimeout(recoveryTimer);
+   recoveryTimer=setTimeout(restoreOnce,180);
+  }).observe(document.body,{childList:true,subtree:true});
+ }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
