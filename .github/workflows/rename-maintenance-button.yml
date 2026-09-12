@@ -1,0 +1,31 @@
+name: Rename Maintenance Button
+on:
+  push:
+    paths:
+      - '.rename-maintenance-button-trigger'
+permissions:
+  contents: write
+jobs:
+  rename:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rename only the top maintenance button
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          s, n = re.subn(r'(<button[^>]*id="maintenanceBtn"[^>]*title=")الصيانة("[^>]*>)الصيانة(</button>)', r'\1إدارة الأعطال\2إدارة الأعطال\3', s, count=1)
+          if n != 1:
+              raise SystemExit(f'Expected exactly one maintenance button replacement, got {n}')
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit change
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          git commit -m 'Rename maintenance button to fault management'
+          git push
