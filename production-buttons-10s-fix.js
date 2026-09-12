@@ -20,6 +20,17 @@ body.acrow-production-10s-lock .actual-input{
 body.acrow-production-10s-lock .topbar{position:sticky!important;top:0!important;z-index:60!important;}
 body.acrow-production-10s-lock .top-main-action,
 body.acrow-production-10s-lock .mc-btn{visibility:visible!important;opacity:1!important;}
+/* Keep the main-screen action button compact so it never covers the other buttons. */
+.top-main-action{
+ width:auto!important;
+ min-width:0!important;
+ max-width:180px!important;
+ padding:8px 14px!important;
+ font-size:13px!important;
+ line-height:1.2!important;
+ flex:0 1 auto!important;
+ box-sizing:border-box!important;
+}
 `;
  document.head.appendChild(s);
 }
