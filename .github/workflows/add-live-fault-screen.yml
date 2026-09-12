@@ -1,0 +1,128 @@
+name: Add live fault screen
+on:
+  push:
+    paths:
+      - '.fault-screen-trigger'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inject live fault screen
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          marker = 'v220-live-fault-screen'
+          if marker in s:
+              print('Already installed')
+              raise SystemExit(0)
+          button_anchor = '<button class="select-machines-btn no-print" id="maintenanceLogoutBtn">خروج</button>'
+          button = '<button class="select-machines-btn no-print" id="liveFaultScreenBtn" type="button" title="شاشة الأعطال">شاشة الأعطال</button>'
+          if button_anchor in s and 'id="liveFaultScreenBtn"' not in s:
+              s = s.replace(button_anchor, button + button_anchor, 1)
+          injection = r'''<!-- v220-live-fault-screen -->
+<style id="v220-live-fault-screen-style">
+#liveFaultScreen{display:none;position:fixed;inset:0;z-index:10050;background:#081a2f;color:#fff;overflow:auto;padding:18px}
+#liveFaultScreen.open{display:block}
+#liveFaultScreen .lf-head{max-width:1100px;margin:0 auto 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#liveFaultScreen .lf-title{font-size:22px;font-weight:900}
+#liveFaultScreen .lf-sub{font-size:13px;color:#a9bac9;margin-top:3px}
+#liveFaultScreen .lf-actions{display:flex;gap:8px;flex-wrap:wrap}
+#liveFaultScreen button{font-family:'Tajawal',sans-serif;font-weight:800;border:1px solid #2b6b96;border-radius:9px;padding:9px 14px;cursor:pointer}
+#lfClose{background:#334155;color:#fff}#lfRefresh{background:#0879d1;color:#fff}
+#liveFaultScreen .lf-new{max-width:1100px;margin:0 auto 14px;background:#7f1d1d;border:2px solid #ef4444;border-radius:12px;padding:13px 16px;text-align:center;font-size:19px;font-weight:900;display:none}
+#liveFaultScreen .lf-grid{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+#liveFaultScreen .lf-card{background:#102a45;border:2px solid #ef4444;border-radius:13px;padding:15px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+#liveFaultScreen .lf-card.closed{border-color:#16a34a}
+#liveFaultScreen .lf-machine{font-size:19px;font-weight:900}.lf-meta{font-size:13px;color:#b9c8d5;margin-top:5px}
+#liveFaultScreen .lf-row{display:flex;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid #285477}.lf-row:last-child{border-bottom:0}
+#liveFaultScreen .lf-label{color:#9fb0bf}.lf-value{font-weight:800;text-align:left}
+#liveFaultScreen .lf-time{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:8px}.lf-time input{background:#061323;color:#fff;border:1px solid #3b617d;border-radius:7px;padding:7px;font-family:monospace}
+#liveFaultScreen .lf-repair{width:100%;margin-top:10px;background:#16a34a;color:#fff;border-color:#16a34a;font-size:16px}
+#liveFaultScreen .lf-save{background:#0879d1;color:#fff}.lf-empty{max-width:1100px;margin:30px auto;text-align:center;color:#9fb0bf;font-size:17px}
+#liveFaultToast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:10080;background:#16a34a;color:#fff;padding:13px 22px;border-radius:10px;font-weight:900;display:none;box-shadow:0 8px 25px rgba(0,0,0,.3)}
+@media(max-width:600px){#liveFaultScreen{padding:12px}.lf-title{font-size:19px}}
+</style>
+<div id="liveFaultScreen" aria-hidden="true">
+  <div class="lf-head">
+    <div><div class="lf-title">شاشة الأعطال</div><div class="lf-sub">متابعة الأعطال الجديدة والإصلاح لحظة بلحظة</div></div>
+    <div class="lf-actions"><button id="lfRefresh">تحديث</button><button id="lfClose">رجوع</button></div>
+  </div>
+  <div id="lfNewBanner" class="lf-new">يوجد عطل جديد على الشاشة، برجاء إصلاح العطل.</div>
+  <div id="lfGrid" class="lf-grid"></div>
+</div>
+<div id="liveFaultToast">تم إصلاح العطل</div>
+<script id="v220-live-fault-screen-js">
+(function(){
+  'use strict';
+  var screen,grid,banner,toast,known={},baseline=true,opened=false,audioCtx=null;
+  function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function now(){return (typeof nowTimeHHMM==='function')?nowTimeHHMM():new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});}
+  function mins(a,b){return (typeof calcMinutesBetween==='function')?calcMinutesBetween(a,b):0;}
+  function speak(text){
+    try{
+      if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume();
+      if(audioCtx){var o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=880;g.gain.value=.18;o.connect(g);g.connect(audioCtx.destination);o.start();setTimeout(function(){o.stop();},220);}
+    }catch(e){}
+    try{if('speechSynthesis' in window){speechSynthesis.cancel();var u=new SpeechSynthesisUtterance(text);u.lang='ar-EG';u.volume=1;u.rate=.9;u.pitch=1;speechSynthesis.speak(u);}}catch(e){}
+  }
+  function unlockAudio(){try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}}
+  function getOpenRows(){
+    var out=[]; if(typeof store==='undefined'||!store||!store.records)return out;
+    Object.keys(store.records).forEach(function(k){
+      var parts=k.split('_'); if(parts.length<3)return;
+      var shift=parts[parts.length-2], id=parts[parts.length-1], date=parts.slice(0,-2).join('_'), r=store.records[k];
+      (r.faults||[]).forEach(function(f,i){if(!f.endTime){var m=(typeof MACHINES!=='undefined'?MACHINES:[]).find(function(x){return String(x.id)===String(id);});out.push({key:k+'_'+i,date:date,shift:shift,id:id,machine:m||{id:id,name:'ماكينة '+id},fault:f,index:i,rec:r});}});
+    });
+    return out.sort(function(a,b){return String(a.fault.startTime||'').localeCompare(String(b.fault.startTime||''));});
+  }
+  function allRows(){
+    var out=[]; if(typeof store==='undefined'||!store||!store.records)return out;
+    Object.keys(store.records).forEach(function(k){var parts=k.split('_');if(parts.length<3)return;var shift=parts[parts.length-2],id=parts[parts.length-1],date=parts.slice(0,-2).join('_'),r=store.records[k];(r.faults||[]).forEach(function(f,i){var m=(typeof MACHINES!=='undefined'?MACHINES:[]).find(function(x){return String(x.id)===String(id);});out.push({key:k+'_'+i,date:date,shift:shift,id:id,machine:m||{id:id,name:'ماكينة '+id},fault:f,index:i,rec:r});});});return out;
+  }
+  function render(){
+    if(!grid)return;var rows=getOpenRows();
+    banner.style.display=rows.length?'block':'none';
+    grid.innerHTML=rows.length?rows.map(function(x){return '<div class="lf-card"><div class="lf-machine">ماكينة '+esc(x.machine.id)+' — '+esc(x.machine.name||'')+'</div><div class="lf-meta">'+esc(x.machine.deptName||x.machine.dept||'')+'</div><div class="lf-row"><span class="lf-label">نوع العطل</span><span class="lf-value">'+esc(typeof reasonCodeLabel==='function'?reasonCodeLabel(x.fault.reason):x.fault.reason)+'</span></div><div class="lf-row"><span class="lf-label">وقت بداية العطل</span><span class="lf-value">'+esc(x.fault.startTime||'—')+'</span></div><div class="lf-row"><span class="lf-label">الوصف</span><span class="lf-value">'+esc(x.fault.description||'بدون وصف')+'</span></div><div class="lf-time"><span>وقت البداية</span><input type="time" data-start="'+esc(x.key)+'" value="'+esc(x.fault.startTime||'')+'"><button class="lf-save" data-save="'+esc(x.key)+'">حفظ الوقت</button></div><button class="lf-repair" data-repair="'+esc(x.key)+'">تم الإصلاح</button></div>';}).join(''):'<div class="lf-empty">لا توجد أعطال مفتوحة حاليًا</div>';
+    grid.querySelectorAll('[data-repair]').forEach(function(btn){btn.onclick=function(){unlockAudio();var x=getOpenRows().find(function(z){return z.key===btn.dataset.repair;});if(!x)return;var end=now();x.fault.endTime=end;x.fault.mins=mins(x.fault.startTime,end)||0;x.fault.repairedAt=end;if(typeof saveStore==='function')saveStore();render();toast.style.display='block';setTimeout(function(){toast.style.display='none';},2200);speak('تم إصلاح العطل');setTimeout(check,400);};});
+    grid.querySelectorAll('[data-save]').forEach(function(btn){btn.onclick=function(){var x=getOpenRows().find(function(z){return z.key===btn.dataset.save;});var inp=grid.querySelector('[data-start="'+CSS.escape(btn.dataset.save)+'"]');if(!x||!inp)return;x.fault.startTime=inp.value||x.fault.startTime;if(typeof saveStore==='function')saveStore();render();};});
+  }
+  function check(){
+    var rows=getOpenRows(), current={};rows.forEach(function(x){current[x.key]=true;});
+    if(opened&&!baseline){Object.keys(current).forEach(function(k){if(!known[k]){banner.style.display='block';speak('يوجد عطل جديد على الشاشة، برجاء إصلاح العطل.');}});}
+    if(opened&&baseline){Object.keys(current).forEach(function(k){known[k]=true;});baseline=false;}
+    Object.keys(known).forEach(function(k){if(!current[k]){delete known[k];}});
+    render();
+  }
+  function open(){
+    unlockAudio();screen.classList.add('open');screen.setAttribute('aria-hidden','false');opened=true;baseline=true;known={};check();
+  }
+  function close(){screen.classList.remove('open');screen.setAttribute('aria-hidden','true');opened=false;}
+  function init(){
+    screen=document.getElementById('liveFaultScreen');grid=document.getElementById('lfGrid');banner=document.getElementById('lfNewBanner');toast=document.getElementById('liveFaultToast');
+    var b=document.getElementById('liveFaultScreenBtn');if(b)b.onclick=open;
+    document.getElementById('lfClose').onclick=close;document.getElementById('lfRefresh').onclick=function(){unlockAudio();check();};
+    setInterval(function(){if(opened)check();},900);
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+'''
+          if '</body>' not in s:
+              raise SystemExit('No body tag found')
+          s = s.replace('</body>', injection + '\n</body>', 1)
+          p.write_text(s, encoding='utf-8')
+          print('Injected live fault screen')
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Add live maintenance fault screen"
+          git push
