@@ -16,54 +16,31 @@ function start(){if(!window.firebase||!firebase.initializeApp||!firebase.firesto
 function loadScripts(){var a=document.createElement('script');a.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js';a.onload=function(){var f=document.createElement('script');f.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js';f.onload=start;document.head.appendChild(f);};document.head.appendChild(a);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScripts);else loadScripts();
 
+/* شاشة الأعطال: زر كبير يظهر داخل شاشة إدارة الأعطال مهما كان اسم/معرّف الزر */
 function showBigFaultScreenButton(){
-  setTimeout(function(){
-    var old=document.getElementById('bigFaultScreenButton');
-    if(old)old.remove();
-    var box=document.createElement('div');
-    box.id='bigFaultScreenButton';
-    box.style.cssText='position:fixed;top:76px;left:10px;right:10px;z-index:99990;background:#10263a;border:2px solid #0879d1;border-radius:16px;padding:10px;box-shadow:0 12px 35px rgba(0,0,0,.35);direction:rtl;text-align:center;font-family:Tajawal,Arial,sans-serif;';
-    box.innerHTML='<button id="bigFaultOpenBtn" style="width:100%;min-height:68px;border:0;border-radius:12px;background:#0879d1;color:#fff;font-family:inherit;font-size:24px;font-weight:900;cursor:pointer">شاشة الأعطال</button>';
-    document.body.appendChild(box);
-    document.getElementById('bigFaultOpenBtn').onclick=function(){window.location.href='fault-screen.html?v=221';};
-  },100);
+  var old=document.getElementById('bigFaultScreenButton'); if(old)old.remove();
+  var box=document.createElement('div'); box.id='bigFaultScreenButton';
+  box.style.cssText='position:fixed;top:78px;left:10px;right:10px;z-index:2147483000;background:#10263a;border:3px solid #0879d1;border-radius:16px;padding:10px;box-shadow:0 12px 35px rgba(0,0,0,.45);direction:rtl;text-align:center;font-family:Tajawal,Arial,sans-serif;';
+  box.innerHTML='<button id="bigFaultOpenBtn" style="width:100%;min-height:76px;border:0;border-radius:12px;background:#0879d1;color:#fff;font-family:inherit;font-size:26px;font-weight:900;cursor:pointer">شاشة الأعطال</button>';
+  document.body.appendChild(box);
+  document.getElementById('bigFaultOpenBtn').onclick=function(){window.location.href='fault-screen.html?v=222';};
 }
-function openFaultManagementDirect(){
-  var btn=document.getElementById('maintenanceBtn');
-  if(!btn || btn.dataset.faultDirectBound==='1')return;
-  btn.dataset.faultDirectBound='1';
-  btn.addEventListener('click',function(e){
-    e.preventDefault();e.stopImmediatePropagation();
-    setTimeout(function(){
-      if(typeof openMaintenanceView==='function'){try{openMaintenanceView();}catch(err){console.error(err);}}
-      showBigFaultScreenButton();
-    },0);
-  },true);
+function removeBigFaultScreenButton(){var x=document.getElementById('bigFaultScreenButton');if(x)x.remove();}
+function looksLikeFaultManagement(){
+  var t=(document.body.innerText||'');
+  return t.indexOf('إدارة الأعطال')!==-1 && (t.indexOf('تسجيل عطل')!==-1 || t.indexOf('الأعطال المفتوحة')!==-1 || t.indexOf('العطل')!==-1);
 }
-function findFaultButton(){
-  var el=document.getElementById('maintenanceBtn');
-  if(el)return el;
-  var all=document.querySelectorAll('button,a,[role="button"]');
-  for(var i=0;i<all.length;i++){
-    var t=(all[i].textContent||'').replace(/\s+/g,'').trim();
-    if(t==='إدارةالأعطال'||t==='إدارةالصيانة')return all[i];
+function watchFaultManagement(){
+  var last=false;
+  function scan(){
+    var now=looksLikeFaultManagement();
+    if(now&&!last)showBigFaultScreenButton();
+    if(!now)removeBigFaultScreenButton();
+    last=now;
   }
-  return null;
+  scan();
+  setInterval(scan,300);
+  if(window.MutationObserver){new MutationObserver(scan).observe(document.body,{childList:true,subtree:true});}
 }
-function installFaultScreenDirect(){
-  var tries=0;
-  var timer=setInterval(function(){
-    tries++;
-    var btn=findFaultButton();
-    if(btn && btn.dataset.faultDirectBound!=='1')openFaultManagementDirect();
-    if(tries>160)clearInterval(timer);
-  },250);
-  if(window.MutationObserver){
-    new MutationObserver(function(){
-      var btn=findFaultButton();
-      if(btn && btn.dataset.faultDirectBound!=='1')openFaultManagementDirect();
-    }).observe(document.body,{childList:true,subtree:true});
-  }
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installFaultScreenDirect);else installFaultScreenDirect();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',watchFaultManagement);else watchFaultManagement();
 })();
