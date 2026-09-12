@@ -16,6 +16,20 @@ function start(){if(!window.firebase||!firebase.initializeApp||!firebase.firesto
 function loadScripts(){var a=document.createElement('script');a.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js';a.onload=function(){var f=document.createElement('script');f.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js';f.onload=start;document.head.appendChild(f);};document.head.appendChild(a);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScripts);else loadScripts();
 
+/* زر شاشة الأعطال الكبير داخل إدارة الأعطال */
+function showBigFaultScreenButton(){
+  setTimeout(function(){
+    var old=document.getElementById('bigFaultScreenButton');
+    if(old)old.remove();
+    var box=document.createElement('div');
+    box.id='bigFaultScreenButton';
+    box.style.cssText='position:fixed;top:92px;left:14px;right:14px;z-index:99990;background:#10263a;border:2px solid #0879d1;border-radius:16px;padding:14px;box-shadow:0 12px 35px rgba(0,0,0,.35);direction:rtl;text-align:center;font-family:Tajawal,Arial,sans-serif;';
+    box.innerHTML='<div style="font-size:14px;font-weight:800;color:#d9e8f5;margin-bottom:9px">شاشة الأعطال</div><button id="bigFaultOpenBtn" style="width:100%;min-height:62px;border:0;border-radius:12px;background:#0879d1;color:#fff;font-family:inherit;font-size:22px;font-weight:900;cursor:pointer">شاشة الأعطال</button>';
+    document.body.appendChild(box);
+    document.getElementById('bigFaultOpenBtn').onclick=function(){window.location.href='fault-screen.html?v=220';};
+  },600);
+}
+
 /* اختيار شاشة الأعطال من زر إدارة الأعطال في القائمة الرئيسية */
 function installFaultScreenChoice(){
   var btn=document.getElementById('maintenanceBtn');
@@ -30,8 +44,8 @@ function installFaultScreenChoice(){
     overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px;font-family:Tajawal,Arial,sans-serif;direction:rtl;';
     overlay.innerHTML='<div style="width:min(420px,100%);background:#111d2b;border:1px solid #2b4054;border-radius:14px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.45);text-align:center"><div style="font-size:20px;font-weight:900;color:#fff;margin-bottom:6px">إدارة الأعطال</div><div style="font-size:13px;color:#8b98a5;margin-bottom:18px">اختار الشاشة المطلوبة</div><button id="openFaultLiveScreen" style="width:100%;padding:13px;margin-bottom:10px;border:0;border-radius:9px;background:#0879d1;color:#fff;font-family:inherit;font-weight:900;font-size:16px;cursor:pointer">شاشة الأعطال</button><button id="openFaultManagement" style="width:100%;padding:13px;margin-bottom:10px;border:1px solid #2b4054;border-radius:9px;background:#123b59;color:#fff;font-family:inherit;font-weight:900;font-size:16px;cursor:pointer">إدارة الأعطال</button><button id="closeFaultChoice" style="width:100%;padding:10px;border:1px solid #2b4054;border-radius:9px;background:transparent;color:#8b98a5;font-family:inherit;font-weight:700;cursor:pointer">إغلاق</button></div>';
     document.body.appendChild(overlay);
-    document.getElementById('openFaultLiveScreen').onclick=function(){window.open('fault-screen.html?v=220','_blank');};
-    document.getElementById('openFaultManagement').onclick=function(){overlay.remove();if(typeof openMaintenanceView==='function')openMaintenanceView();};
+    document.getElementById('openFaultLiveScreen').onclick=function(){window.location.href='fault-screen.html?v=220';};
+    document.getElementById('openFaultManagement').onclick=function(){overlay.remove();if(typeof openMaintenanceView==='function'){openMaintenanceView();showBigFaultScreenButton();}};
     document.getElementById('closeFaultChoice').onclick=function(){overlay.remove();};
     overlay.addEventListener('click',function(ev){if(ev.target===overlay)overlay.remove();});
   },true);
