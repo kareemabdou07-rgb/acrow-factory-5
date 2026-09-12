@@ -16,7 +16,6 @@ function start(){if(!window.firebase||!firebase.initializeApp||!firebase.firesto
 function loadScripts(){var a=document.createElement('script');a.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js';a.onload=function(){var f=document.createElement('script');f.src='https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js';f.onload=start;document.head.appendChild(f);};document.head.appendChild(a);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadScripts);else loadScripts();
 
-/* شاشة الأعطال: زر كبير ثابت داخل شاشة إدارة الأعطال */
 function showBigFaultScreenButton(){
   setTimeout(function(){
     var old=document.getElementById('bigFaultScreenButton');
@@ -26,34 +25,45 @@ function showBigFaultScreenButton(){
     box.style.cssText='position:fixed;top:76px;left:10px;right:10px;z-index:99990;background:#10263a;border:2px solid #0879d1;border-radius:16px;padding:10px;box-shadow:0 12px 35px rgba(0,0,0,.35);direction:rtl;text-align:center;font-family:Tajawal,Arial,sans-serif;';
     box.innerHTML='<button id="bigFaultOpenBtn" style="width:100%;min-height:68px;border:0;border-radius:12px;background:#0879d1;color:#fff;font-family:inherit;font-size:24px;font-weight:900;cursor:pointer">شاشة الأعطال</button>';
     document.body.appendChild(box);
-    document.getElementById('bigFaultOpenBtn').onclick=function(){window.location.href='fault-screen.html?v=220';};
-  },150);
+    document.getElementById('bigFaultOpenBtn').onclick=function(){window.location.href='fault-screen.html?v=221';};
+  },100);
 }
 function openFaultManagementDirect(){
   var btn=document.getElementById('maintenanceBtn');
-  if(!btn)return;
+  if(!btn || btn.dataset.faultDirectBound==='1')return;
   btn.dataset.faultDirectBound='1';
   btn.addEventListener('click',function(e){
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    var old=document.getElementById('faultScreenChoiceModal');
-    if(old)old.remove();
+    e.preventDefault();e.stopImmediatePropagation();
     setTimeout(function(){
-      if(typeof openMaintenanceView==='function'){
-        try{openMaintenanceView();}catch(err){console.error(err);}
-        showBigFaultScreenButton();
-      }
+      if(typeof openMaintenanceView==='function'){try{openMaintenanceView();}catch(err){console.error(err);}}
+      showBigFaultScreenButton();
     },0);
   },true);
+}
+function findFaultButton(){
+  var el=document.getElementById('maintenanceBtn');
+  if(el)return el;
+  var all=document.querySelectorAll('button,a,[role="button"]');
+  for(var i=0;i<all.length;i++){
+    var t=(all[i].textContent||'').replace(/\s+/g,'').trim();
+    if(t==='إدارةالأعطال'||t==='إدارةالصيانة')return all[i];
+  }
+  return null;
 }
 function installFaultScreenDirect(){
   var tries=0;
   var timer=setInterval(function(){
     tries++;
-    var btn=document.getElementById('maintenanceBtn');
+    var btn=findFaultButton();
     if(btn && btn.dataset.faultDirectBound!=='1')openFaultManagementDirect();
-    if(tries>120)clearInterval(timer);
+    if(tries>160)clearInterval(timer);
   },250);
+  if(window.MutationObserver){
+    new MutationObserver(function(){
+      var btn=findFaultButton();
+      if(btn && btn.dataset.faultDirectBound!=='1')openFaultManagementDirect();
+    }).observe(document.body,{childList:true,subtree:true});
+  }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',installFaultScreenDirect);else installFaultScreenDirect();
 })();
