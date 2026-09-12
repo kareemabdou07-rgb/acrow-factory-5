@@ -51,7 +51,6 @@ function watch(){if(!window.MutationObserver)return;var ob=new MutationObserver(
 function start(){style();decorateMerged();watch();setTimeout(decorateMerged,500);setTimeout(decorateMerged,1500);setInterval(keepMachineLists,2000);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 (function loadFaultRepairDeleteFix(){if(window.__acrowFaultRepairDeleteV68Loaded)return;window.__acrowFaultRepairDeleteV68Loaded=true;var s=document.createElement('script');s.src='fault-delete-fix.js?v=68';s.async=false;document.head.appendChild(s);})();
-/* ACROW FIX: the Machine Manager stores user machines in store.machineCustom. Rebuild the global list immediately before the daily-production chooser renders. */
 (function(){
  function syncCustom(){try{if(typeof window.rebuildMachines==='function')window.rebuildMachines();}catch(e){}}
  function hookChooser(){try{if(window.__acrowDailyChooserHook)return;if(typeof window.renderMachineSelectList!=='function')return;var original=window.renderMachineSelectList;window.renderMachineSelectList=function(){syncCustom();return original.apply(this,arguments)};window.__acrowDailyChooserHook=true;}catch(e){}}
@@ -59,4 +58,28 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
 (function(){function hideSplash(){var s=document.getElementById('acrowSplash');if(!s)return;s.classList.add('hidden','v172-off');s.setAttribute('aria-hidden','true');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');s.style.setProperty('z-index','-1','important');}function openApp(e){if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}document.body.classList.add('v172-app-open');document.body.classList.remove('splash-open','v139-app-open','v128-app-open','v162-app-open','v163-app-open');document.body.style.setProperty('overflow','auto','important');hideSplash();['.topbar','.container','#summaryStrip','#departments'].forEach(function(sel){var x=document.querySelector(sel);if(x){x.style.setProperty('display','block','important');x.style.setProperty('visibility','visible','important');x.style.setProperty('opacity','1','important');}});try{if(typeof render==='function')render();}catch(err){}try{if(typeof renderReport==='function')renderReport();}catch(err){}return false;}function findButton(){var ids=['enterSystemBtn','enterBtn','loginBtn','splashEnterBtn'];for(var i=0;i<ids.length;i++){var b=document.getElementById(ids[i]);if(b)return b;}var s=document.getElementById('acrowSplash');if(s){var bs=s.querySelectorAll('button,input[type=button],input[type=submit],a');for(var j=0;j<bs.length;j++){var t=String(bs[j].textContent||bs[j].value||'').trim();if(/دخول|ادخل|ابدأ|فتح|اضغط/i.test(t))return bs[j];}}return null;}function bind(){var b=findButton();if(!b)return;b.onclick=openApp;b.disabled=false;b.removeAttribute('disabled');b.style.setProperty('pointer-events','auto','important');b.style.setProperty('touch-action','manipulation','important');if(b.dataset.v172!=='1'){b.dataset.v172='1';b.addEventListener('click',openApp,true);b.addEventListener('touchend',openApp,true);}}function guard(){if(document.body.classList.contains('v172-app-open'))hideSplash();}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();if(window.MutationObserver)new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});setInterval(bind,200);setInterval(guard,100);})();
+/* v70 — freeze only production-related render/rebuild calls while the production input has focus. No refocus is used, so Android keyboard is not forced open/closed. */
+(function(){
+ var hookedNames={};
+ var queued=false;
+ function editing(){var e=document.activeElement;return !!(e&&e.classList&&e.classList.contains('actual-input'));}
+ function install(){
+  ['render','renderAll','rebuildMachines','renderMachineSelectList','renderDashboard','renderReport','renderMaintenance'].forEach(function(name){
+   try{
+    if(hookedNames[name]||typeof window[name]!=='function')return;
+    var fn=window[name];
+    var wrap=function(){
+     if(editing()){queued=true;return;}
+     return fn.apply(this,arguments);
+    };
+    wrap.__acrowKeyboardGuard=true;
+    window[name]=wrap;
+    hookedNames[name]=true;
+   }catch(e){}
+  });
+ }
+ document.addEventListener('focusin',function(e){if(e.target&&e.target.classList&&e.target.classList.contains('actual-input')){install();}},true);
+ document.addEventListener('focusout',function(e){if(!(e.target&&e.target.classList&&e.target.classList.contains('actual-input')))return;if(queued){queued=false;setTimeout(function(){try{if(typeof window.render==='function')window.render();}catch(x){}},80);}},true);
+ install();setTimeout(install,100);setTimeout(install,500);setTimeout(install,1500);
+})();
 })();
