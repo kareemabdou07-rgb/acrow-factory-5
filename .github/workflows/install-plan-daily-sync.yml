@@ -15,20 +15,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install sync script in app
+      - name: Install sync scripts with fresh cache versions
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          tag = '<script src="./daily-selector-hard-fix.js?v=250"></script>'
+          s = s.replace('./daily-selector-hard-fix.js?v=250', './daily-selector-hard-fix.js?v=251')
+          s = s.replace('./production-keyboard-lock-fix.js?v=1', './production-keyboard-lock-fix.js?v=251')
+          s = s.replace('./production-keyboard-lock-fix.js?v=2', './production-keyboard-lock-fix.js?v=251')
+          tag = '<script src="./daily-selector-hard-fix.js?v=251"></script>'
           if tag not in s:
               marker = '<script src="./settings-buttons-fix.js?v=1"></script>'
               if marker in s:
                   s = s.replace(marker, marker + '\n' + tag, 1)
               else:
                   s = s.replace('</head>', tag + '\n</head>', 1)
-              p.write_text(s, encoding='utf-8')
+          p.write_text(s, encoding='utf-8')
           PY
 
       - name: Commit app wiring
@@ -37,8 +40,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
           if git diff --cached --quiet; then
-            echo "Sync script already installed"
+            echo "Sync scripts already installed"
           else
-            git commit -m "Link monthly plan machines to daily production"
+            git commit -m "Refresh machine selector fix cache version"
             git push
           fi
