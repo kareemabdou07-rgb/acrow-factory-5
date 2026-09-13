@@ -14,4 +14,15 @@ function boot(){
   }
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+
+/* v231: load the dedicated fault screen from the main program itself. */
+function loadFaultScreen(){
+  if(window.__acrowFaultScreenLoaded)return;
+  window.__acrowFaultScreenLoaded=true;
+  var s=document.createElement('script');
+  s.src='./fault-log-screen.js?v=231';
+  s.async=false;
+  document.head.appendChild(s);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadFaultScreen);else loadFaultScreen();
 })();
