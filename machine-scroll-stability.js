@@ -31,3 +31,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 if(window.MutationObserver)new MutationObserver(function(){sync();}).observe(document.body,{childList:true,subtree:true});
 setInterval(sync,800);
 })();
+
+/* v217 — load the hard daily-selection guard */
+(function(){
+  var s=document.createElement('script');
+  s.src='./daily-selector-hard-fix.js?v=217';
+  s.async=false;
+  (document.head||document.documentElement).appendChild(s);
+})();
