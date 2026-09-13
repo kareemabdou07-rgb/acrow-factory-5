@@ -14,35 +14,23 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Install sync scripts with fresh cache versions
+      - name: Refresh selector cache version
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path('index.html')
-          s = p.read_text(encoding='utf-8')
-          s = s.replace('./daily-selector-hard-fix.js?v=250', './daily-selector-hard-fix.js?v=252')
-          s = s.replace('./daily-selector-hard-fix.js?v=251', './daily-selector-hard-fix.js?v=252')
-          s = s.replace('./production-keyboard-lock-fix.js?v=1', './production-keyboard-lock-fix.js?v=252')
-          s = s.replace('./production-keyboard-lock-fix.js?v=2', './production-keyboard-lock-fix.js?v=252')
-          tag = '<script src="./daily-selector-hard-fix.js?v=252"></script>'
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          import re
+          s=re.sub(r'\./daily-selector-hard-fix\.js\?v=\d+', './daily-selector-hard-fix.js?v=253', s)
+          tag='<script src="./daily-selector-hard-fix.js?v=253"></script>'
           if tag not in s:
-              marker = '<script src="./settings-buttons-fix.js?v=1"></script>'
-              if marker in s:
-                  s = s.replace(marker, marker + '\n' + tag, 1)
-              else:
-                  s = s.replace('</head>', tag + '\n</head>', 1)
-          p.write_text(s, encoding='utf-8')
+              marker='<script src="./settings-buttons-fix.js?v=1"></script>'
+              if marker in s: s=s.replace(marker, marker+'\n'+tag,1)
+          p.write_text(s,encoding='utf-8')
           PY
-
       - name: Commit app wiring
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          if git diff --cached --quiet; then
-            echo "Sync scripts already installed"
-          else
-            git commit -m "Make monthly plan machines available in daily selector"
-            git push
-          fi
+          if git diff --cached --quiet; then echo "No wiring changes"; else git commit -m "Use monthly plan machines in daily selector"; git push; fi
