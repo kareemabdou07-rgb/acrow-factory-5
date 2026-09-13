@@ -27,7 +27,7 @@ function loadFaultScreen(){
     if(window.__acrowFaultMediaLoaded)return;
     window.__acrowFaultMediaLoaded=true;
     var m=document.createElement('script');
-    m.src='./fault-media-details.js?v=235';
+    m.src='./fault-media-details.js?v=236';
     m.async=false;
     document.head.appendChild(m);
   };
