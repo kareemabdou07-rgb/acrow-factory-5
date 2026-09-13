@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACROW Factory 5 — شاشة الأعطال</title>
+<style>
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#081a2f}
+iframe{display:block;width:100%;height:100%;border:0}
+</style>
+</head>
+<body>
+<iframe id="app" src="./index.html" title="ACROW Factory 5"></iframe>
+<script>
+(function(){
+  var frame=document.getElementById('app');
+  function openFaults(){
+    try{
+      var d=frame.contentDocument||frame.contentWindow.document;
+      var b=d.getElementById('maintenanceBtn');
+      if(b){b.click();return true;}
+    }catch(e){}
+    return false;
+  }
+  frame.addEventListener('load',function(){
+    var tries=0;
+    var timer=setInterval(function(){
+      tries++;
+      if(openFaults()||tries>60)clearInterval(timer);
+    },250);
+  });
+})();
+</script>
+</body>
+</html>
