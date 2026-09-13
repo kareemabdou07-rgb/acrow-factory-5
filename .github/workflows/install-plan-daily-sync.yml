@@ -21,10 +21,11 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          s = s.replace('./daily-selector-hard-fix.js?v=250', './daily-selector-hard-fix.js?v=251')
-          s = s.replace('./production-keyboard-lock-fix.js?v=1', './production-keyboard-lock-fix.js?v=251')
-          s = s.replace('./production-keyboard-lock-fix.js?v=2', './production-keyboard-lock-fix.js?v=251')
-          tag = '<script src="./daily-selector-hard-fix.js?v=251"></script>'
+          s = s.replace('./daily-selector-hard-fix.js?v=250', './daily-selector-hard-fix.js?v=252')
+          s = s.replace('./daily-selector-hard-fix.js?v=251', './daily-selector-hard-fix.js?v=252')
+          s = s.replace('./production-keyboard-lock-fix.js?v=1', './production-keyboard-lock-fix.js?v=252')
+          s = s.replace('./production-keyboard-lock-fix.js?v=2', './production-keyboard-lock-fix.js?v=252')
+          tag = '<script src="./daily-selector-hard-fix.js?v=252"></script>'
           if tag not in s:
               marker = '<script src="./settings-buttons-fix.js?v=1"></script>'
               if marker in s:
@@ -37,11 +38,11 @@ jobs:
       - name: Commit app wiring
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+users.noreply.github.com"
           git add index.html
           if git diff --cached --quiet; then
             echo "Sync scripts already installed"
           else
-            git commit -m "Refresh machine selector fix cache version"
+            git commit -m "Make monthly plan machines available in daily selector"
             git push
           fi
