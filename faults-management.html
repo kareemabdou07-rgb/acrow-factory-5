@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ACROW Factory 5 — إدارة الأعطال</title><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#081a2f}iframe{display:block;width:100%;height:100%;border:0}</style></head>
+<body>
+<iframe id="app" src="./index.html" title="ACROW Factory 5"></iframe>
+<script>
+(function(){
+ var f=document.getElementById('app');
+ function open(){try{var d=f.contentDocument||f.contentWindow.document,b=d.getElementById('maintenanceBtn');if(b)b.click();}catch(e){}}
+ function addButton(){try{var d=f.contentDocument||f.contentWindow.document,box=d.getElementById('maintenanceDashboard');if(!box||d.getElementById('directFaultScreenBtn'))return false;var btn=d.createElement('button');btn.id='directFaultScreenBtn';btn.className='select-machines-btn no-print';btn.textContent='شاشة الأعطال';btn.style.margin='8px 0';btn.onclick=function(){window.location.href='./faults.html';};var header=box.querySelector('.dept-header');if(header)header.appendChild(btn);else box.insertBefore(btn,box.firstChild);return true;}catch(e){return false}}
+ f.addEventListener('load',function(){var n=0,t=setInterval(function(){n++;open();if(addButton()||n>40)clearInterval(t)},250)});
+})();
+</script>
+</body></html>
