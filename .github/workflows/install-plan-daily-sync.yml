@@ -21,8 +21,8 @@ jobs:
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           import re
-          s=re.sub(r'\./daily-selector-hard-fix\.js\?v=\d+', './daily-selector-hard-fix.js?v=253', s)
-          tag='<script src="./daily-selector-hard-fix.js?v=253"></script>'
+          s=re.sub(r'\./daily-selector-hard-fix\.js\?v=\d+', './daily-selector-hard-fix.js?v=254', s)
+          tag='<script src="./daily-selector-hard-fix.js?v=254"></script>'
           if tag not in s:
               marker='<script src="./settings-buttons-fix.js?v=1"></script>'
               if marker in s: s=s.replace(marker, marker+'\n'+tag,1)
@@ -33,4 +33,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          if git diff --cached --quiet; then echo "No wiring changes"; else git commit -m "Use monthly plan machines in daily selector"; git push; fi
+          if git diff --cached --quiet; then echo "No wiring changes"; else git commit -m "Lock daily machine selection and restore fault screen"; git push; fi
