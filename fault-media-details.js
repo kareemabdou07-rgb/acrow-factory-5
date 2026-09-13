@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — fault photo/audio details */
+/* ACROW Factory 5 — v236: fault details with photo + audio */
 (function(){
 'use strict';
 function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];});}
@@ -10,7 +10,8 @@ function showDetails(btn){
   var desc=(card.querySelector('.afl-desc')||{}).textContent||'';
   var box=document.getElementById('aflDetailModal');
   if(!box){box=document.createElement('div');box.id='aflDetailModal';document.body.appendChild(box);}
-  box.innerHTML='<div class="afl-detail-card"><button class="afl-detail-close">إغلاق</button><h2>تفاصيل العطل</h2><div class="afl-detail-reason">'+esc(reason)+'</div><div class="afl-detail-meta">'+esc(meta)+'</div><div class="afl-detail-desc">'+esc(desc)+'</div><div class="afl-detail-media">'+(media?media.innerHTML:'<div>لا توجد صورة أو تسجيل صوتي</div>')+'</div></div>';
+  var mediaHtml=media&&media.innerHTML?media.innerHTML:'<div>لا توجد صورة أو تسجيل صوتي لهذا العطل</div>';
+  box.innerHTML='<div class="afl-detail-card"><button class="afl-detail-close">إغلاق</button><h2>تفاصيل العطل</h2><div class="afl-detail-reason">'+esc(reason)+'</div><div class="afl-detail-meta">'+esc(meta)+'</div><div class="afl-detail-desc">'+esc(desc)+'</div><div class="afl-detail-media">'+mediaHtml+'</div></div>';
   box.style.display='flex';
   box.querySelector('.afl-detail-close').onclick=function(){box.style.display='none';};
 }
