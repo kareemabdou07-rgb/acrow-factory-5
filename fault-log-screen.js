@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v246: force camera for fault photos */
+/* ACROW Factory 5 — v247: immediate camera capture */
 (function(){
 'use strict';
 var screenId='acrowFaultLogScreen';
@@ -19,14 +19,14 @@ root.querySelectorAll('.afl-repair').forEach(function(b){b.onclick=function(e){e
 root.querySelectorAll('.afl-photo').forEach(function(b){b.onclick=function(e){e.preventDefault();e.stopPropagation();selected=openFaults()[+b.dataset.n];openCamera();};});}
 function save(){try{if(typeof saveStore==='function')saveStore();}catch(e){}}
 function finishPhoto(data){if(!selected||!selected.f)return;selected.f.photo=data;save();closeCamera();render();toast('تم حفظ صورة العطل');}
-function closeCamera(){if(cameraStream){cameraStream.getTracks().forEach(function(t){try{t.stop();}catch(e){}});cameraStream=null;}var box=document.getElementById('aflCameraModal');if(box)box.remove();}
-function cameraError(err){closeCamera();var msg='تعذر فتح الكاميرا. اسمح للمتصفح باستخدام الكاميرا ثم اضغط إضافة صورة مرة أخرى.';if(err&&err.name==='NotAllowedError')msg='الكاميرا مرفوضة. اسمح للمتصفح باستخدام الكاميرا ثم اضغط إضافة صورة مرة أخرى.';centralMessage(msg);toast(msg);}
+function closeCamera(){if(cameraStream){cameraStream.getTracks().forEach(function(t){try{t.stop();}catch(e){}});cameraStream=null;}var box=document.getElementById('aflCameraModal');if(box)box.remove();var old=document.getElementById('aflNativeCameraInput');if(old){try{old.remove();}catch(e){}}}
+function cameraError(err){var msg='تعذر فتح الكاميرا. اسمح للمتصفح باستخدام الكاميرا ثم اضغط إضافة صورة مرة أخرى.';if(err&&err.name==='NotAllowedError')msg='الكاميرا مرفوضة. اسمح للمتصفح باستخدام الكاميرا ثم اضغط إضافة صورة مرة أخرى.';centralMessage(msg);toast(msg);}
+function readNativePhoto(file,input){var rd=new FileReader();rd.onload=function(){var im=new Image();im.onload=function(){var c=document.createElement('canvas'),max=1000,w=im.width,h=im.height;if(w>max){h=Math.round(h*max/w);w=max;}c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);finishPhoto(c.toDataURL('image/jpeg',.62));};im.onerror=function(){cameraError({name:'ImageError'});};im.src=rd.result;};rd.onerror=function(){cameraError({name:'ReadError'});};rd.readAsDataURL(file);}
 function openCamera(){
-  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){cameraError({name:'NotSupportedError'});return;}
-  var box=document.createElement('div');box.id='aflCameraModal';box.innerHTML='<div class="afl-camera-card"><div class="afl-camera-title">كاميرا تصوير العطل</div><video id="aflCameraVideo" autoplay playsinline muted></video><div class="afl-camera-actions"><button id="aflTakePhoto">التقاط الصورة</button><button id="aflCloseCamera">إلغاء</button></div></div>';document.body.appendChild(box);
-  box.querySelector('#aflCloseCamera').onclick=closeCamera;
-  box.querySelector('#aflTakePhoto').onclick=function(){var video=document.getElementById('aflCameraVideo');if(!video||!video.videoWidth){toast('انتظر حتى تظهر صورة الكاميرا');return;}var c=document.createElement('canvas'),max=1000,w=video.videoWidth,h=video.videoHeight;if(w>max){h=Math.round(h*max/w);w=max;}c.width=w;c.height=h;c.getContext('2d').drawImage(video,0,0,w,h);finishPhoto(c.toDataURL('image/jpeg',.62));};
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:false}).then(function(stream){cameraStream=stream;var video=document.getElementById('aflCameraVideo');if(video){video.srcObject=stream;video.onloadedmetadata=function(){video.play().catch(function(){});};}}).catch(function(err){cameraError(err);});
+  var old=document.getElementById('aflNativeCameraInput');if(old){try{old.remove();}catch(e){}}
+  var input=document.createElement('input');input.id='aflNativeCameraInput';input.type='file';input.accept='image/*';input.setAttribute('capture','environment');input.style.position='fixed';input.style.left='-9999px';input.style.top='-9999px';input.style.width='1px';input.style.height='1px';input.style.opacity='0';input.setAttribute('aria-hidden','true');document.body.appendChild(input);
+  input.onchange=function(){var file=input.files&&input.files[0];if(file)readNativePhoto(file,input);else{try{input.remove();}catch(e){}}};
+  input.click();
 }
 function openScreen(){var root=document.getElementById(screenId);if(!root){root=document.createElement('section');root.id=screenId;document.body.appendChild(root);}root.style.display='block';render();root.scrollIntoView({behavior:'smooth',block:'start'});}
 function addManagementButton(){var box=document.getElementById('maintenanceDashboard');if(!box)return;var b=document.getElementById('aflManagementButton');if(!b){b=document.createElement('button');b.id='aflManagementButton';b.type='button';b.textContent='شاشة الأعطال';b.onclick=function(e){e.preventDefault();e.stopPropagation();openScreen();};}b.style.cssText='display:flex!important;width:100%!important;max-width:100%!important;justify-content:center!important;align-items:center!important;margin:10px 0 16px!important;background:linear-gradient(90deg,#20c96b,#008cff,#20c96b)!important;color:#fff!important;border:3px solid #fff!important;border-radius:9px!important;padding:13px 16px!important;font-weight:900!important;font-size:17px!important;cursor:pointer!important;box-sizing:border-box!important;';var header=box.querySelector('.dept-header');if(header&&header.parentNode){if(b.parentNode!==header.parentNode||b.previousElementSibling!==header)b.remove();header.parentNode.insertBefore(b,header.nextSibling);}else if(b.parentNode!==box)box.insertBefore(b,box.firstChild);}
