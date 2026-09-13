@@ -73,4 +73,32 @@ if(window.MutationObserver)new MutationObserver(function(){mark();bindProduction
   window.__acrowMachineMasterSync=refresh;
   setInterval(sync,1500);
 })();
+
+/* v210: keep the newly requested production machines in both selectors */
+(function(){
+  var NEW_MACHINES=[
+    {id:'NEW-FRAME-CONNECTOR',name:'مكبس فريم كونيكتور'},
+    {id:'NEW-ASBGOT',name:'مكبس أسبجوت'},
+    {id:'NEW-SHORE-PRESS',name:'فارمة لحام شور بريس'},
+    {id:'NEW-4',name:'ماكينة جديدة 4'}
+  ];
+  function add(){
+    try{
+      if(typeof store==='undefined'||!store)return;
+      if(!store.machineCustom||typeof store.machineCustom!=='object')store.machineCustom={};
+      if(!store.settings)store.settings={};
+      if(!Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds=[];
+      NEW_MACHINES.forEach(function(m){
+        if(!store.machineCustom[m.id])store.machineCustom[m.id]={id:m.id,code:m.id,name:m.name,type:m.name,location:'الإنتاج',dept:'production',deptName:'الإنتاج',target:null};
+        if(store.settings.planMachineIds.indexOf(m.id)<0)store.settings.planMachineIds.push(m.id);
+      });
+      if(typeof rebuildMachines==='function')rebuildMachines();
+      try{if(typeof renderMachineSelectList==='function')renderMachineSelectList();}catch(e){}
+      try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
+      try{if(typeof saveStore==='function')saveStore();}catch(e){}
+    }catch(e){console.error('ACROW new machine sync',e);}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',add);else add();
+  setTimeout(add,500);setTimeout(add,1500);setInterval(add,3000);
+})();
 })();
