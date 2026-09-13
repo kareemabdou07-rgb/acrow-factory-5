@@ -46,9 +46,9 @@ function boot(){mark();bindProductionInputs();setTimeout(mark,50);setTimeout(bin
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 
-/* v213: restore every machine selected in the monthly plan into today's production.
-   Run only once after Firebase/local data has had time to settle. No repeating timer,
-   so the list cannot flicker or disappear. */
+/* v214: keep every monthly-plan machine visible in today's production selector.
+   Preserve the current MACHINES entries before rebuilding, then restore plan IDs.
+   No repeating timer is used, so the selector cannot flicker. */
 (function(){
   function id(v){return String(v==null?'':v).trim();}
   function stabilize(){
@@ -60,12 +60,23 @@ if(window.MutationObserver)new MutationObserver(function(){mark();bindProduction
       if(!store.machineDisabled||typeof store.machineDisabled!=='object')store.machineDisabled={};
 
       var ids=store.settings.planMachineIds.map(id).filter(Boolean);
+      var current=(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES))?MACHINES.slice():[];
+
+      /* First preserve any plan machine that already exists in the live machine list. */
       ids.forEach(function(mid){
         if(store.machineCustom[mid])return;
-        var base=Array.isArray(store.machines)?store.machines.find(function(m){
-          return id(m&&(m.id||m.code||m.number||m.machine))===mid;
-        }):null;
+        var base=current.find(function(m){return id(m&&(m.id||m.code||m.number||m.machine))===mid;});
+        if(!base && Array.isArray(store.machines)){
+          base=store.machines.find(function(m){return id(m&&(m.id||m.code||m.number||m.machine))===mid;});
+        }
         if(base)store.machineCustom[mid]=Object.assign({},base,{id:mid,code:base.code||mid});
+      });
+
+      /* If a plan ID has no saved object at all, keep it as a visible machine instead of dropping it. */
+      var dept=(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.length)?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'};
+      ids.forEach(function(mid){
+        if(store.machineCustom[mid])return;
+        store.machineCustom[mid]={id:mid,name:'ماكينة '+mid,dept:dept.id,deptName:dept.name||dept.id,target:null};
       });
 
       Object.keys(store.machineCustom).forEach(function(k){
@@ -75,12 +86,12 @@ if(window.MutationObserver)new MutationObserver(function(){mark();bindProduction
       store.settings.planMachineIds=Array.from(new Set(ids));
 
       if(typeof rebuildMachines==='function')rebuildMachines();
-      setTimeout(function(){
-        try{if(typeof renderMachineSelectList==='function'&&document.getElementById('machineSelectModal')?.classList.contains('open'))renderMachineSelectList();}catch(e){}
-        try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
-        try{if(typeof renderPlanStatus==='function'&&document.getElementById('planStatusSection')?.style.display!=='none')renderPlanStatus();}catch(e){}
-      },120);
-    }catch(e){console.error('ACROW v213 machine restore',e);}
+      if(typeof renderMachineSelectList==='function')renderMachineSelectList();
+      if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();
+      if(typeof render==='function')render();
+      if(typeof renderDashboard==='function')renderDashboard();
+      if(typeof saveStore==='function')saveStore();
+    }catch(e){console.error('ACROW v214 machine restore',e);}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(stabilize,3000);});
   else setTimeout(stabilize,3000);
