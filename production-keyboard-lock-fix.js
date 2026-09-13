@@ -15,12 +15,12 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 
-/* v239: load the dedicated fault screen and reliable media-details viewer. */
+/* v244: load the dedicated fault screen and media-details viewer. */
 function loadFaultScreen(){
   if(window.__acrowFaultScreenLoaded)return;
   window.__acrowFaultScreenLoaded=true;
   var s=document.createElement('script');
-  s.src='./fault-log-screen.js?v=239';
+  s.src='./fault-log-screen.js?v=244';
   s.async=false;
   document.head.appendChild(s);
   s.onload=function(){
