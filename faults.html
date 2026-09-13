@@ -3,32 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ACROW Factory 5 — شاشة الأعطال</title>
+<title>ACROW Factory 5 — شاشة الأعطال المفتوحة</title>
 <style>
-html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#081a2f}
-iframe{display:block;width:100%;height:100%;border:0}
+:root{--bg:#081a2f;--card:#102a45;--border:#285477;--text:#f3f6f9;--dim:#aab8c6;--bad:#ff5f6d;--accent:#f5b400;--blue:#0879d1}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--text);font-family:Tajawal,Arial,sans-serif}body{padding:16px}.wrap{max-width:1100px;margin:auto}.head{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.title{font-size:22px;font-weight:900}.sub{font-size:12px;color:var(--dim);margin-top:4px}.actions{display:flex;gap:8px;flex-wrap:wrap}button,a{border:1px solid var(--border);border-radius:9px;padding:9px 14px;font-weight:800;text-decoration:none;cursor:pointer;font-family:inherit}button{background:var(--accent);color:#111}a{background:var(--blue);color:#fff}.count{background:#32151a;border:1px solid var(--bad);color:#ff9aa3;border-radius:10px;padding:10px 14px;font-weight:900;margin-bottom:14px}.empty{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px;text-align:center;color:var(--dim)}.tablebox{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:auto}table{width:100%;border-collapse:collapse;min-width:650px}th,td{padding:11px 9px;border-bottom:1px solid var(--border);text-align:center}th{background:#0b2239;font-size:13px}td{font-size:13px}tr:last-child td{border-bottom:0}.open{color:#ff8d97;font-weight:900}.muted{color:var(--dim)}#app{display:none}
 </style>
 </head>
 <body>
+<div class="wrap">
+  <div class="head">
+    <div><div class="title">شاشة الأعطال المفتوحة</div><div class="sub">عرض الأعطال التي لم يتم تسجيل وقت انتهائها</div></div>
+    <div class="actions"><button id="refresh">تحديث</button><a href="./index.html">البرنامج الرئيسي</a></div>
+  </div>
+  <div id="count" class="count">جاري تحميل البيانات...</div>
+  <div id="content" class="empty">جاري تحميل الأعطال...</div>
+</div>
 <iframe id="app" src="./index.html" title="ACROW Factory 5"></iframe>
 <script>
 (function(){
-  var frame=document.getElementById('app');
-  function openFaults(){
+  var frame=document.getElementById('app'), content=document.getElementById('content'), count=document.getElementById('count');
+  function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]});}
+  function render(){
     try{
-      var d=frame.contentDocument||frame.contentWindow.document;
-      var b=d.getElementById('maintenanceBtn');
-      if(b){b.click();return true;}
-    }catch(e){}
-    return false;
+      var w=frame.contentWindow, store=w.store, machines=w.MACHINES;
+      if(!store||!store.records||!Array.isArray(machines)){count.textContent='جاري انتظار اتصال البرنامج...';return;}
+      var map={}; machines.forEach(function(m){map[String(m.id)]=m});
+      var rows=[];
+      Object.keys(store.records).forEach(function(k){
+        var r=store.records[k]; if(!r||!Array.isArray(r.faults))return;
+        r.faults.forEach(function(f){
+          if(!f)return;
+          var end=String(f.endTime||'').trim();
+          if(end)return;
+          var parts=k.split('_'), date=parts.shift()||'', shift=parts.shift()||'';
+          var id=parts.join('_'), m=map[String(id)]||{name:id};
+          rows.push({date:date,shift:shift,machine:m.name||id,reason:f.reason||'—',start:f.startTime||'—',desc:f.description||'—'});
+        });
+      });
+      rows.sort(function(a,b){return (b.date+b.start).localeCompare(a.date+a.start)});
+      count.textContent='عدد الأعطال المفتوحة: '+rows.length;
+      if(!rows.length){content.innerHTML='<div class="empty">لا توجد أعطال مفتوحة حاليًا.</div>';return;}
+      var html='<div class="tablebox"><table><thead><tr><th>التاريخ</th><th>الوردية</th><th>الماكينة</th><th>نوع العطل</th><th>وقت البداية</th><th>التفاصيل</th><th>الحالة</th></tr></thead><tbody>';
+      rows.forEach(function(x){html+='<tr><td>'+esc(x.date)+'</td><td>'+esc(x.shift==='1'?'الأولى':x.shift==='2'?'الثانية':x.shift)+'</td><td>'+esc(x.machine)+'</td><td>'+esc(x.reason)+'</td><td>'+esc(x.start)+'</td><td>'+esc(x.desc)+'</td><td class="open">مفتوح</td></tr>'});
+      html+='</tbody></table></div>'; content.innerHTML=html;
+    }catch(e){count.textContent='تعذر تحميل البيانات — اضغط تحديث';}
   }
-  frame.addEventListener('load',function(){
-    var tries=0;
-    var timer=setInterval(function(){
-      tries++;
-      if(openFaults()||tries>60)clearInterval(timer);
-    },250);
-  });
+  frame.addEventListener('load',function(){setTimeout(render,1200);setTimeout(render,3000);setInterval(render,3000)});
+  document.getElementById('refresh').onclick=render;
 })();
 </script>
 </body>
