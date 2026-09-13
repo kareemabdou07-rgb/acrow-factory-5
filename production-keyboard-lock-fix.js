@@ -15,19 +15,19 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 
-/* v245: load the current fault screen and media-details viewer. */
+/* v246: load the force-camera fault screen. */
 function loadFaultScreen(){
   if(window.__acrowFaultScreenLoaded)return;
   window.__acrowFaultScreenLoaded=true;
   var s=document.createElement('script');
-  s.src='./fault-log-screen.js?v=245';
+  s.src='./fault-log-screen.js?v=246';
   s.async=false;
   document.head.appendChild(s);
   s.onload=function(){
     if(window.__acrowFaultMediaLoaded)return;
     window.__acrowFaultMediaLoaded=true;
     var m=document.createElement('script');
-    m.src='./fault-media-details.js?v=245';
+    m.src='./fault-media-details.js?v=246';
     m.async=false;
     document.head.appendChild(m);
   };
