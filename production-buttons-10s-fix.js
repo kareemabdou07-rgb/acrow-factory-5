@@ -20,7 +20,6 @@ body.acrow-production-10s-lock .actual-input{
 body.acrow-production-10s-lock .topbar{position:sticky!important;top:0!important;z-index:60!important;}
 body.acrow-production-10s-lock .top-main-action,
 body.acrow-production-10s-lock .mc-btn{visibility:visible!important;opacity:1!important;}
-/* Keep the main-screen action button compact so it never covers the other buttons. */
 .top-main-action{
  width:auto!important;
  min-width:0!important;
@@ -63,5 +62,60 @@ function watchProduction(){
  observer.observe(document.body,{childList:true,subtree:true});
 }
 function boot(){addStyle();watchProduction();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+
+/* ACROW Factory 5 — v221: five monthly-plan machines are permanently included in daily production */
+(function(){
+'use strict';
+var EXTRA_DAILY=[
+ {id:'2',name:'مكبس فريم كونكتور',dept:'daily'},
+ {id:'8',name:'تليسكوب',dept:'daily'},
+ {id:'9',name:'شور برس',dept:'daily'},
+ {id:'10',name:'اسبيجوت',dept:'daily'},
+ {id:'forming-frame',name:'فريم تشكيل',dept:'daily'}
+];
+var IDS=EXTRA_DAILY.map(function(x){return String(x.id);});
+function sid(v){return String(v==null?'':v).trim();}
+function fixed(a){
+ a=Array.isArray(a)?a.map(sid).filter(Boolean):[];
+ IDS.forEach(function(id){if(a.indexOf(id)<0)a.push(id);});
+ return a;
+}
+function ensure(){
+ try{
+  if(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&!DEPARTMENTS.some(function(d){return d&&d.id==='daily';}))DEPARTMENTS.push({id:'daily',name:'ماكينات إنتاج اليوم',target:0,count:5,prefix:'PD'});
+  if(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES))EXTRA_DAILY.forEach(function(x){
+   var i=MACHINES.findIndex(function(m){return sid(m&&m.id)===sid(x.id);});
+   if(i<0)MACHINES.push({id:x.id,name:x.name,dept:'daily',deptName:'ماكينات إنتاج اليوم',target:null});
+   else{MACHINES[i].name=x.name;MACHINES[i].dept='daily';MACHINES[i].deptName='ماكينات إنتاج اليوم';}
+  });
+ }catch(e){}
+}
+function save(a){
+ a=fixed(a);
+ try{localStorage.setItem('acrow_daily_favorites_override',JSON.stringify(a));}catch(e){}
+ try{if(typeof store!=='undefined')store.favorites=a;if(typeof saveStore==='function')saveStore();}catch(e){}
+ return a;
+}
+function current(){
+ try{var x=localStorage.getItem('acrow_daily_favorites_override');if(x!==null){var a=JSON.parse(x);if(Array.isArray(a))return fixed(a);}}catch(e){}
+ try{if(typeof store!=='undefined'&&Array.isArray(store.favorites))return fixed(store.favorites);}catch(e){}
+ return fixed([]);
+}
+function sync(){
+ ensure();
+ var a=save(current());
+ var box=document.getElementById('machineSelectList');
+ if(box)box.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+  var id=sid(cb.getAttribute('data-machine'));
+  if(id)cb.checked=a.indexOf(id)>=0;
+ });
+}
+function boot(){
+ ensure();sync();
+ [100,300,700,1500,2500].forEach(function(t){setTimeout(sync,t);});
+ if(!window.__acrow221Interval)window.__acrow221Interval=setInterval(sync,700);
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
