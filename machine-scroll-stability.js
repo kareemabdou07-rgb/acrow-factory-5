@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v223: dedicated fault screen button injected robustly */
+/* ACROW Factory 5 — v240: production stability + daily selector sync only */
 (function(){
 'use strict';
 var active=false,lock=null,queuedRender=false,hooked=false;
@@ -9,26 +9,13 @@ function capture(){var y=window.scrollY||window.pageYOffset||0,x=window.scrollX|
 function addStyle(){if(document.getElementById('acrow-machine-stability-v211'))return;var s=document.createElement('style');s.id='acrow-machine-stability-v211';s.textContent=SELECTOR+'{overflow-anchor:none!important;} #machineSelectList{scroll-behavior:auto!important;}';document.head.appendChild(s);}
 function hookRenders(){if(hooked)return;hooked=true;function wrap(name){try{if(typeof window[name]!=='function')return;var original=window[name];if(original.__acrowV211)return;var wrapped=function(){if(active&&inProduction()&&(name==='rebuildMachines'||name==='render')){queuedRender=true;setTimeout(function(){if(!active&&queuedRender){queuedRender=false;try{original.apply(window,arguments);}catch(e){}}},80);return;}return original.apply(this,arguments);};wrapped.__acrowV211=true;window[name]=wrapped;}catch(e){}}wrap('rebuildMachines');wrap('render');}
 function bind(){addStyle();hookRenders();}
-document.addEventListener('pointerdown',function(e){if(e.target&&e.target.closest&&e.target.closest(SELECTOR)){capture();bind();}},true);document.addEventListener('touchstart',function(e){if(e.target&&e.target.closest&&e.target.closest(SELECTOR))capture();},true);document.addEventListener('focusin',function(e){if(e.target&&e.target.closest&&e.target.closest(SELECTOR)){capture();bind();}},true);document.addEventListener('change',function(e){if(e.target&&e.target.closest&&e.target.closest('#machineSelectList')){setTimeout(function(){if(inProduction())capture();},20);}},true);document.addEventListener('focusout',function(){setTimeout(function(){if(!inProduction())release();},180);},true);
-if(window.MutationObserver)new MutationObserver(function(){if(active&&inProduction()){var y=window.scrollY||0,x=window.scrollX||0;requestAnimationFrame(function(){if(active&&inProduction()&&(Math.abs((window.scrollY||0)-y)>1||Math.abs((window.scrollX||0)-x)>1))window.scrollTo(x,y);});}bind();}).observe(document.body,{childList:true,subtree:true});if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+document.addEventListener('pointerdown',function(e){if(e.target&&e.target.closest&&e.target.closest(SELECTOR)){capture();bind();}},true);
+document.addEventListener('touchstart',function(e){if(e.target&&e.target.closest&&e.target.closest(SELECTOR))capture();},true);
+document.addEventListener('focusin',function(e){if(e.target&&e.target.closest&&e.target.closest(SELECTOR)){capture();bind();}},true);
+document.addEventListener('change',function(e){if(e.target&&e.target.closest&&e.target.closest('#machineSelectList'))setTimeout(function(){if(inProduction())capture();},20);},true);
+document.addEventListener('focusout',function(){setTimeout(function(){if(!inProduction())release();},180);},true);
+if(window.MutationObserver)new MutationObserver(function(){if(active&&inProduction()){var y=window.scrollY||0,x=window.scrollX||0;requestAnimationFrame(function(){if(active&&inProduction()&&(Math.abs((window.scrollY||0)-y)>1||Math.abs((window.scrollX||0)-x)>1))window.scrollTo(x,y);});}bind();}).observe(document.body,{childList:true,subtree:true});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
 })();
 (function(){'use strict';function sid(v){return String(v==null?'':v).trim();}function box(){return document.getElementById('machineSelectList');}function sync(){var b=box();if(!b||typeof store==='undefined')return;var fav=Array.isArray(store.favorites)?store.favorites.map(sid):[];b.querySelectorAll('label[data-machine-id]').forEach(function(row){var id=sid(row.getAttribute('data-machine-id'));var cb=row.querySelector('input[type="checkbox"]');if(cb)cb.checked=fav.indexOf(id)>=0;});}function saveSelection(cb){var row=cb&&cb.closest?cb.closest('label[data-machine-id]'):null;if(!row||typeof store==='undefined')return false;var id=sid(row.getAttribute('data-machine-id'));if(!id)return false;if(!Array.isArray(store.favorites))store.favorites=[];if(cb.checked){if(store.favorites.indexOf(id)<0)store.favorites.push(id);}else store.favorites=store.favorites.filter(function(x){return sid(x)!==id;});try{if(typeof saveStore==='function')saveStore();}catch(e){}return true;}document.addEventListener('change',function(e){var cb=e.target;if(!cb||!cb.matches||!cb.matches('#machineSelectList input[type="checkbox"]'))return;saveSelection(cb);sync();e.stopImmediatePropagation();},true);function boot(){sync();[100,300,700,1200,2000].forEach(function(t){setTimeout(sync,t);});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();if(window.MutationObserver)new MutationObserver(function(){sync();}).observe(document.body,{childList:true,subtree:true});setInterval(sync,800);})();
-(function(){
- function addFaultButton(){
-  var b=document.getElementById('faultScreenBtn');
-  if(!b){
-   b=document.createElement('button'); b.id='faultScreenBtn'; b.type='button'; b.textContent='شاشة الأعطال'; b.className='select-machines-btn';
-   b.style.cssText='display:block!important;width:100%!important;box-sizing:border-box!important;margin:10px 0!important;background:#0f6fff!important;color:#fff!important;border:0!important;min-height:44px!important;font-size:17px!important;font-weight:700!important;position:relative!important;z-index:20!important;';
-   b.onclick=function(e){e.preventDefault();e.stopPropagation();if(typeof window.showFaultLog==='function')window.showFaultLog();else{var s=document.getElementById('acrowFaultLogScreen');if(s){s.style.display='block';s.scrollIntoView({behavior:'smooth',block:'start'});}}};
-  }
-  var anchor=document.getElementById('machineSelectList');
-  if(anchor&&anchor.parentNode){if(b.nextSibling!==anchor)anchor.parentNode.insertBefore(b,anchor);return;}
-  var candidates=document.querySelectorAll('button,div,h2,h3');
-  for(var i=0;i<candidates.length;i++){var t=(candidates[i].textContent||'').trim();if(t.indexOf('اختيار الماكينات المنتجة اليوم')>=0){candidates[i].parentNode.insertBefore(b,candidates[i].nextSibling);return;}}
- }
- function boot(){addFaultButton();[300,800,1500,2500,4000].forEach(function(t){setTimeout(addFaultButton,t);});}
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
- if(window.MutationObserver)new MutationObserver(addFaultButton).observe(document.documentElement,{childList:true,subtree:true});
- setInterval(addFaultButton,1200);
-})();
 (function(){var a=[['daily-selector-hard-fix.js','217'],['maintenance-screen-fix.js','219'],['fault-log-screen.js','220'],['fault-alert-watch.js','220']];a.forEach(function(x){var s=document.createElement('script');s.src='./'+x[0]+'?v='+x[1];s.async=false;(document.head||document.documentElement).appendChild(s);});})();
