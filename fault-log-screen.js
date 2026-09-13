@@ -36,3 +36,29 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 if(window.MutationObserver)new MutationObserver(watch).observe(document.documentElement,{childList:true,subtree:true});
 setInterval(function(){watch();},1800);
 })();
+
+/* v231: زر شاشة الأعطال ثابت داخل الشاشة الرئيسية فوق اختيار الماكينات المنتجة اليوم */
+(function(){
+'use strict';
+function addNativeFaultButton(){
+  try{
+    var anchor=document.getElementById('machineSelectList');
+    if(!anchor||!anchor.parentNode)return;
+    var b=document.getElementById('acrowNativeFaultButton');
+    if(!b){
+      b=document.createElement('button');
+      b.id='acrowNativeFaultButton';
+      b.type='button';
+      b.textContent='شاشة الأعطال';
+      b.className='select-machines-btn';
+      b.style.cssText='display:block!important;visibility:visible!important;opacity:1!important;width:100%!important;min-height:50px!important;margin:12px 0!important;padding:11px 16px!important;background:#0f6fff!important;color:#fff!important;border:0!important;border-radius:9px!important;font-family:Tajawal,sans-serif!important;font-size:17px!important;font-weight:800!important;cursor:pointer!important;position:relative!important;z-index:2147483647!important;box-shadow:0 3px 10px rgba(0,0,0,.25)!important;';
+      b.onclick=function(e){e.preventDefault();e.stopPropagation();if(typeof window.showFaultLog==='function')window.showFaultLog();};
+    }
+    if(b.parentNode!==anchor.parentNode || b.nextElementSibling!==anchor){anchor.parentNode.insertBefore(b,anchor);}
+  }catch(e){}
+}
+function bootNativeFaultButton(){addNativeFaultButton();[100,300,700,1200,2000,3500].forEach(function(t){setTimeout(addNativeFaultButton,t);});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootNativeFaultButton);else bootNativeFaultButton();
+if(window.MutationObserver)new MutationObserver(addNativeFaultButton).observe(document.documentElement,{childList:true,subtree:true});
+setInterval(addNativeFaultButton,1000);
+})();
