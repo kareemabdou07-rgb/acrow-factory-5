@@ -14,18 +14,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Refresh selector cache version
+      - name: Refresh selector and controls cache versions
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('index.html')
           s=p.read_text(encoding='utf-8')
           import re
-          s=re.sub(r'\./daily-selector-hard-fix\.js\?v=\d+', './daily-selector-hard-fix.js?v=254', s)
-          tag='<script src="./daily-selector-hard-fix.js?v=254"></script>'
-          if tag not in s:
-              marker='<script src="./settings-buttons-fix.js?v=1"></script>'
-              if marker in s: s=s.replace(marker, marker+'\n'+tag,1)
+          s=re.sub(r'\./daily-selector-hard-fix\.js\?v=\d+', './daily-selector-hard-fix.js?v=255', s)
+          s=re.sub(r'\./settings-buttons-fix\.js\?v=\d+', './settings-buttons-fix.js?v=255', s)
+          daily='<script src="./daily-selector-hard-fix.js?v=255"></script>'
+          controls='<script src="./settings-buttons-fix.js?v=255"></script>'
+          if controls not in s:
+              s=s.replace('<script src="./settings-buttons-fix.js?v=1"></script>',controls,1)
+          if daily not in s:
+              s=s.replace(controls,controls+'\n'+daily,1)
           p.write_text(s,encoding='utf-8')
           PY
       - name: Commit app wiring
@@ -33,4 +36,4 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html
-          if git diff --cached --quiet; then echo "No wiring changes"; else git commit -m "Lock daily machine selection and restore fault screen"; git push; fi
+          if git diff --cached --quiet; then echo "No wiring changes"; else git commit -m "Refresh stable controls and daily selector"; git push; fi
