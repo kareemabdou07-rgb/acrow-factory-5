@@ -1,7 +1,8 @@
-/* ACROW Factory 5 — v256: exact fault photo binding */
+/* ACROW Factory 5 — v261: direct fault and repair voice alerts */
 (function(){
 'use strict';
 var screenId='acrowFaultLogScreen',selected=null,seenFaults={},watchReady=false;
+var audioCtx=null;
 function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];});}
 function allFaults(){var out=[];if(typeof store==='undefined'||!store||!store.records)return out;Object.keys(store.records).forEach(function(k){var r=store.records[k]||{};if(!Array.isArray(r.faults))return;r.faults.forEach(function(f,i){if(f)out.push({key:k,index:i,f:f,machine:r.machine||k,date:f.date||k});});});out.sort(function(a,b){return String(b.f.date||b.date).localeCompare(String(a.f.date||a.date))||String(b.f.time||'').localeCompare(String(a.f.time||''));});return out;}
 function openFaults(){return allFaults().filter(function(x){return x.f&&!x.f.endTime;});}
@@ -10,8 +11,30 @@ function save(){try{if(typeof saveStore==='function')saveStore();}catch(e){}}
 function toast(msg){var t=document.getElementById('acrowFaultToast');if(!t)return;t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},3000);}
 function centralMessage(text){var m=document.getElementById('aflCentralMessage');if(!m){m=document.createElement('div');m.id='aflCentralMessage';document.body.appendChild(m);}m.textContent=text;m.classList.add('show');clearTimeout(m._t);m._t=setTimeout(function(){m.classList.remove('show');},3000);}
 function hideCentralMessage(){var m=document.getElementById('aflCentralMessage');if(m)m.classList.remove('show');}
-function announceNewFault(){var rows=openFaults(),cur={};rows.forEach(function(x){cur[faultSig(x)]=true;});if(!watchReady){seenFaults=cur;watchReady=true;return;}var added=null;for(var i=0;i<rows.length;i++)if(!seenFaults[faultSig(rows[i])]){added=rows[i];break;}seenFaults=cur;if(added)centralMessage('يوجد عطل جديد، رجاء الإصلاح');}
-function repairFault(item){if(!item||!item.f)return;var f=item.f;if(f.endTime)return;var now=new Date(),hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');f.endTime=hh+':'+mm;f.repairedAt=f.endTime;save();render();toast('تم اصلاح العطل شكرا');}
+function unlockAudio(){try{var C=window.AudioContext||window.webkitAudioContext;if(!C)return;if(!audioCtx)audioCtx=new C();if(audioCtx.state==='suspended')audioCtx.resume();}catch(e){}}
+try{['pointerdown','touchstart','click'].forEach(function(ev){document.addEventListener(ev,unlockAudio,{capture:true});});}catch(e){}
+function speakFault(msg,open){
+  try{
+    unlockAudio();
+    if(audioCtx){
+      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type='sine';o.frequency.value=open?880:660;
+      g.gain.setValueAtTime(.0001,audioCtx.currentTime);
+      g.gain.exponentialRampToValueAtTime(.22,audioCtx.currentTime+.03);
+      g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.55);
+      o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+.6);
+    }
+  }catch(e){}
+  try{
+    if('speechSynthesis' in window){
+      window.speechSynthesis.cancel();
+      var u=new SpeechSynthesisUtterance(msg);u.lang='ar-EG';u.rate=.95;u.pitch=1;
+      window.speechSynthesis.speak(u);
+    }
+  }catch(e){}
+}
+function announceNewFault(){var rows=openFaults(),cur={};rows.forEach(function(x){cur[faultSig(x)]=true;});if(!watchReady){seenFaults=cur;watchReady=true;return;}var added=null;for(var i=0;i<rows.length;i++)if(!seenFaults[faultSig(rows[i])]){added=rows[i];break;}seenFaults=cur;if(added){centralMessage('يوجد عطل جديد، رجاء الإصلاح');speakFault('يوجد عطل جديد، رجاء الإصلاح',true);}}
+function repairFault(item){if(!item||!item.f)return;var f=item.f;if(f.endTime)return;var now=new Date(),hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');f.endTime=hh+':'+mm;f.repairedAt=f.endTime;save();speakFault('تم إصلاح العطل، شكرًا',false);render();toast('تم اصلاح العطل شكرا');}
 function showDetails(item){if(!item||!item.f)return;selected=item;if(typeof showFaultDetails==='function'){try{showFaultDetails(item.machine,item.f,{date:item.date,shift:item.f.shift});return;}catch(e){}}centralMessage('تفاصيل العطل: '+(item.f.reason||'عطل')+' — '+(item.f.description||item.f.notes||'لا توجد تفاصيل'));}
 function openCameraForItem(item){if(!item||!item.f)return;selected=item;var input=document.getElementById('aflExactPhotoInput');if(input)try{input.remove();}catch(e){}input=document.createElement('input');input.id='aflExactPhotoInput';input.type='file';input.accept='image/*';input.setAttribute('capture','environment');input.style.cssText='position:fixed;left:0;top:0;width:1px;height:1px;opacity:.01;z-index:2147483647;';document.body.appendChild(input);input.addEventListener('change',function(){var file=input.files&&input.files[0];if(!file)return;var rd=new FileReader();rd.onload=function(){var im=new Image();im.onload=function(){var max=1000,w=im.width,h=im.height;if(w>max){h=Math.round(h*max/w);w=max;}var c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);selected.f.photo=c.toDataURL('image/jpeg',.62);save();render();toast('تم حفظ صورة العطل');};im.src=rd.result;};rd.readAsDataURL(file);});try{input.click();}catch(e){}}
 function bindFaultButtons(root){root.querySelectorAll('.afl-open,.afl-photo').forEach(function(b){if(b._aflBound)return;b._aflBound=true;b.onclick=function(e){e.preventDefault();e.stopPropagation();var rows=openFaults(),item=rows[Number(b.getAttribute('data-n'))];if(!item)return;if(b.classList.contains('afl-photo'))openCameraForItem(item);else showDetails(item);};});}
