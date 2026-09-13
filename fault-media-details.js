@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v251: direct fault details/photo actions */
+/* ACROW Factory 5 — v254: details only; photo handled by fault log */
 (function(){
 'use strict';
 function esc(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];});}
@@ -12,79 +12,14 @@ function showDetails(btn){
   if(!box){box=document.createElement('div');box.id='aflDetailModal';document.body.appendChild(box);}
   box.innerHTML='<div class="afl-detail-card"><button class="afl-detail-close">إغلاق</button><h2>تفاصيل العطل</h2><div class="afl-detail-reason">'+esc(reason)+'</div><div class="afl-detail-meta">'+esc(meta)+'</div><div class="afl-detail-desc">'+esc(desc)+'</div><div class="afl-detail-media"></div></div>';
   var target=box.querySelector('.afl-detail-media');
-  if(media){
-    var img=media.querySelector('img');
-    var audio=media.querySelector('audio');
-    if(img){var im=img.cloneNode(true);im.removeAttribute('style');target.appendChild(im);}
-    if(audio){var au=audio.cloneNode(true);au.controls=true;target.appendChild(au);}
-  }
+  if(media){var img=media.querySelector('img'),audio=media.querySelector('audio');if(img){var im=img.cloneNode(true);im.removeAttribute('style');target.appendChild(im);}if(audio){var au=audio.cloneNode(true);au.controls=true;target.appendChild(au);}}
   if(!target.children.length)target.innerHTML='<div>لا توجد صورة أو تسجيل صوتي لهذا العطل</div>';
-  box.style.display='flex';
-  box.querySelector('.afl-detail-close').onclick=function(){box.style.display='none';};
-}
-function openPhoto(btn){
-  var card=btn&&btn.closest?btn.closest('.afl-card'):null;
-  if(!card)return;
-  var input=document.getElementById('aflDirectPhotoInput');
-  if(input)try{input.remove();}catch(x){}
-  input=document.createElement('input');
-  input.id='aflDirectPhotoInput';
-  input.type='file';
-  input.accept='image/*';
-  input.setAttribute('capture','environment');
-  input.style.cssText='position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;z-index:2147483647;';
-  document.body.appendChild(input);
-  input.addEventListener('change',function(){
-    var file=input.files&&input.files[0];
-    if(!file)return;
-    var reader=new FileReader();
-    reader.onload=function(){
-      var img=new Image();
-      img.onload=function(){
-        var max=1000,w=img.width,h=img.height;
-        if(w>max){h=Math.round(h*max/w);w=max;}
-        var c=document.createElement('canvas');c.width=w;c.height=h;
-        c.getContext('2d').drawImage(img,0,0,w,h);
-        var data=c.toDataURL('image/jpeg',.62);
-        var row=card.querySelector('.afl-media');
-        if(!row){row=document.createElement('div');row.className='afl-media';card.appendChild(row);}
-        row.innerHTML='<img src="'+data+'" alt="صورة العطل">';
-        try{
-          var root=card.closest('#acrowFaultLogScreen');
-          if(root&&typeof store!=='undefined'&&store&&store.records){
-            var machineText=(card.querySelector('.afl-row b')||{}).textContent||'';
-            var machine=machineText.replace(/^ماكينة\\s*/,'').trim();
-            var meta=(card.querySelector('.afl-meta')||{}).textContent||'';
-            Object.keys(store.records).forEach(function(k){
-              var r=store.records[k]||{};
-              if(String(r.machine||k)!==String(machine))return;
-              (r.faults||[]).forEach(function(f){
-                var text=(f.date||'')+' — '+(f.time||'')+' — الوردية '+(f.shift||'');
-                if(text===meta||(!f.photo&&String(f.reason||'')===String((card.querySelector('.afl-main')||{}).textContent||'')))f.photo=data;
-              });
-            });
-            if(typeof saveStore==='function')saveStore();
-          }
-        }catch(e){}
-        var t=document.getElementById('acrowFaultToast');
-        if(t){t.textContent='تم حفظ صورة العطل';t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3000);}
-      };
-      img.onerror=function(){};
-      img.src=reader.result;
-    };
-    reader.readAsDataURL(file);
-  });
-  try{input.click();}catch(e){}
+  box.style.display='flex';box.querySelector('.afl-detail-close').onclick=function(){box.style.display='none';};
 }
 function boot(){
   if(document.getElementById('aflDetailStyle'))return;
   var s=document.createElement('style');s.id='aflDetailStyle';s.textContent='#aflDetailModal{display:none;position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:15px;box-sizing:border-box}#aflDetailModal .afl-detail-card{position:relative;width:min(720px,96vw);max-height:90vh;overflow:auto;background:#fff;color:#111;border-radius:16px;padding:20px;box-sizing:border-box;text-align:right}#aflDetailModal h2{margin:0 0 12px;text-align:center}#aflDetailModal .afl-detail-close{position:absolute;left:12px;top:12px;background:#e53935;color:#fff;border:0;border-radius:8px;padding:8px 14px;font-weight:800}#aflDetailModal .afl-detail-reason{font-size:20px;font-weight:900;margin:8px 0}#aflDetailModal .afl-detail-meta,#aflDetailModal .afl-detail-desc{margin:7px 0;color:#555}#aflDetailModal .afl-detail-media{display:flex;flex-direction:column;gap:12px;margin-top:15px;align-items:center}#aflDetailModal .afl-detail-media img{display:block;width:auto;max-width:100%;max-height:55vh;border-radius:10px;border:2px solid #ddd}#aflDetailModal .afl-detail-media audio{width:min(520px,90vw);max-width:100%}';document.head.appendChild(s);
-  document.addEventListener('click',function(e){
-    var b=e.target&&e.target.closest?e.target.closest('.afl-open,.afl-photo'):null;
-    if(!b)return;
-    if(b.classList.contains('afl-photo')){e.preventDefault();e.stopImmediatePropagation();openPhoto(b);return;}
-    e.preventDefault();e.stopImmediatePropagation();showDetails(b);
-  },true);
+  document.addEventListener('click',function(e){var b=e.target&&e.target.closest?e.target.closest('.afl-open'):null;if(!b)return;e.preventDefault();e.stopImmediatePropagation();showDetails(b);},true);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
