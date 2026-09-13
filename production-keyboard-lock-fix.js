@@ -15,19 +15,19 @@ function boot(){
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 
-/* v231: load the dedicated fault screen from the main program itself. */
+/* v239: load the dedicated fault screen and reliable media-details viewer. */
 function loadFaultScreen(){
   if(window.__acrowFaultScreenLoaded)return;
   window.__acrowFaultScreenLoaded=true;
   var s=document.createElement('script');
-  s.src='./fault-log-screen.js?v=234';
+  s.src='./fault-log-screen.js?v=239';
   s.async=false;
   document.head.appendChild(s);
   s.onload=function(){
     if(window.__acrowFaultMediaLoaded)return;
     window.__acrowFaultMediaLoaded=true;
     var m=document.createElement('script');
-    m.src='./fault-media-details.js?v=236';
+    m.src='./fault-media-details.js?v=239';
     m.async=false;
     document.head.appendChild(m);
   };
