@@ -2,90 +2,22 @@
 (function(){
 'use strict';
 var STYLE_ID='acrow-settings-buttons-stable-v2';
-function addStyle(){
- if(document.getElementById(STYLE_ID))return;
- var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
-.acrow-settings-stable{position:relative!important;z-index:60!important;visibility:visible!important;opacity:1!important;transform:none!important;transition:none!important;animation:none!important;}
-.acrow-settings-stable button,.acrow-settings-stable a{visibility:visible!important;opacity:1!important;transform:none!important;transition:none!important;animation:none!important;}
-.machine-card{overflow-anchor:none!important;}
-.actual-input{scroll-margin:0!important;}
-`;
- document.head.appendChild(s);
-}
-function mark(){
- addStyle();
- document.querySelectorAll('button,a').forEach(function(el){
-   var t=(el.textContent||el.getAttribute('aria-label')||el.title||'').trim();
-   if(t&&/الخطة|طباعة التقارير|الصيانة|تعديل|الإعدادات|اعدادات|إعدادات/.test(t)){
-     el.classList.add('acrow-settings-stable');
-     var p=el.parentElement;if(p&&p.children.length<=12)p.classList.add('acrow-settings-stable');
-   }
- });
-}
+function addStyle(){if(document.getElementById(STYLE_ID))return;var s=document.createElement('style');s.id=STYLE_ID;s.textContent='.acrow-settings-stable{position:relative!important;z-index:60!important;visibility:visible!important;opacity:1!important;transform:none!important;transition:none!important;animation:none!important}.acrow-settings-stable button,.acrow-settings-stable a{visibility:visible!important;opacity:1!important;transform:none!important;transition:none!important;animation:none!important}.machine-card{overflow-anchor:none!important}.actual-input{scroll-margin:0!important;}';document.head.appendChild(s);}
+function mark(){addStyle();document.querySelectorAll('button,a').forEach(function(el){var t=(el.textContent||el.getAttribute('aria-label')||el.title||'').trim();if(t&&/الخطة|طباعة التقارير|الصيانة|تعديل|الإعدادات|اعدادات|إعدادات/.test(t)){el.classList.add('acrow-settings-stable');var p=el.parentElement;if(p&&p.children.length<=12)p.classList.add('acrow-settings-stable');}});}
 var productionLock=null;
 function releaseProductionLock(){if(!productionLock)return;var v=productionLock.vv;if(v){v.removeEventListener('resize',productionLock.keep);v.removeEventListener('scroll',productionLock.keep);}window.removeEventListener('resize',productionLock.keep);window.removeEventListener('scroll',productionLock.keep);productionLock=null;}
 function lockProductionInput(inp){releaseProductionLock();var y=window.scrollY||window.pageYOffset||0,x=window.scrollX||0,vv=window.visualViewport;var keep=function(){if(!document.body.contains(inp)||document.activeElement!==inp){releaseProductionLock();return;}if(Math.abs((window.scrollY||0)-y)>1||Math.abs((window.scrollX||0)-x)>1)window.scrollTo(x,y);};productionLock={vv:vv,keep:keep};if(vv){vv.addEventListener('resize',keep,{passive:true});vv.addEventListener('scroll',keep,{passive:true});}window.addEventListener('resize',keep,{passive:true});window.addEventListener('scroll',keep,{passive:true});requestAnimationFrame(keep);[50,150,300,600].forEach(function(t){setTimeout(keep,t);});}
 function bindProductionInputs(){addStyle();document.querySelectorAll('.actual-input').forEach(function(inp){if(inp.dataset.acrowStableBound==='1')return;inp.dataset.acrowStableBound='1';inp.addEventListener('focus',function(){lockProductionInput(inp);},false);inp.addEventListener('blur',function(){setTimeout(releaseProductionLock,80);},false);});}
-
 var ALL_MACHINES=[['1712','منشار RSA'],['982','متقاب/مثقاب'],['961','متقاب'],['263','مثقاب'],['882','مثقاب'],['1522','Ledgers/Ring'],['999','Ledgers/Ring'],['5004','Ledgers/Ring'],['5003','Ledgers/Ring'],['1521','Ledgers/Ring'],['998','Ledgers/Ring'],['997','Ring Vertical'],['996','Ring Vertical'],['5006','Ring Vertical'],['5005','Cup Lock Vertical'],['450','Cup Lock Vertical'],['1524','Cup Lock Vertical'],['1523','Cup Lock Vertical'],['5008','فوله اوتوماتيك'],['402','Hand welding'],['455','Hand welding'],['118','Hand welding'],['116','Hand welding'],['404','Hand welding'],['1502','منطقة الفرز'],['279','مكبس'],['225','مكبس'],['956','مكبس'],['284','مكبس'],['1107','مكبس تخريم'],['1324','مكبس تشكيل'],['1313','مكنه تشكيل'],['1320','مكنه تشكيل'],['147','مكنه تشكيل'],['986','متقاب'],['1306','متقاب'],['963','متقاب'],['1317','متقاب'],['1318','متقاب'],['964','متقاب'],['954','منشار'],['1713','متقاب متعدد'],['112','فريم كوباية'],['114','فريم كوباية'],['477','فارمه يدوي'],['1504','فارمه يدوي'],['712','فارمه يدوي'],['710','فارمه يدوي'],['122','فارمه يدوي'],['454','فارمه يدوي'],['713','فارمه يدوي'],['115','فارمه يدوي'],['117','فارمه يدوي'],['711','فارمه يدوي'],['456','فارمه يدوي'],['1501','ماكينه يدوي'],['120','ماكينه يدوي']];
 function sid(v){return String(v==null?'':v).trim();}
-function storedIds(){
- var out=[];function add(v){v=sid(v);if(v&&out.indexOf(v)<0)out.push(v);}
- try{if(window.store){
-  if(store.machineCustom&&typeof store.machineCustom==='object')Object.keys(store.machineCustom).forEach(add);
-  if(Array.isArray(store.machines))store.machines.forEach(function(m){if(m)add(m.id||m.number||m.code||m.machine);});
-  else if(store.machines&&typeof store.machines==='object')Object.keys(store.machines).forEach(add);
-  var st=store.settings||{};
-  if(Array.isArray(st.planMachineIds))st.planMachineIds.forEach(add);
-  if(Array.isArray(st.planStatusMachineIds))st.planStatusMachineIds.forEach(add);
- }}catch(e){}
- return out;
-}
-function machineInfo(id){
- id=sid(id);var a=ALL_MACHINES.find(function(x){return x[0]===id;});if(a)return {id:id,name:a[1]};
- try{if(store.machineCustom&&store.machineCustom[id]){var c=store.machineCustom[id];return {id:id,name:c.name||c.type||('ماكينة '+id),obj:c};}}catch(e){}
- try{if(Array.isArray(store.machines)){var m=store.machines.find(function(x){return sid(x&&(x.id||x.number||x.code||x.machine))===id;});if(m)return {id:id,name:m.name||m.type||m.machineName||('ماكينة '+id),obj:m);}
- else if(store.machines&&typeof store.machines==='object'&&store.machines[id]){var om=store.machines[id];return {id:id,name:om.name||om.type||om.machineName||('ماكينة '+id),obj:om};}}catch(e){}
- return {id:id,name:'ماكينة '+id,obj:null};
-}
-function ensureMachines(){
- try{if(typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return;
-  var wanted=ALL_MACHINES.map(function(x){return x[0];}).concat(storedIds());
-  wanted.forEach(function(id){id=sid(id);if(!id)return;var idx=MACHINES.findIndex(function(m){return sid(m&&m.id)===id;});var info=machineInfo(id);
-   if(idx<0){var o=info.obj||{};var dept=(o.dept&&typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.find(function(d){return d.id===o.dept;}))||(typeof DEPARTMENTS!=='undefined'&&DEPARTMENTS.length?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'});MACHINES.push(Object.assign({id:id,name:info.name,dept:dept.id,deptName:dept.name||dept.id,target:null,disabled:false},o,{id:id,disabled:false,name:o.name||info.name}));}
-   else if(MACHINES[idx]){MACHINES[idx].disabled=false;if(!MACHINES[idx].name||MACHINES[idx].name==='ماكينة '+id)MACHINES[idx].name=info.name;}
-  });
- }catch(e){console.error('ACROW complete machine list',e);}
-}
-function repairDailySelector(){
- try{ensureMachines();var box=document.getElementById('machineSelectList');if(!box||typeof store==='undefined')return;
-  if(typeof renderMachineSelectList==='function'&&!window.__acrowDailySelectorWrapped){var original=renderMachineSelectList;window.renderMachineSelectList=function(){ensureMachines();return original.apply(this,arguments);};window.__acrowDailySelectorWrapped=true;}
-  var selected=Array.isArray(store.favorites)?store.favorites.map(sid):[];
-  box.querySelectorAll('label[data-machine-id]').forEach(function(row){var id=sid(row.getAttribute('data-machine-id'));var cb=row.querySelector('input[type="checkbox"]');if(cb)cb.checked=selected.indexOf(id)>=0;});
-  var ids=ALL_MACHINES.map(function(x){return x[0];}).concat(storedIds());
-  Array.from(new Set(ids.map(sid))).forEach(function(id){var exists=box.querySelector('[data-machine-id="'+id.replace(/(["\\])/g,'\\$1')+'"]');if(exists)return;var m=machineInfo(id),row=document.createElement('label');row.className='fav-checkbox-row';row.setAttribute('data-machine-id',id);var checked=selected.indexOf(id)>=0;row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+'><span>'+m.name+' <span style="opacity:.65">('+id+')</span></span>';var cb=row.querySelector('input');cb.addEventListener('change',function(){if(!Array.isArray(store.favorites))store.favorites=[];if(this.checked){if(store.favorites.map(sid).indexOf(id)<0)store.favorites.push(id);}else store.favorites=store.favorites.filter(function(x){return sid(x)!==id;});try{if(typeof saveStore==='function')saveStore();}catch(e){}});var titles=box.querySelectorAll('.fav-group-title'),title=titles.length?titles[titles.length-1]:null;if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);});
- }catch(e){console.error('ACROW daily selector repair',e);}
-}
-function wrapProductionRender(){
- try{
-  if(typeof window.rebuildMachines==='function'&&!window.__acrowRebuildWrapped){
-   var rb=window.rebuildMachines;window.rebuildMachines=function(){var r=rb.apply(this,arguments);ensureMachines();return r;};window.__acrowRebuildWrapped=true;
-  }
-  if(typeof window.render==='function'&&!window.__acrowRenderWrapped){
-   var rr=window.render;window.render=function(){ensureMachines();var r=rr.apply(this,arguments);ensureMachines();return r;};window.__acrowRenderWrapped=true;
-  }
- }catch(e){console.error('ACROW production render wrapper',e);}
-}
+function storedIds(){var out=[];function add(v){v=sid(v);if(v&&out.indexOf(v)<0)out.push(v);}try{if(window.store){if(store.machineCustom&&typeof store.machineCustom==='object')Object.keys(store.machineCustom).forEach(add);if(Array.isArray(store.machines))store.machines.forEach(function(m){if(m)add(m.id||m.number||m.code||m.machine);});else if(store.machines&&typeof store.machines==='object')Object.keys(store.machines).forEach(add);var st=store.settings||{};if(Array.isArray(st.planMachineIds))st.planMachineIds.forEach(add);if(Array.isArray(st.planStatusMachineIds))st.planStatusMachineIds.forEach(add);}}catch(e){}return out;}
+function machineInfo(id){id=sid(id);var a=ALL_MACHINES.find(function(x){return x[0]===id;});if(a)return {id:id,name:a[1]};try{if(store.machineCustom&&store.machineCustom[id]){var c=store.machineCustom[id];return {id:id,name:c.name||c.type||('ماكينة '+id),obj:c};}}catch(e){}try{if(Array.isArray(store.machines)){var m=store.machines.find(function(x){return sid(x&&(x.id||x.number||x.code||x.machine))===id;});if(m)return {id:id,name:m.name||m.type||m.machineName||('ماكينة '+id),obj:m};}else if(store.machines&&typeof store.machines==='object'&&store.machines[id]){var om=store.machines[id];return {id:id,name:om.name||om.type||om.machineName||('ماكينة '+id),obj:om};}}catch(e){}return {id:id,name:'ماكينة '+id,obj:null};}
+function ensureMachines(){try{if(typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return;var wanted=ALL_MACHINES.map(function(x){return x[0];}).concat(storedIds());wanted.forEach(function(id){id=sid(id);if(!id)return;var idx=MACHINES.findIndex(function(m){return sid(m&&m.id)===id;});var info=machineInfo(id);if(idx<0){var o=info.obj||{};var dept=(o.dept&&typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.find(function(d){return d.id===o.dept;}))||(typeof DEPARTMENTS!=='undefined'&&DEPARTMENTS.length?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'});MACHINES.push(Object.assign({id:id,name:info.name,dept:dept.id,deptName:dept.name||dept.id,target:null,disabled:false},o,{id:id,disabled:false,name:o.name||info.name}));}else if(MACHINES[idx]){MACHINES[idx].disabled=false;if(!MACHINES[idx].name||MACHINES[idx].name==='ماكينة '+id)MACHINES[idx].name=info.name;}});}catch(e){console.error('ACROW complete machine list',e);}}
+function repairDailySelector(){try{ensureMachines();var box=document.getElementById('machineSelectList');if(!box||typeof store==='undefined')return;if(typeof renderMachineSelectList==='function'&&!window.__acrowDailySelectorWrapped){var original=renderMachineSelectList;window.renderMachineSelectList=function(){ensureMachines();return original.apply(this,arguments);};window.__acrowDailySelectorWrapped=true;}var selected=Array.isArray(store.favorites)?store.favorites.map(sid):[];box.querySelectorAll('label[data-machine-id]').forEach(function(row){var id=sid(row.getAttribute('data-machine-id'));var cb=row.querySelector('input[type="checkbox"]');if(cb)cb.checked=selected.indexOf(id)>=0;});var ids=ALL_MACHINES.map(function(x){return x[0];}).concat(storedIds());Array.from(new Set(ids.map(sid))).forEach(function(id){var exists=box.querySelector('[data-machine-id="'+id.replace(/(["\\])/g,'\\$1')+'"]');if(exists)return;var m=machineInfo(id),row=document.createElement('label');row.className='fav-checkbox-row';row.setAttribute('data-machine-id',id);var checked=selected.indexOf(id)>=0;row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+'><span>'+m.name+' <span style="opacity:.65">('+id+')</span></span>';var cb=row.querySelector('input');cb.addEventListener('change',function(){if(!Array.isArray(store.favorites))store.favorites=[];if(this.checked){if(store.favorites.map(sid).indexOf(id)<0)store.favorites.push(id);}else store.favorites=store.favorites.filter(function(x){return sid(x)!==id;});try{if(typeof saveStore==='function')saveStore();}catch(e){}});var titles=box.querySelectorAll('.fav-group-title'),title=titles.length?titles[titles.length-1]:null;if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);});}catch(e){console.error('ACROW daily selector repair',e);}}
+function wrapProductionRender(){try{if(typeof window.rebuildMachines==='function'&&!window.__acrowRebuildWrapped){var rb=window.rebuildMachines;window.rebuildMachines=function(){var r=rb.apply(this,arguments);ensureMachines();return r;};window.__acrowRebuildWrapped=true;}if(typeof window.render==='function'&&!window.__acrowRenderWrapped){var rr=window.render;window.render=function(){ensureMachines();var r=rr.apply(this,arguments);ensureMachines();return r;};window.__acrowRenderWrapped=true;}}catch(e){console.error('ACROW production render wrapper',e);}}
 function boot(){mark();bindProductionInputs();ensureMachines();wrapProductionRender();repairDailySelector();[100,300,700,1500,2500].forEach(function(t){setTimeout(function(){mark();bindProductionInputs();ensureMachines();wrapProductionRender();repairDailySelector();},t);});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();wrapProductionRender();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 setInterval(function(){ensureMachines();wrapProductionRender();repairDailySelector();},1200);
 })();
-
-/* v213: load machine/production scroll stability guard */
-(function(){
- var s=document.createElement('script');
- s.src='./machine-scroll-stability.js?v=213';
- s.async=false;
- document.head.appendChild(s);
-})();
+(function(){var s=document.createElement('script');s.src='./machine-scroll-stability.js?v=213';s.async=false;document.head.appendChild(s);})();
