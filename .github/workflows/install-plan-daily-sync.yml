@@ -1,0 +1,44 @@
+name: Install monthly-plan daily-production sync
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install sync script in app
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="./daily-selector-hard-fix.js?v=250"></script>'
+          if tag not in s:
+              marker = '<script src="./settings-buttons-fix.js?v=1"></script>'
+              if marker in s:
+                  s = s.replace(marker, marker + '\n' + tag, 1)
+              else:
+                  s = s.replace('</head>', tag + '\n</head>', 1)
+              p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit app wiring
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "Sync script already installed"
+          else
+            git commit -m "Link monthly plan machines to daily production"
+            git push
+          fi
