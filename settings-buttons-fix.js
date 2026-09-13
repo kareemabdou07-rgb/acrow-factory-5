@@ -30,28 +30,47 @@ function boot(){mark();bindProductionInputs();[50,200,500,1000,2000].forEach(fun
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 
-/* v216: keep every machine already stored in the app visible in the daily machine selector.
-   Do not rely on wrapping the lexical rebuildMachines function; the original app can recreate MACHINES directly. */
+/* v217: preserve every machine source used by the app, especially machines
+   created/selected from the monthly plan.  The original app's rebuild can
+   recreate MACHINES from the default list, so we merge stored machines back
+   in without changing the existing layout or production behavior. */
 (function(){
   function sid(v){return String(v==null?'':v).trim();}
+  function eachStoredMachine(fn){
+    if(typeof store==='undefined'||!store)return;
+    var seen={};
+    function add(id,obj){
+      id=sid(id); if(!id||seen[id])return; seen[id]=1; fn(id,obj||null);
+    }
+    if(store.machineCustom&&typeof store.machineCustom==='object'){
+      Object.keys(store.machineCustom).forEach(function(k){add(k,store.machineCustom[k]);});
+    }
+    if(Array.isArray(store.machines)){
+      store.machines.forEach(function(m){if(m&&typeof m==='object')add(m.id,m);});
+    }else if(store.machines&&typeof store.machines==='object'){
+      Object.keys(store.machines).forEach(function(k){add(k,store.machines[k]);});
+    }
+    var st=store.settings||{};
+    if(Array.isArray(st.planMachineIds))st.planMachineIds.forEach(function(k){add(k,null);});
+    if(Array.isArray(st.planStatusMachineIds))st.planStatusMachineIds.forEach(function(k){add(k,null);});
+  }
+  function fallbackMachine(mid,obj){
+    var dept=(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.length)?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'};
+    return Object.assign({id:mid,name:'ماكينة '+mid,dept:dept.id,deptName:dept.name||dept.id,target:null,disabled:false},obj||{}, {id:mid,disabled:false});
+  }
   function addStoredMachines(){
     try{
-      if(typeof store==='undefined'||!store)return;
-      if(!store.settings)store.settings={};
-      if(!Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds=[];
-      if(!store.machineCustom||typeof store.machineCustom!=='object')store.machineCustom={};
-      if(typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return;
-      var ids=[];
-      Object.keys(store.machineCustom).forEach(function(k){if(sid(k))ids.push(sid(k));});
-      store.settings.planMachineIds.forEach(function(k){if(sid(k))ids.push(sid(k));});
-      ids.forEach(function(mid){
-        if(MACHINES.some(function(m){return sid(m&&m.id)===mid;}))return;
-        var c=store.machineCustom[mid];
-        if(c){MACHINES.push(Object.assign({},c,{id:mid,disabled:false}));return;}
-        var dept=(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.length)?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'};
-        MACHINES.push({id:mid,name:'ماكينة '+mid,dept:dept.id,deptName:dept.name||dept.id,target:null,disabled:false});
+      if(typeof store==='undefined'||!store||typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return;
+      eachStoredMachine(function(mid,obj){
+        var idx=MACHINES.findIndex(function(m){return sid(m&&m.id)===mid;});
+        if(idx>=0){
+          if(obj)MACHINES[idx]=Object.assign({},MACHINES[idx],obj,{id:mid,disabled:false});
+          else MACHINES[idx].disabled=false;
+        }else{
+          MACHINES.push(fallbackMachine(mid,obj));
+        }
       });
-    }catch(e){console.error('ACROW v216 machine keep',e);}
+    }catch(e){console.error('ACROW v217 machine merge',e);}
   }
   function patchDailySelector(){
     try{
@@ -59,19 +78,18 @@ if(window.MutationObserver)new MutationObserver(function(){mark();bindProduction
       if(!box||typeof store==='undefined'||!store)return;
       addStoredMachines();
       var ids=[];
-      if(store.machineCustom)Object.keys(store.machineCustom).forEach(function(k){if(sid(k))ids.push(sid(k));});
-      if(store.settings&&Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds.forEach(function(k){if(sid(k))ids.push(sid(k));});
+      eachStoredMachine(function(mid){ids.push(mid);});
       ids=Array.from(new Set(ids));
       ids.forEach(function(mid){
-        if(box.querySelector('[data-machine-id="'+CSS.escape(mid)+'"]'))return;
+        var selector='[data-machine-id="'+(window.CSS&&CSS.escape?CSS.escape(mid):mid.replace(/(["\\])/g,'\\$1'))+'"]';
+        if(box.querySelector(selector))return;
         var m=(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES))?MACHINES.find(function(x){return sid(x&&x.id)===mid;}):null;
-        var c=(store.machineCustom&&store.machineCustom[mid])||m;
-        if(!c)return;
+        if(!m)return;
         var row=document.createElement('label');
         row.className='fav-checkbox-row';
         row.setAttribute('data-machine-id',mid);
         var checked=Array.isArray(store.favorites)&&store.favorites.map(sid).includes(mid);
-        row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+' data-mid="'+mid.replace(/"/g,'&quot;')+'"><span>'+String(c.name||('ماكينة '+mid))+' <span style="opacity:.65">('+mid+')</span></span>';
+        row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+' data-mid="'+mid.replace(/"/g,'&quot;')+'"><span>'+String(m.name||('ماكينة '+mid))+' <span style="opacity:.65">('+mid+')</span></span>';
         var cb=row.querySelector('input');
         cb.addEventListener('change',function(){
           if(!Array.isArray(store.favorites))store.favorites=[];
@@ -80,10 +98,11 @@ if(window.MutationObserver)new MutationObserver(function(){mark();bindProduction
           if(typeof saveStore==='function')saveStore();
           if(typeof render==='function')render();
         });
-        var title=box.querySelector('.fav-group-title');
+        var titles=box.querySelectorAll('.fav-group-title');
+        var title=titles.length?titles[titles.length-1]:null;
         if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);
       });
-    }catch(e){console.error('ACROW v216 selector patch',e);}
+    }catch(e){console.error('ACROW v217 selector patch',e);}
   }
   function run(){addStoredMachines();patchDailySelector();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(run,300);});else setTimeout(run,300);
