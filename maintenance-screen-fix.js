@@ -1,26 +1,41 @@
-/* ACROW Factory 5 — v218: restore the maintenance/fault screen without touching machine selection */
+/* ACROW Factory 5 — v219: force restore visible maintenance/fault button and screen */
 (function(){
   'use strict';
-  function bind(){
-    var old=document.getElementById('maintenanceBtn');
-    if(!old || old.dataset.v218Maintenance==='1') return;
-    var b=old.cloneNode(true);
-    b.dataset.v218Maintenance='1';
+  function ensureButton(){
+    var b=document.getElementById('maintenanceBtn');
+    var host=document.querySelector('.topbar .shift-controls');
+    if(!b && host){
+      b=document.createElement('button');
+      b.id='maintenanceBtn';
+      b.type='button';
+      b.className='select-machines-btn top-main-action';
+      b.title='إدارة الأعطال';
+      b.textContent='إدارة الأعطال';
+      host.appendChild(b);
+    }
+    if(!b) return;
+    b.style.setProperty('display','flex','important');
+    b.style.setProperty('visibility','visible','important');
+    b.style.setProperty('opacity','1','important');
+    b.style.setProperty('pointer-events','auto','important');
+    if(b.dataset.v219Bound==='1') return;
+    b.dataset.v219Bound='1';
     b.dataset.v137Bound='1';
     b.dataset.v180='1';
     b.dataset.v181Capture='1';
-    old.parentNode.replaceChild(b,old);
     b.addEventListener('click',function(e){
       e.preventDefault();
-      e.stopPropagation();
+      e.stopImmediatePropagation();
       try{
         if(typeof openMaintenanceView==='function') openMaintenanceView();
         if(typeof renderMaintenance==='function') renderMaintenance();
-      }catch(err){ console.error('v218 maintenance screen error',err); }
-    },false);
+        var d=document.getElementById('maintenanceDashboard');
+        if(d){d.style.setProperty('display','block','important');d.scrollIntoView({behavior:'smooth',block:'start'});}
+      }catch(err){console.error('v219 maintenance error',err);}
+    },true);
   }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
-  setTimeout(bind,100);
-  setTimeout(bind,700);
-  setInterval(bind,1500);
+  function boot(){ensureButton();setTimeout(ensureButton,100);setTimeout(ensureButton,500);setTimeout(ensureButton,1200);}
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',boot); else boot();
+  if(window.MutationObserver) new MutationObserver(ensureButton).observe(document.documentElement,{childList:true,subtree:true});
+  setInterval(ensureButton,1500);
 })();
