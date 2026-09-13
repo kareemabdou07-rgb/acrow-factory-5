@@ -7,7 +7,6 @@ function addStyle(){
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
 .acrow-settings-stable{position:relative!important;z-index:60!important;visibility:visible!important;opacity:1!important;transform:none!important;transition:none!important;animation:none!important;}
 .acrow-settings-stable button,.acrow-settings-stable a{visibility:visible!important;opacity:1!important;transform:none!important;transition:none!important;animation:none!important;}
-/* v208: تثبيت خانة الإنتاج أثناء الكتابة على الموبايل */
 .machine-card{overflow-anchor:none!important;}
 .actual-input{scroll-margin:0!important;}
 `;
@@ -26,50 +25,52 @@ function mark(){
    }
  });
 }
-
-/* v208: لا نسمح للمتصفح بتحريك الصفحة/كارت الماكينة عند فتح لوحة الأرقام أو أثناء كتابة الإنتاج */
 var productionLock=null;
 function releaseProductionLock(){
  if(!productionLock)return;
  var v=productionLock.vv;
  if(v){v.removeEventListener('resize',productionLock.keep);v.removeEventListener('scroll',productionLock.keep);}
- window.removeEventListener('resize',productionLock.keep);
- window.removeEventListener('scroll',productionLock.keep);
- productionLock=null;
+ window.removeEventListener('resize',productionLock.keep);window.removeEventListener('scroll',productionLock.keep);productionLock=null;
 }
 function lockProductionInput(inp){
- releaseProductionLock();
- var y=window.scrollY||window.pageYOffset||0;
- var x=window.scrollX||0;
- var vv=window.visualViewport;
- var keep=function(){
-   if(!document.body.contains(inp)||document.activeElement!==inp){releaseProductionLock();return;}
-   if(Math.abs((window.scrollY||0)-y)>1 || Math.abs((window.scrollX||0)-x)>1){window.scrollTo(x,y);}
- };
+ releaseProductionLock();var y=window.scrollY||window.pageYOffset||0,x=window.scrollX||0,vv=window.visualViewport;
+ var keep=function(){if(!document.body.contains(inp)||document.activeElement!==inp){releaseProductionLock();return;}if(Math.abs((window.scrollY||0)-y)>1||Math.abs((window.scrollX||0)-x)>1)window.scrollTo(x,y);};
  productionLock={vv:vv,keep:keep,y:y,x:x};
  if(vv){vv.addEventListener('resize',keep,{passive:true});vv.addEventListener('scroll',keep,{passive:true});}
- window.addEventListener('resize',keep,{passive:true});
- window.addEventListener('scroll',keep,{passive:true});
- requestAnimationFrame(keep);
- setTimeout(keep,50);setTimeout(keep,150);setTimeout(keep,300);setTimeout(keep,600);
+ window.addEventListener('resize',keep,{passive:true});window.addEventListener('scroll',keep,{passive:true});requestAnimationFrame(keep);setTimeout(keep,50);setTimeout(keep,150);setTimeout(keep,300);setTimeout(keep,600);
 }
 function bindProductionInputs(){
- addStyle();
- document.querySelectorAll('.actual-input').forEach(function(inp){
-   if(inp.dataset.acrowStableBound==='1')return;
-   inp.dataset.acrowStableBound='1';
-   inp.addEventListener('focus',function(){lockProductionInput(inp);},false);
-   inp.addEventListener('blur',function(){setTimeout(releaseProductionLock,80);},false);
- });
+ addStyle();document.querySelectorAll('.actual-input').forEach(function(inp){if(inp.dataset.acrowStableBound==='1')return;inp.dataset.acrowStableBound='1';inp.addEventListener('focus',function(){lockProductionInput(inp);},false);inp.addEventListener('blur',function(){setTimeout(releaseProductionLock,80);},false);});
 }
-function boot(){
- mark();bindProductionInputs();
- setTimeout(mark,50);setTimeout(bindProductionInputs,50);
- setTimeout(mark,200);setTimeout(bindProductionInputs,200);
- setTimeout(mark,500);setTimeout(bindProductionInputs,500);
- setTimeout(mark,1000);setTimeout(bindProductionInputs,1000);
- setTimeout(mark,2000);setTimeout(bindProductionInputs,2000);
-}
+function boot(){mark();bindProductionInputs();setTimeout(mark,50);setTimeout(bindProductionInputs,50);setTimeout(mark,200);setTimeout(bindProductionInputs,200);setTimeout(mark,500);setTimeout(bindProductionInputs,500);setTimeout(mark,1000);setTimeout(bindProductionInputs,1000);setTimeout(mark,2000);setTimeout(bindProductionInputs,2000);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
+
+/* v209: machine master-list bridge */
+(function(){
+  function id(v){return String(v==null?'':v).trim();}
+  function sync(){
+    try{
+      if(typeof store==='undefined'||!store)return;
+      if(!store.machineCustom||typeof store.machineCustom!=='object')store.machineCustom={};
+      if(!store.machineDisabled||typeof store.machineDisabled!=='object')store.machineDisabled={};
+      if(!store.settings)store.settings={};
+      if(!Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds=[];
+      Object.keys(store.machineCustom).forEach(function(k){
+        k=id(k); if(k&&!store.machineDisabled[k]&&store.settings.planMachineIds.indexOf(k)<0)store.settings.planMachineIds.push(k);
+      });
+      if(typeof rebuildMachines==='function')rebuildMachines();
+    }catch(e){console.error('ACROW machine sync',e);}
+  }
+  function refresh(){
+    sync();
+    try{if(typeof renderMachineSelectList==='function'&&document.getElementById('machineSelectModal')?.classList.contains('open'))renderMachineSelectList();}catch(e){}
+    try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
+    try{if(typeof renderPlanStatus==='function'&&document.getElementById('planStatusSection')?.style.display!=='none')renderPlanStatus();}catch(e){}
+  }
+  function boot(){refresh();[200,600,1200,2500].forEach(function(ms){setTimeout(refresh,ms);});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  window.__acrowMachineMasterSync=refresh;
+  setInterval(sync,1500);
+})();
 })();
