@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — stable settings buttons + stable production input */
+/* ACROW Factory 5 — stable controls + stable production input + complete machine list */
 (function(){
 'use strict';
-var STYLE_ID='acrow-settings-buttons-stable-v1';
+var STYLE_ID='acrow-settings-buttons-stable-v2';
 function addStyle(){
  if(document.getElementById(STYLE_ID))return;
  var s=document.createElement('style');s.id=STYLE_ID;s.textContent=`
@@ -24,88 +24,77 @@ function mark(){
 }
 var productionLock=null;
 function releaseProductionLock(){if(!productionLock)return;var v=productionLock.vv;if(v){v.removeEventListener('resize',productionLock.keep);v.removeEventListener('scroll',productionLock.keep);}window.removeEventListener('resize',productionLock.keep);window.removeEventListener('scroll',productionLock.keep);productionLock=null;}
-function lockProductionInput(inp){releaseProductionLock();var y=window.scrollY||window.pageYOffset||0,x=window.scrollX||0,vv=window.visualViewport;var keep=function(){if(!document.body.contains(inp)||document.activeElement!==inp){releaseProductionLock();return;}if(Math.abs((window.scrollY||0)-y)>1||Math.abs((window.scrollX||0)-x)>1)window.scrollTo(x,y);};productionLock={vv:vv,keep:keep,y:y,x:x};if(vv){vv.addEventListener('resize',keep,{passive:true});vv.addEventListener('scroll',keep,{passive:true});}window.addEventListener('resize',keep,{passive:true});window.addEventListener('scroll',keep,{passive:true});requestAnimationFrame(keep);setTimeout(keep,50);setTimeout(keep,150);setTimeout(keep,300);setTimeout(keep,600);}
+function lockProductionInput(inp){releaseProductionLock();var y=window.scrollY||window.pageYOffset||0,x=window.scrollX||0,vv=window.visualViewport;var keep=function(){if(!document.body.contains(inp)||document.activeElement!==inp){releaseProductionLock();return;}if(Math.abs((window.scrollY||0)-y)>1||Math.abs((window.scrollX||0)-x)>1)window.scrollTo(x,y);};productionLock={vv:vv,keep:keep};if(vv){vv.addEventListener('resize',keep,{passive:true});vv.addEventListener('scroll',keep,{passive:true});}window.addEventListener('resize',keep,{passive:true});window.addEventListener('scroll',keep,{passive:true});requestAnimationFrame(keep);[50,150,300,600].forEach(function(t){setTimeout(keep,t);});}
 function bindProductionInputs(){addStyle();document.querySelectorAll('.actual-input').forEach(function(inp){if(inp.dataset.acrowStableBound==='1')return;inp.dataset.acrowStableBound='1';inp.addEventListener('focus',function(){lockProductionInput(inp);},false);inp.addEventListener('blur',function(){setTimeout(releaseProductionLock,80);},false);});}
-function boot(){mark();bindProductionInputs();[50,200,500,1000,2000].forEach(function(t){setTimeout(mark,t);setTimeout(bindProductionInputs,t);});}
+
+/* Complete machine list used by the factory and retained in every selector. */
+var ALL_MACHINES=[['1712','منشار RSA'],['982','متقاب/مثقاب'],['961','متقاب'],['263','مثقاب'],['882','مثقاب'],['1522','Ledgers/Ring'],['999','Ledgers/Ring'],['5004','Ledgers/Ring'],['5003','Ledgers/Ring'],['1521','Ledgers/Ring'],['998','Ledgers/Ring'],['997','Ring Vertical'],['996','Ring Vertical'],['5006','Ring Vertical'],['5005','Cup Lock Vertical'],['450','Cup Lock Vertical'],['1524','Cup Lock Vertical'],['1523','Cup Lock Vertical'],['5008','فوله اوتوماتيك'],['402','Hand welding'],['455','Hand welding'],['118','Hand welding'],['116','Hand welding'],['404','Hand welding'],['1502','منطقة الفرز'],['279','مكبس'],['225','مكبس'],['956','مكبس'],['284','مكبس'],['1107','مكبس تخريم'],['1324','مكبس تشكيل'],['1313','مكنه تشكيل'],['1320','مكنه تشكيل'],['147','مكنه تشكيل'],['986','متقاب'],['1306','متقاب'],['963','متقاب'],['1317','متقاب'],['1318','متقاب'],['964','متقاب'],['954','منشار'],['1713','متقاب متعدد'],['112','فريم كوباية'],['114','فريم كوباية'],['477','فارمه يدوي'],['1504','فارمه يدوي'],['712','فارمه يدوي'],['710','فارمه يدوي'],['122','فارمه يدوي'],['454','فارمه يدوي'],['713','فارمه يدوي'],['115','فارمه يدوي'],['117','فارمه يدوي'],['711','فارمه يدوي'],['456','فارمه يدوي'],['1501','ماكينه يدوي'],['120','ماكينه يدوي']];
+function sid(v){return String(v==null?'':v).trim();}
+function storedIds(){
+ var out=[];
+ function add(v){v=sid(v);if(v&&out.indexOf(v)<0)out.push(v);}
+ try{if(window.store){
+   if(store.machineCustom&&typeof store.machineCustom==='object')Object.keys(store.machineCustom).forEach(add);
+   if(Array.isArray(store.machines))store.machines.forEach(function(m){if(m)add(m.id||m.number||m.code||m.machine);});
+   var st=store.settings||{};
+   if(Array.isArray(st.planMachineIds))st.planMachineIds.forEach(add);
+   if(Array.isArray(st.planStatusMachineIds))st.planStatusMachineIds.forEach(add);
+ }}catch(e){}
+ return out;
+}
+function machineInfo(id){
+ id=sid(id);
+ var a=ALL_MACHINES.find(function(x){return x[0]===id;});
+ if(a)return {id:id,name:a[1]};
+ try{if(store.machineCustom&&store.machineCustom[id]){var c=store.machineCustom[id];return {id:id,name:c.name||c.type||('ماكينة '+id)};}}catch(e){}
+ try{if(Array.isArray(store.machines)){var m=store.machines.find(function(x){return sid(x&& (x.id||x.number||x.code||x.machine))===id;});if(m)return {id:id,name:m.name||m.type||m.machineName||('ماكينة '+id)};}}catch(e){}
+ return {id:id,name:'ماكينة '+id};
+}
+function ensureMachines(){
+ try{
+  if(typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return;
+  var wanted=ALL_MACHINES.map(function(x){return x[0];}).concat(storedIds());
+  wanted.forEach(function(id){
+   id=sid(id);if(!id)return;
+   var idx=MACHINES.findIndex(function(m){return sid(m&&m.id)===id;});
+   var info=machineInfo(id);
+   if(idx<0){var dept=(typeof DEPARTMENTS!=='undefined'&&DEPARTMENTS.length)?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'};MACHINES.push({id:id,name:info.name,dept:dept.id,deptName:dept.name||dept.id,target:null,disabled:false});}
+   else if(MACHINES[idx]){MACHINES[idx].disabled=false;if(!MACHINES[idx].name||MACHINES[idx].name==='ماكينة '+id)MACHINES[idx].name=info.name;}
+  });
+ }catch(e){console.error('ACROW complete machine list',e);}
+}
+function repairDailySelector(){
+ try{
+  ensureMachines();
+  var box=document.getElementById('machineSelectList');
+  if(!box||typeof store==='undefined')return;
+  if(typeof renderMachineSelectList==='function'&&!window.__acrowDailySelectorWrapped){
+   var original=renderMachineSelectList;
+   window.renderMachineSelectList=function(){ensureMachines();return original.apply(this,arguments);};
+   window.__acrowDailySelectorWrapped=true;
+  }
+  var ids=ALL_MACHINES.map(function(x){return x[0];}).concat(storedIds());
+  Array.from(new Set(ids.map(sid))).forEach(function(id){
+   var exists=box.querySelector('[data-machine-id="'+id.replace(/(["\\])/g,'\\$1')+'"]');
+   if(exists)return;
+   var m=machineInfo(id),row=document.createElement('label');
+   row.className='fav-checkbox-row';row.setAttribute('data-machine-id',id);
+   var checked=Array.isArray(store.favorites)&&store.favorites.map(sid).indexOf(id)>=0;
+   row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+'><span>'+m.name+' <span style="opacity:.65">('+id+')</span></span>';
+   var cb=row.querySelector('input');
+   cb.addEventListener('change',function(){
+    if(!Array.isArray(store.favorites))store.favorites=[];
+    if(this.checked){if(store.favorites.map(sid).indexOf(id)<0)store.favorites.push(id);}else store.favorites=store.favorites.filter(function(x){return sid(x)!==id;});
+    try{if(typeof saveStore==='function')saveStore();}catch(e){}
+    try{if(typeof render==='function')render();}catch(e){}
+   });
+   var titles=box.querySelectorAll('.fav-group-title'),title=titles.length?titles[titles.length-1]:null;
+   if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);
+  });
+ }catch(e){console.error('ACROW daily selector repair',e);}
+}
+function boot(){mark();bindProductionInputs();ensureMachines();repairDailySelector();[100,300,700,1500,2500].forEach(function(t){setTimeout(function(){mark();bindProductionInputs();ensureMachines();repairDailySelector();},t);});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
-
-/* v217: preserve every machine source used by the app, especially machines
-   created/selected from the monthly plan.  The original app's rebuild can
-   recreate MACHINES from the default list, so we merge stored machines back
-   in without changing the existing layout or production behavior. */
-(function(){
-  function sid(v){return String(v==null?'':v).trim();}
-  function eachStoredMachine(fn){
-    if(typeof store==='undefined'||!store)return;
-    var seen={};
-    function add(id,obj){
-      id=sid(id); if(!id||seen[id])return; seen[id]=1; fn(id,obj||null);
-    }
-    if(store.machineCustom&&typeof store.machineCustom==='object'){
-      Object.keys(store.machineCustom).forEach(function(k){add(k,store.machineCustom[k]);});
-    }
-    if(Array.isArray(store.machines)){
-      store.machines.forEach(function(m){if(m&&typeof m==='object')add(m.id,m);});
-    }else if(store.machines&&typeof store.machines==='object'){
-      Object.keys(store.machines).forEach(function(k){add(k,store.machines[k]);});
-    }
-    var st=store.settings||{};
-    if(Array.isArray(st.planMachineIds))st.planMachineIds.forEach(function(k){add(k,null);});
-    if(Array.isArray(st.planStatusMachineIds))st.planStatusMachineIds.forEach(function(k){add(k,null);});
-  }
-  function fallbackMachine(mid,obj){
-    var dept=(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.length)?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'};
-    return Object.assign({id:mid,name:'ماكينة '+mid,dept:dept.id,deptName:dept.name||dept.id,target:null,disabled:false},obj||{}, {id:mid,disabled:false});
-  }
-  function addStoredMachines(){
-    try{
-      if(typeof store==='undefined'||!store||typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return;
-      eachStoredMachine(function(mid,obj){
-        var idx=MACHINES.findIndex(function(m){return sid(m&&m.id)===mid;});
-        if(idx>=0){
-          if(obj)MACHINES[idx]=Object.assign({},MACHINES[idx],obj,{id:mid,disabled:false});
-          else MACHINES[idx].disabled=false;
-        }else{
-          MACHINES.push(fallbackMachine(mid,obj));
-        }
-      });
-    }catch(e){console.error('ACROW v217 machine merge',e);}
-  }
-  function patchDailySelector(){
-    try{
-      var box=document.getElementById('machineSelectList');
-      if(!box||typeof store==='undefined'||!store)return;
-      addStoredMachines();
-      var ids=[];
-      eachStoredMachine(function(mid){ids.push(mid);});
-      ids=Array.from(new Set(ids));
-      ids.forEach(function(mid){
-        var selector='[data-machine-id="'+(window.CSS&&CSS.escape?CSS.escape(mid):mid.replace(/(["\\])/g,'\\$1'))+'"]';
-        if(box.querySelector(selector))return;
-        var m=(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES))?MACHINES.find(function(x){return sid(x&&x.id)===mid;}):null;
-        if(!m)return;
-        var row=document.createElement('label');
-        row.className='fav-checkbox-row';
-        row.setAttribute('data-machine-id',mid);
-        var checked=Array.isArray(store.favorites)&&store.favorites.map(sid).includes(mid);
-        row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+' data-mid="'+mid.replace(/"/g,'&quot;')+'"><span>'+String(m.name||('ماكينة '+mid))+' <span style="opacity:.65">('+mid+')</span></span>';
-        var cb=row.querySelector('input');
-        cb.addEventListener('change',function(){
-          if(!Array.isArray(store.favorites))store.favorites=[];
-          if(this.checked){if(!store.favorites.map(sid).includes(mid))store.favorites.push(mid);}
-          else store.favorites=store.favorites.filter(function(x){return sid(x)!==mid;});
-          if(typeof saveStore==='function')saveStore();
-          if(typeof render==='function')render();
-        });
-        var titles=box.querySelectorAll('.fav-group-title');
-        var title=titles.length?titles[titles.length-1]:null;
-        if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);
-      });
-    }catch(e){console.error('ACROW v217 selector patch',e);}
-  }
-  function run(){addStoredMachines();patchDailySelector();}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(run,300);});else setTimeout(run,300);
-  setInterval(run,800);
-})();
+setInterval(function(){ensureMachines();repairDailySelector();},1500);
 })();
