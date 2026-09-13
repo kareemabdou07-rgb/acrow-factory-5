@@ -46,73 +46,39 @@ function boot(){mark();bindProductionInputs();setTimeout(mark,50);setTimeout(bin
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 
-/* v209: machine master-list bridge */
+/* v212: stabilize the monthly-plan -> today's-production machine list.
+   IMPORTANT: do not repeatedly call rebuildMachines(). That rebuild loop was causing
+   machines to appear, disappear, then appear again while Firebase/local state merged.
+   The monthly-plan IDs remain the source of truth and are preserved without a timer. */
 (function(){
   function id(v){return String(v==null?'':v).trim();}
-  function sync(){
+  function stabilize(){
     try{
       if(typeof store==='undefined'||!store)return;
-      if(!store.machineCustom||typeof store.machineCustom!=='object')store.machineCustom={};
-      if(!store.machineDisabled||typeof store.machineDisabled!=='object')store.machineDisabled={};
-      if(!store.settings)store.settings={};
-      if(!Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds=[];
-      Object.keys(store.machineCustom).forEach(function(k){
-        k=id(k); if(k&&!store.machineDisabled[k]&&store.settings.planMachineIds.indexOf(k)<0)store.settings.planMachineIds.push(k);
-      });
-      if(typeof rebuildMachines==='function')rebuildMachines();
-    }catch(e){console.error('ACROW machine sync',e);}
-  }
-  function refresh(){
-    sync();
-    try{if(typeof renderMachineSelectList==='function'&&document.getElementById('machineSelectModal')?.classList.contains('open'))renderMachineSelectList();}catch(e){}
-    try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
-    try{if(typeof renderPlanStatus==='function'&&document.getElementById('planStatusSection')?.style.display!=='none')renderPlanStatus();}catch(e){}
-  }
-  function boot(){refresh();[200,600,1200,2500].forEach(function(ms){setTimeout(refresh,ms);});}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-  window.__acrowMachineMasterSync=refresh;
-  setInterval(sync,1500);
-})();
-
-/* v211: keep every machine already present in the monthly plan visible in today's production selector.
-   Do not hard-code machine numbers or names here. The monthly-plan list is the single source of truth. */
-(function(){
-  function id(v){return String(v==null?'':v).trim();}
-  function ensure(){
-    try{
-      if(typeof store==='undefined'||!store)return false;
       if(!store.settings)store.settings={};
       if(!Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds=[];
       if(!store.machineCustom||typeof store.machineCustom!=='object')store.machineCustom={};
       if(!store.machineDisabled||typeof store.machineDisabled!=='object')store.machineDisabled={};
 
-      /* Preserve every ID already selected by the monthly plan. */
       var ids=store.settings.planMachineIds.map(id).filter(Boolean);
-      var changed=false;
-      ids.forEach(function(mid){
-        if(!store.machineCustom[mid]){
-          var base=Array.isArray(store.machines)?store.machines.find(function(m){return id(m&&((m.id||m.code||m.number||m.machine)))===mid;}):null;
-          if(base){store.machineCustom[mid]=Object.assign({},base,{id:mid,code:base.code||mid});changed=true;}
-        }
-      });
-
-      /* Also retain all custom machines in the plan list so a remote/local merge
-         cannot make a newly-added machine disappear from the production selector. */
+      /* Keep custom machines represented in the plan list, but do not rebuild the
+         application's master machine array on a repeating timer. */
       Object.keys(store.machineCustom).forEach(function(k){
         var mid=id(k);
-        if(mid&&!store.machineDisabled[mid]&&ids.indexOf(mid)<0){ids.push(mid);changed=true;}
+        if(mid&&!store.machineDisabled[mid]&&ids.indexOf(mid)<0)ids.push(mid);
       });
       store.settings.planMachineIds=Array.from(new Set(ids));
 
+      /* One controlled rebuild after Firebase/local state has settled. */
       if(typeof rebuildMachines==='function')rebuildMachines();
-      try{if(typeof renderMachineSelectList==='function'&&document.getElementById('machineSelectModal')?.classList.contains('open'))renderMachineSelectList();}catch(e){}
-      try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
-      try{if(typeof renderPlanStatus==='function'&&document.getElementById('planStatusSection')?.style.display!=='none')renderPlanStatus();}catch(e){}
-      return changed;
-    }catch(e){console.error('ACROW v211 machine sync',e);return false;}
+      setTimeout(function(){
+        try{if(typeof renderMachineSelectList==='function'&&document.getElementById('machineSelectModal')?.classList.contains('open'))renderMachineSelectList();}catch(e){}
+        try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
+        try{if(typeof renderPlanStatus==='function'&&document.getElementById('planStatusSection')?.style.display!=='none')renderPlanStatus();}catch(e){}
+      },80);
+    }catch(e){console.error('ACROW v212 machine stabilization',e);}
   }
-  function boot(){ensure();[300,1000,2000,4000].forEach(function(ms){setTimeout(ensure,ms);});}
+  function boot(){setTimeout(stabilize,1800);setTimeout(stabilize,5000);}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
-  setInterval(ensure,2500);
 })();
 })();
