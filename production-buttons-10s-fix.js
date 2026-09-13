@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v226: force the five daily-production machines into the real production renderer */
+/* ACROW Factory 5 — v227: make the five fixed machines real production entries */
 (function(){
 'use strict';
 var EXTRA=[
@@ -10,78 +10,13 @@ var EXTRA=[
 ];
 var IDS=EXTRA.map(function(x){return String(x.id);});
 function sid(v){return String(v==null?'':v).trim();}
-function ensureDepartment(){
- try{
-  if(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&!DEPARTMENTS.some(function(d){return d&&sid(d.id)==='daily'})){
-   DEPARTMENTS.push({id:'daily',name:'ماكينات إنتاج اليوم',target:0,count:5,prefix:'PD'});
-  }
- }catch(e){}
-}
-function ensureFavorites(){
- try{
-  if(typeof store==='undefined'||!store)return;
-  if(!Array.isArray(store.favorites))store.favorites=[];
-  IDS.forEach(function(id){if(store.favorites.map(sid).indexOf(id)<0)store.favorites.push(id);});
- }catch(e){}
-}
-function extraObjects(){return EXTRA.map(function(m){return {id:m.id,name:m.name,dept:'daily',deptName:'ماكينات إنتاج اليوم',target:null};});}
-function patchBuildMachines(){
- try{
-  if(typeof window.buildMachines!=='function'||window.buildMachines.__acrow226)return;
-  var original=window.buildMachines;
-  var wrapped=function(){
-   var arr=original.apply(this,arguments)||[];
-   EXTRA.forEach(function(m){
-    var found=arr.some(function(x){return sid(x&&x.id)===sid(m.id);});
-    if(!found)arr.push({id:m.id,name:m.name,dept:'daily',deptName:'ماكينات إنتاج اليوم',target:null});
-   });
-   return arr;
-  };
-  wrapped.__acrow226=true;
-  window.buildMachines=wrapped;
- }catch(e){}
-}
-function ensureCustomStore(){
- try{
-  if(typeof store==='undefined'||!store)return;
-  if(!store.machineCustom||typeof store.machineCustom!=='object'||Array.isArray(store.machineCustom))store.machineCustom={};
-  EXTRA.forEach(function(m){
-   var old=store.machineCustom[m.id]||{};
-   store.machineCustom[m.id]=Object.assign({},old,{id:m.id,name:m.name,dept:'daily',deptName:'ماكينات إنتاج اليوم',target:null});
-  });
-  ensureFavorites();
-  try{if(typeof saveStore==='function')saveStore();}catch(e){}
- }catch(e){}
-}
-function rebuildAndRender(){
- ensureDepartment();
- patchBuildMachines();
- ensureCustomStore();
- try{if(typeof window.rebuildMachines==='function')window.rebuildMachines();}catch(e){}
- /* rebuildMachines may have been defined before our wrapper; verify the five are actually present. */
- try{
-  if(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES)){
-   EXTRA.forEach(function(m){
-    if(!MACHINES.some(function(x){return sid(x&&x.id)===sid(m.id)}))MACHINES.push({id:m.id,name:m.name,dept:'daily',deptName:'ماكينات إنتاج اليوم',target:null});
-   });
-  }
- }catch(e){}
- ensureFavorites();
- try{if(typeof window.render==='function')window.render();}catch(e){}
- try{if(typeof window.renderMachineSelectList==='function')window.renderMachineSelectList();}catch(e){}
-}
-function boot(){
- rebuildAndRender();
- [100,300,700,1500,3000,6000,10000].forEach(function(t){setTimeout(rebuildAndRender,t);});
- /* Firebase/realtime or other legacy code can rebuild MACHINES later; keep the five real. */
- setInterval(function(){
-  try{
-   ensureDepartment();patchBuildMachines();ensureCustomStore();
-   var missing=false;
-   if(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES))IDS.forEach(function(id){if(!MACHINES.some(function(x){return sid(x&&x.id)===id;}))missing=true;});
-   if(missing){try{if(typeof rebuildMachines==='function')rebuildMachines();}catch(e){}try{if(typeof render==='function')render();}catch(e){}}
-  }catch(e){}
- },1200);
-}
+function obj(m){return {id:m.id,name:m.name,dept:'daily',deptName:'ماكينات إنتاج اليوم',target:null};}
+function ensureDepartment(){try{if(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&!DEPARTMENTS.some(function(d){return d&&sid(d.id)==='daily';}))DEPARTMENTS.push({id:'daily',name:'ماكينات إنتاج اليوم',target:0,count:5,prefix:'PD'});}catch(e){}}
+function ensureGlobal(){try{if(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES))EXTRA.forEach(function(m){if(!MACHINES.some(function(x){return sid(x&&x.id)===sid(m.id)}))MACHINES.push(obj(m));});}catch(e){}}
+function addContainer(c,m){var id=sid(m.id),o=obj(m);if(Array.isArray(c)){if(!c.some(function(x){return sid(x&&x.id)===id}))c.push(o);return;}if(c&&typeof c==='object'){if(!c[id])c[id]=o;}}
+function ensureStoreMachines(){try{if(typeof store==='undefined'||!store)return;['machines','customMachines','machineCustom'].forEach(function(k){var v=store[k];if(v==null){store[k]=k==='machineCustom'?{}:[];v=store[k];}EXTRA.forEach(function(m){addContainer(v,m);});});if(!Array.isArray(store.favorites))store.favorites=[];IDS.forEach(function(id){if(store.favorites.map(sid).indexOf(id)<0)store.favorites.push(id);});try{if(typeof saveStore==='function')saveStore();}catch(e){}}catch(e){}}
+function hookBuild(){try{if(typeof window.buildMachines==='function'&&!window.buildMachines.__acrow227){var old=window.buildMachines;var w=function(){var a=old.apply(this,arguments)||[];EXTRA.forEach(function(m){if(!a.some(function(x){return sid(x&&x.id)===sid(m.id)}))a.push(obj(m));});return a;};w.__acrow227=true;window.buildMachines=w;}}catch(e){}}
+function redraw(){ensureDepartment();ensureGlobal();ensureStoreMachines();hookBuild();try{if(typeof window.rebuildMachines==='function')window.rebuildMachines();}catch(e){}ensureGlobal();ensureStoreMachines();try{if(typeof window.render==='function')window.render();}catch(e){}try{if(typeof window.renderAll==='function')window.renderAll();}catch(e){}}
+function boot(){redraw();[150,400,800,1500,3000,6000,10000].forEach(function(t){setTimeout(redraw,t);});setInterval(function(){ensureDepartment();ensureGlobal();ensureStoreMachines();},1500);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
