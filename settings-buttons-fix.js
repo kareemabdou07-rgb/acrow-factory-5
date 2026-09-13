@@ -30,47 +30,63 @@ function boot(){mark();bindProductionInputs();[50,200,500,1000,2000].forEach(fun
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 
-/* v215: monthly-plan machines are part of the real machine list.
-   Wrap rebuildMachines so Firebase/render cycles cannot remove them. */
+/* v216: keep every machine already stored in the app visible in the daily machine selector.
+   Do not rely on wrapping the lexical rebuildMachines function; the original app can recreate MACHINES directly. */
 (function(){
-  function id(v){return String(v==null?'':v).trim();}
-  function ensurePlanMachines(){
+  function sid(v){return String(v==null?'':v).trim();}
+  function addStoredMachines(){
     try{
       if(typeof store==='undefined'||!store)return;
       if(!store.settings)store.settings={};
       if(!Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds=[];
       if(!store.machineCustom||typeof store.machineCustom!=='object')store.machineCustom={};
-      if(!store.machineDisabled||typeof store.machineDisabled!=='object')store.machineDisabled={};
       if(typeof MACHINES==='undefined'||!Array.isArray(MACHINES))return;
-      var ids=store.settings.planMachineIds.map(id).filter(Boolean);
+      var ids=[];
+      Object.keys(store.machineCustom).forEach(function(k){if(sid(k))ids.push(sid(k));});
+      store.settings.planMachineIds.forEach(function(k){if(sid(k))ids.push(sid(k));});
       ids.forEach(function(mid){
-        var exists=MACHINES.some(function(m){return id(m&&m.id)===mid;});
-        if(exists)return;
+        if(MACHINES.some(function(m){return sid(m&&m.id)===mid;}))return;
         var c=store.machineCustom[mid];
-        if(!c){
-          var base=MACHINES.find(function(m){return id(m&&m.id)===mid;});
-          c=base?Object.assign({},base,{id:mid}):null;
-        }
-        if(!c){
-          var dept=(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.length)?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'};
-          c={id:mid,name:'ماكينة '+mid,dept:dept.id,deptName:dept.name||dept.id,target:null};
-          store.machineCustom[mid]=c;
-        }
-        MACHINES.push(Object.assign({},c,{id:mid,disabled:false}));
+        if(c){MACHINES.push(Object.assign({},c,{id:mid,disabled:false}));return;}
+        var dept=(typeof DEPARTMENTS!=='undefined'&&Array.isArray(DEPARTMENTS)&&DEPARTMENTS.length)?DEPARTMENTS[0]:{id:'production',name:'الإنتاج'};
+        MACHINES.push({id:mid,name:'ماكينة '+mid,dept:dept.id,deptName:dept.name||dept.id,target:null,disabled:false});
       });
-      /* If a plan machine is marked disabled by an old state, it must still be selectable because it is in the monthly plan. */
-      MACHINES=MACHINES.filter(function(m,i,a){return a.findIndex(function(x){return id(x&&x.id)===id(m&&m.id);})===i;});
-    }catch(e){console.error('ACROW v215 ensure plan machines',e);}
+    }catch(e){console.error('ACROW v216 machine keep',e);}
   }
-  function install(){
-    if(typeof rebuildMachines!=='function'||rebuildMachines.__acrowV215)return;
-    var original=rebuildMachines;
-    function wrapped(){original.apply(this,arguments);ensurePlanMachines();}
-    wrapped.__acrowV215=true;
-    window.rebuildMachines=wrapped;
-    try{rebuildMachines();}catch(e){}
-    setTimeout(ensurePlanMachines,1500);
+  function patchDailySelector(){
+    try{
+      var box=document.getElementById('machineSelectList');
+      if(!box||typeof store==='undefined'||!store)return;
+      addStoredMachines();
+      var ids=[];
+      if(store.machineCustom)Object.keys(store.machineCustom).forEach(function(k){if(sid(k))ids.push(sid(k));});
+      if(store.settings&&Array.isArray(store.settings.planMachineIds))store.settings.planMachineIds.forEach(function(k){if(sid(k))ids.push(sid(k));});
+      ids=Array.from(new Set(ids));
+      ids.forEach(function(mid){
+        if(box.querySelector('[data-machine-id="'+CSS.escape(mid)+'"]'))return;
+        var m=(typeof MACHINES!=='undefined'&&Array.isArray(MACHINES))?MACHINES.find(function(x){return sid(x&&x.id)===mid;}):null;
+        var c=(store.machineCustom&&store.machineCustom[mid])||m;
+        if(!c)return;
+        var row=document.createElement('label');
+        row.className='fav-checkbox-row';
+        row.setAttribute('data-machine-id',mid);
+        var checked=Array.isArray(store.favorites)&&store.favorites.map(sid).includes(mid);
+        row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+' data-mid="'+mid.replace(/"/g,'&quot;')+'"><span>'+String(c.name||('ماكينة '+mid))+' <span style="opacity:.65">('+mid+')</span></span>';
+        var cb=row.querySelector('input');
+        cb.addEventListener('change',function(){
+          if(!Array.isArray(store.favorites))store.favorites=[];
+          if(this.checked){if(!store.favorites.map(sid).includes(mid))store.favorites.push(mid);}
+          else store.favorites=store.favorites.filter(function(x){return sid(x)!==mid;});
+          if(typeof saveStore==='function')saveStore();
+          if(typeof render==='function')render();
+        });
+        var title=box.querySelector('.fav-group-title');
+        if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);
+      });
+    }catch(e){console.error('ACROW v216 selector patch',e);}
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(install,200);});else setTimeout(install,200);
+  function run(){addStoredMachines();patchDailySelector();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(run,300);});else setTimeout(run,300);
+  setInterval(run,800);
 })();
 })();
