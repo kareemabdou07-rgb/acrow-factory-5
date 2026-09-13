@@ -46,10 +46,9 @@ function boot(){mark();bindProductionInputs();setTimeout(mark,50);setTimeout(bin
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 
-/* v212: stabilize the monthly-plan -> today's-production machine list.
-   IMPORTANT: do not repeatedly call rebuildMachines(). That rebuild loop was causing
-   machines to appear, disappear, then appear again while Firebase/local state merged.
-   The monthly-plan IDs remain the source of truth and are preserved without a timer. */
+/* v213: restore every machine selected in the monthly plan into today's production.
+   Run only once after Firebase/local data has had time to settle. No repeating timer,
+   so the list cannot flicker or disappear. */
 (function(){
   function id(v){return String(v==null?'':v).trim();}
   function stabilize(){
@@ -61,24 +60,29 @@ if(window.MutationObserver)new MutationObserver(function(){mark();bindProduction
       if(!store.machineDisabled||typeof store.machineDisabled!=='object')store.machineDisabled={};
 
       var ids=store.settings.planMachineIds.map(id).filter(Boolean);
-      /* Keep custom machines represented in the plan list, but do not rebuild the
-         application's master machine array on a repeating timer. */
+      ids.forEach(function(mid){
+        if(store.machineCustom[mid])return;
+        var base=Array.isArray(store.machines)?store.machines.find(function(m){
+          return id(m&&(m.id||m.code||m.number||m.machine))===mid;
+        }):null;
+        if(base)store.machineCustom[mid]=Object.assign({},base,{id:mid,code:base.code||mid});
+      });
+
       Object.keys(store.machineCustom).forEach(function(k){
         var mid=id(k);
         if(mid&&!store.machineDisabled[mid]&&ids.indexOf(mid)<0)ids.push(mid);
       });
       store.settings.planMachineIds=Array.from(new Set(ids));
 
-      /* One controlled rebuild after Firebase/local state has settled. */
       if(typeof rebuildMachines==='function')rebuildMachines();
       setTimeout(function(){
         try{if(typeof renderMachineSelectList==='function'&&document.getElementById('machineSelectModal')?.classList.contains('open'))renderMachineSelectList();}catch(e){}
         try{if(typeof renderPlanMachineSelectList==='function')renderPlanMachineSelectList();}catch(e){}
         try{if(typeof renderPlanStatus==='function'&&document.getElementById('planStatusSection')?.style.display!=='none')renderPlanStatus();}catch(e){}
-      },80);
-    }catch(e){console.error('ACROW v212 machine stabilization',e);}
+      },120);
+    }catch(e){console.error('ACROW v213 machine restore',e);}
   }
-  function boot(){setTimeout(stabilize,1800);setTimeout(stabilize,5000);}
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(stabilize,3000);});
+  else setTimeout(stabilize,3000);
 })();
 })();
