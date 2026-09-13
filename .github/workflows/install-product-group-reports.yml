@@ -1,0 +1,38 @@
+name: Install product group reports
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "product-group-reports.js"
+      - ".github/workflows/install-product-group-reports.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Add product group report script to index
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          tag='<script src="./product-group-reports.js?v=1"></script>'
+          if tag not in s:
+              s=s.replace('</head>',tag+'\n</head>',1)
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit installed script
+        run: |
+          git config user.name "ACROW Factory 5 Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add index.html
+          git diff --cached --quiet && exit 0
+          git commit -m "Install product group reports in app"
+          git push
