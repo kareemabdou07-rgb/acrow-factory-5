@@ -20,9 +20,17 @@ function loadFaultScreen(){
   if(window.__acrowFaultScreenLoaded)return;
   window.__acrowFaultScreenLoaded=true;
   var s=document.createElement('script');
-  s.src='./fault-log-screen.js?v=231';
+  s.src='./fault-log-screen.js?v=234';
   s.async=false;
   document.head.appendChild(s);
+  s.onload=function(){
+    if(window.__acrowFaultMediaLoaded)return;
+    window.__acrowFaultMediaLoaded=true;
+    var m=document.createElement('script');
+    m.src='./fault-media-details.js?v=235';
+    m.async=false;
+    document.head.appendChild(m);
+  };
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadFaultScreen);else loadFaultScreen();
 })();
