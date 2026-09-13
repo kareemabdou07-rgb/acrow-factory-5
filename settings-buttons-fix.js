@@ -79,3 +79,11 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();wrapProductionRender();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 setInterval(function(){ensureMachines();wrapProductionRender();repairDailySelector();},1200);
 })();
+
+/* v210: load machine/production scroll stability guard */
+(function(){
+ var s=document.createElement('script');
+ s.src='./machine-scroll-stability.js?v=210';
+ s.async=false;
+ document.head.appendChild(s);
+})();
