@@ -27,6 +27,6 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 if(window.MutationObserver)new MutationObserver(function(){mark();bindProductionInputs();wrapProductionRender();addFaultButton();}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['style','class']});
 setInterval(function(){ensureMachines();wrapProductionRender();repairDailySelector();addFaultButton();},1200);
 })();
-(function(){var s=document.createElement('script');s.src='./machine-scroll-stability.js?v=238&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
-(function(){var s=document.createElement('script');s.src='./fault-log-screen.js?v=238&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
-(function(){var s=document.createElement('script');s.src='./fault-button-final.js?v=238&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
+(function(){var s=document.createElement('script');s.src='./machine-scroll-stability.js?v=242&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
+(function(){var s=document.createElement('script');s.src='./fault-log-screen.js?v=242&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
+(function(){var s=document.createElement('script');s.src='./fault-button-final.js?v=242&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
