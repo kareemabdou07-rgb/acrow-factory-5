@@ -44,7 +44,7 @@ function storedIds(){
 function machineInfo(id){
  id=sid(id);var a=ALL_MACHINES.find(function(x){return x[0]===id;});if(a)return {id:id,name:a[1]};
  try{if(store.machineCustom&&store.machineCustom[id]){var c=store.machineCustom[id];return {id:id,name:c.name||c.type||('ماكينة '+id),obj:c};}}catch(e){}
- try{if(Array.isArray(store.machines)){var m=store.machines.find(function(x){return sid(x&&(x.id||x.number||x.code||x.machine))===id;});if(m)return {id:id,name:m.name||m.type||m.machineName||('ماكينة '+id),obj:m};}
+ try{if(Array.isArray(store.machines)){var m=store.machines.find(function(x){return sid(x&&(x.id||x.number||x.code||x.machine))===id;});if(m)return {id:id,name:m.name||m.type||m.machineName||('ماكينة '+id),obj:m);}
  else if(store.machines&&typeof store.machines==='object'&&store.machines[id]){var om=store.machines[id];return {id:id,name:om.name||om.type||om.machineName||('ماكينة '+id),obj:om};}}catch(e){}
  return {id:id,name:'ماكينة '+id,obj:null};
 }
@@ -60,8 +60,10 @@ function ensureMachines(){
 function repairDailySelector(){
  try{ensureMachines();var box=document.getElementById('machineSelectList');if(!box||typeof store==='undefined')return;
   if(typeof renderMachineSelectList==='function'&&!window.__acrowDailySelectorWrapped){var original=renderMachineSelectList;window.renderMachineSelectList=function(){ensureMachines();return original.apply(this,arguments);};window.__acrowDailySelectorWrapped=true;}
+  var selected=Array.isArray(store.favorites)?store.favorites.map(sid):[];
+  box.querySelectorAll('label[data-machine-id]').forEach(function(row){var id=sid(row.getAttribute('data-machine-id'));var cb=row.querySelector('input[type="checkbox"]');if(cb)cb.checked=selected.indexOf(id)>=0;});
   var ids=ALL_MACHINES.map(function(x){return x[0];}).concat(storedIds());
-  Array.from(new Set(ids.map(sid))).forEach(function(id){var exists=box.querySelector('[data-machine-id="'+id.replace(/(["\\])/g,'\\$1')+'"]');if(exists)return;var m=machineInfo(id),row=document.createElement('label');row.className='fav-checkbox-row';row.setAttribute('data-machine-id',id);var checked=Array.isArray(store.favorites)&&store.favorites.map(sid).indexOf(id)>=0;row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+'><span>'+m.name+' <span style="opacity:.65">('+id+')</span></span>';var cb=row.querySelector('input');cb.addEventListener('change',function(){if(!Array.isArray(store.favorites))store.favorites=[];if(this.checked){if(store.favorites.map(sid).indexOf(id)<0)store.favorites.push(id);}else store.favorites=store.favorites.filter(function(x){return sid(x)!==id;});try{if(typeof saveStore==='function')saveStore();}catch(e){}try{ensureMachines();if(typeof render==='function')render();}catch(e){}});var titles=box.querySelectorAll('.fav-group-title'),title=titles.length?titles[titles.length-1]:null;if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);});
+  Array.from(new Set(ids.map(sid))).forEach(function(id){var exists=box.querySelector('[data-machine-id="'+id.replace(/(["\\])/g,'\\$1')+'"]');if(exists)return;var m=machineInfo(id),row=document.createElement('label');row.className='fav-checkbox-row';row.setAttribute('data-machine-id',id);var checked=selected.indexOf(id)>=0;row.innerHTML='<input type="checkbox" '+(checked?'checked':'')+'><span>'+m.name+' <span style="opacity:.65">('+id+')</span></span>';var cb=row.querySelector('input');cb.addEventListener('change',function(){if(!Array.isArray(store.favorites))store.favorites=[];if(this.checked){if(store.favorites.map(sid).indexOf(id)<0)store.favorites.push(id);}else store.favorites=store.favorites.filter(function(x){return sid(x)!==id;});try{if(typeof saveStore==='function')saveStore();}catch(e){}});var titles=box.querySelectorAll('.fav-group-title'),title=titles.length?titles[titles.length-1]:null;if(title&&title.parentElement)title.parentElement.appendChild(row);else box.appendChild(row);});
  }catch(e){console.error('ACROW daily selector repair',e);}
 }
 function wrapProductionRender(){
@@ -80,10 +82,10 @@ if(window.MutationObserver)new MutationObserver(function(){mark();bindProduction
 setInterval(function(){ensureMachines();wrapProductionRender();repairDailySelector();},1200);
 })();
 
-/* v210: load machine/production scroll stability guard */
+/* v213: load machine/production scroll stability guard */
 (function(){
  var s=document.createElement('script');
- s.src='./machine-scroll-stability.js?v=210';
+ s.src='./machine-scroll-stability.js?v=213';
  s.async=false;
  document.head.appendChild(s);
 })();
