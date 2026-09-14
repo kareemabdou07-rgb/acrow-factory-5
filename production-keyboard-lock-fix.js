@@ -33,4 +33,19 @@ function loadFaultScreen(){
   };
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadFaultScreen);else loadFaultScreen();
+
+/* Targeted production persistence hotfix: timestamp local edits so Firebase can reject stale remote records. */
+(function(){
+  function mark(input){
+    try{
+      var r=typeof getRecord==='function'&&typeof dateInput!=='undefined'?getRecord(dateInput.value,currentShift,String(input.dataset.machine||'')):null;
+      if(!r)return;
+      r._productionUpdatedAt=Date.now();
+      if(typeof saveStore==='function')saveStore();
+    }catch(e){}
+  }
+  document.addEventListener('input',function(e){var x=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(x)mark(x);},true);
+  document.addEventListener('change',function(e){var x=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(x)mark(x);},true);
+  document.addEventListener('blur',function(e){var x=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(x)mark(x);},true);
+})();
 })();
