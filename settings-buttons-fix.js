@@ -30,3 +30,20 @@ setInterval(function(){ensureMachines();wrapProductionRender();repairDailySelect
 (function(){var s=document.createElement('script');s.src='./machine-scroll-stability.js?v=242&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
 (function(){var s=document.createElement('script');s.src='./fault-log-screen.js?v=242&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
 (function(){var s=document.createElement('script');s.src='./fault-button-final.js?v=242&cb='+Date.now();s.async=false;document.head.appendChild(s);})();
+
+/* v164 — real date-range controls for maintenance and monthly plan */
+(function(){'use strict';
+function localDate(v){return String(v||'').slice(0,10);}
+function makeDates(a,b){a=localDate(a);b=localDate(b);if(!a||!b||a>b)return[];var out=[],d=new Date(a+'T00:00:00'),e=new Date(b+'T00:00:00');for(;d<=e;d.setDate(d.getDate()+1))out.push(isoLocal(d));return out;}
+function maintenanceUI(){var r=document.getElementById('maintenanceRange'),f=document.getElementById('maintenanceFromDate'),t=document.getElementById('maintenanceToDate');if(!r||!f||!t)return;var custom=r.value==='custom';var fw=document.getElementById('maintenanceCustomFromWrap'),tw=document.getElementById('maintenanceCustomToWrap');if(fw)fw.style.display=custom?'flex':'none';if(tw)tw.style.display=custom?'flex':'none';if(custom){f.type='date';t.type='date';if(!f.value){f.value=document.getElementById('maintenanceDate')?.value||document.getElementById('dateInput')?.value||new Date().toISOString().slice(0,10);}if(!t.value)t.value=f.value;}}
+function planUI(){var tabs=document.getElementById('planPeriodTabs');if(!tabs)return;var btn=tabs.querySelector('[data-plan-period="custom"]');if(!btn){btn=document.createElement('button');btn.type='button';btn.className='shift-tab';btn.dataset.planPeriod='custom';btn.textContent='من يوم إلى يوم';tabs.appendChild(btn);btn.addEventListener('click',function(){document.querySelectorAll('#planPeriodTabs .shift-tab').forEach(function(x){x.classList.remove('active');});btn.classList.add('active');planPeriod='custom';box.style.display='flex';renderPlanStatus();});}
+var box=document.getElementById('acrowPlanCustomDates');if(!box){box=document.createElement('div');box.id='acrowPlanCustomDates';box.className='analysis-options no-print';box.style.cssText='display:none;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0;';box.innerHTML='<span>من:</span><input type="date" id="planCustomFrom" class="date-input"><span>إلى:</span><input type="date" id="planCustomTo" class="date-input">';tabs.parentNode.insertBefore(box,tabs.nextSibling);}
+var f=document.getElementById('planCustomFrom'),t=document.getElementById('planCustomTo');if(f&&!f.dataset.bound){f.dataset.bound='1';f.addEventListener('change',planRangeChanged);t.addEventListener('change',planRangeChanged);}
+function planRangeChanged(){if(f.value&&t.value&&f.value>t.value){var q=f.value;f.value=t.value;t.value=q;}if(typeof renderPlanStatus==='function')renderPlanStatus();}
+if(typeof planDates==='function'&&!window.__acrowCustomPlanDates){var oldPlanDates=planDates;planDates=function(period,base){if(period==='custom'){var a=document.getElementById('planCustomFrom')?.value||'',b=document.getElementById('planCustomTo')?.value||'';return makeDates(a,b);}return oldPlanDates(period,base);};window.__acrowCustomPlanDates=true;}
+}
+function bind(){try{maintenanceUI();planUI();}catch(e){console.error('ACROW date range',e);}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+[300,800,1500,3000].forEach(function(ms){setTimeout(bind,ms);});
+if(window.MutationObserver)new MutationObserver(function(){setTimeout(bind,0);}).observe(document.body,{childList:true,subtree:true});
+})();
