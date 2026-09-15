@@ -19,15 +19,19 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import re
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          tag = '<script src="./button-colors-only.js?v=1"></script>'
-          if tag not in s:
+          tag = '<script src="./button-colors-only.js?v=4"></script>'
+          pattern = r'<script\s+src=["\']\./button-colors-only\.js(?:\?[^"\']*)?["\']\s*></script>'
+          if re.search(pattern, s):
+              s = re.sub(pattern, tag, s, count=1)
+          else:
               marker = '</head>'
               if marker not in s:
                   raise SystemExit('index.html missing </head>')
               s = s.replace(marker, tag + '\n' + marker, 1)
-              p.write_text(s, encoding='utf-8')
+          p.write_text(s, encoding='utf-8')
           PY
       - name: Commit index change
         run: |
@@ -35,6 +39,6 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html
           git diff --cached --quiet && exit 0
-          git commit -m 'Apply ACROW button colors only'
+          git commit -m 'Refresh ACROW button colors script'
           git push
-# v2 trigger
+# v4 cache refresh
