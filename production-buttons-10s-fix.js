@@ -139,7 +139,7 @@ function place(){
  var b=document.getElementById('acrowReasonBtn');
  if(!b){
   b=document.createElement('button');b.id='acrowReasonBtn';b.type='button';b.textContent='أسباب نقص كفاءة الإنتاج';
-  b.style.cssText='display:flex!important;width:100%!important;margin:8px 0 10px!important;box-sizing:border-box!important;background:linear-gradient(135deg,#0f6fff,#20b8ff)!important;color:#fff!important;border:1px solid #20b8ff!important;padding:12px 16px!important;border-radius:10px!important;font-family:Tajawal,sans-serif!important;font-weight:800!important;font-size:14px!important;cursor:pointer!important;justify-content:center!important;align-items:center!important;';
+  b.style.cssText='display:flex!important;width:100%!important;margin:8px 0 10px!important;box-sizing:border-box!important;background:#ffd400!important;color:#064b9b!important;border:3px solid #064b9b!important;padding:12px 16px!important;border-radius:10px!important;font-family:Tajawal,sans-serif!important;font-weight:800!important;font-size:14px!important;cursor:pointer!important;justify-content:center!important;align-items:center!important;box-shadow:0 2px 8px rgba(6,75,155,.28)!important;';
   b.onclick=function(){ensureModal();document.getElementById('acrowEfficiencyReasonModal').style.display='flex';};
   document.body.appendChild(b);
  }
