@@ -47,3 +47,17 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 [300,800,1500,3000].forEach(function(ms){setTimeout(bind,ms);});
 if(window.MutationObserver)new MutationObserver(function(){setTimeout(bind,0);}).observe(document.body,{childList:true,subtree:true});
 })();
+
+/* v165 — force Android/Chrome date pickers to open in efficiency and faults */
+(function(){
+'use strict';
+function today(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function anchor(){var el=document.getElementById('analysisDate')||document.getElementById('dateInput');return (el&&el.value)||today();}
+function seed(){var a=anchor();try{if(typeof topCustomFrom!=='undefined'&&!topCustomFrom)topCustomFrom=a;if(typeof topCustomTo!=='undefined'&&!topCustomTo)topCustomTo=a;}catch(e){}
+  document.querySelectorAll('input[type="date"]').forEach(function(el){if(!el.value&&/topCustom|maintenance|planCustom|date/i.test((el.id||''))&&el.offsetParent!==null)el.value=a;});}
+function openPicker(el){if(!el||el.disabled||el.readOnly)return;try{if(typeof el.showPicker==='function')el.showPicker();}catch(e){}}
+function bind(){seed();document.querySelectorAll('input[type="date"]').forEach(function(el){el.style.setProperty('pointer-events','auto','important');el.style.setProperty('position','relative','important');el.style.setProperty('z-index','80','important');el.style.setProperty('touch-action','manipulation','important');if(el.dataset.acrowDateFix==='1')return;el.dataset.acrowDateFix='1';el.addEventListener('click',function(){openPicker(el);},false);el.addEventListener('pointerup',function(){setTimeout(function(){openPicker(el);},0);},false);});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
+[150,500,1000,2000].forEach(function(ms){setTimeout(bind,ms);});
+if(window.MutationObserver)new MutationObserver(function(){setTimeout(bind,0);}).observe(document.body,{childList:true,subtree:true});
+})();
