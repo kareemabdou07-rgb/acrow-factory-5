@@ -49,3 +49,71 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
   document.addEventListener('blur',function(e){var x=e.target&&e.target.closest?e.target.closest('.actual-input'):null;if(x)mark(x);},true);
 })();
 })();
+
+/* ACROW Factory 5 — DATA SAFETY: prevent accidental wipe and keep an automatic recovery copy. */
+(function(){
+'use strict';
+if(window.__acrowDataSafetyLoaded)return;
+window.__acrowDataSafetyLoaded=true;
+var BACKUP_KEY='acrowFactory5_safety_backup_v1';
+var MAX_BACKUP=5*1024*1024;
+function meaningful(s){
+  if(!s||typeof s!=='object')return false;
+  try{
+    var keys=Object.keys(s);
+    if(keys.length<2)return false;
+    for(var i=0;i<keys.length;i++){
+      var v=s[keys[i]];
+      if(Array.isArray(v)&&v.length)return true;
+      if(v&&typeof v==='object'&&Object.keys(v).length)return true;
+    }
+  }catch(e){}
+  return false;
+}
+function snapshot(){
+  try{
+    if(typeof store==='undefined'||!meaningful(store))return;
+    var raw=JSON.stringify(store);
+    if(raw.length>MAX_BACKUP)return;
+    localStorage.setItem(BACKUP_KEY,raw);
+    localStorage.setItem(BACKUP_KEY+'_time',String(Date.now()));
+  }catch(e){}
+}
+function restoreIfWiped(){
+  try{
+    if(typeof store==='undefined'||meaningful(store))return false;
+    var raw=localStorage.getItem(BACKUP_KEY);
+    if(!raw)return false;
+    var old=JSON.parse(raw);
+    if(!meaningful(old))return false;
+    window.store=old;
+    return true;
+  }catch(e){return false;}
+}
+function protectSave(){
+  try{
+    if(typeof saveStore!=='function'||saveStore.__acrowSafetyWrapped)return;
+    var old=saveStore;
+    var wrapped=function(){
+      var restored=restoreIfWiped();
+      if(!restored&&typeof store!=='undefined'&&!meaningful(store)){
+        return;
+      }
+      var result=old.apply(this,arguments);
+      snapshot();
+      return result;
+    };
+    wrapped.__acrowSafetyWrapped=true;
+    window.saveStore=wrapped;
+  }catch(e){}
+}
+function run(){
+  restoreIfWiped();
+  protectSave();
+  snapshot();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',run);else run();
+setTimeout(run,500);
+setTimeout(run,1500);
+setInterval(function(){protectSave();},2000);
+})();
