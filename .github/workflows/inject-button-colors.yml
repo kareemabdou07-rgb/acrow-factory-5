@@ -37,3 +37,4 @@ jobs:
           git diff --cached --quiet && exit 0
           git commit -m 'Apply ACROW button colors only'
           git push
+# v2 trigger
