@@ -2,21 +2,26 @@
 (function(){
 'use strict';
 function apply(){
- var ids=['acrowReasonBtn','reportsBtn','printReportsBtn','maintenanceBtn','faultsBtn','planBtn','editBtn'];
- var selectors=['button'];
- document.querySelectorAll(selectors.join(',')).forEach(function(b){
-   var t=(b.textContent||'').trim();
-   if(/طباعة التقارير|إدارة الأعطال|الخطة الشهرية|التعديل|تسجيل الإنتاج|أسباب نقص الكفاءة/.test(t)){
-     b.style.setProperty('background','#1769aa','important');
-     b.style.setProperty('color','#fff','important');
-     b.style.setProperty('border-color','#1769aa','important');
-     b.style.setProperty('font-weight','900','important');
-     b.style.setProperty('transition','background .15s ease,color .15s ease','important');
-     b.onpointerdown=function(){b.style.setProperty('background','#fff176','important');b.style.setProperty('color','#1769aa','important');};
-     b.onpointerup=function(){setTimeout(function(){b.style.setProperty('background','#1769aa','important');b.style.setProperty('color','#fff','important');},120);};
-   }
- });
+  document.querySelectorAll('button').forEach(function(b){
+    var t=(b.textContent||'').trim();
+    if(/طباعة التقارير|إدارة الأعطال|الخطة الشهرية|التعديل|تسجيل الإنتاج|أسباب نقص الكفاءة/.test(t)){
+      b.setAttribute('data-acrow-main-color','1');
+      b.style.setProperty('background','#1769aa','important');
+      b.style.setProperty('color','#fff','important');
+      b.style.setProperty('border-color','#1769aa','important');
+      b.style.setProperty('font-weight','900','important');
+      b.style.setProperty('transition','background .15s ease,color .15s ease','important');
+    }
+  });
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(apply,300);});else setTimeout(apply,300);
+function installStyle(){
+  if(document.getElementById('acrow-button-colors-style')) return;
+  var s=document.createElement('style');
+  s.id='acrow-button-colors-style';
+  s.textContent='button[data-acrow-main-color="1"]:active{background:#fff176!important;color:#1769aa!important;border-color:#fff176!important;}';
+  document.head.appendChild(s);
+}
+function boot(){installStyle();apply();}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,300);});else setTimeout(boot,300);
 new MutationObserver(function(){apply();}).observe(document.documentElement,{childList:true,subtree:true});
 })();
