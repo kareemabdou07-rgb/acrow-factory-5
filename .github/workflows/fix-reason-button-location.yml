@@ -1,0 +1,37 @@
+name: Fix efficiency reason button placement
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-reason-button-location.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    if: ${{ !contains(github.event.head_commit.message, '[reason-button-bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Move reason button below daily machine selector
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('machine-targets-fixed.js')
+          s=p.read_text(encoding='utf-8')
+          old="var anchor=cs.find(function(b){return /طباعة التقارير/.test(b.textContent||'');})||cs.find(function(b){return /الخطة الشهرية/.test(b.textContent||'');});"
+          new="var anchor=document.getElementById('selectMachinesBtn')||cs.find(function(b){return /اختيار\\s*الماكينات\\s*المنتجة\\s*اليوم/.test((b.textContent||'').replace(/\\s+/g,' ').trim());})||cs.find(function(b){return /طباعة التقارير/.test(b.textContent||'');})||cs.find(function(b){return /الخطة الشهرية/.test(b.textContent||'');});"
+          if old not in s:
+              raise SystemExit('target text not found')
+          s=s.replace(old,new,1)
+          old2="anchor.parentElement.appendChild(b);"
+          new2="anchor.parentElement.insertBefore(b,anchor.nextSibling);"
+          if old2 not in s:
+              raise SystemExit('append text not found')
+          s=s.replace(old2,new2,1)
+          p.write_text(s,encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add machine-targets-fixed.js
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Place أسباب نقص الكفاءة under daily machine selector [reason-button-bot]'
+          git push
