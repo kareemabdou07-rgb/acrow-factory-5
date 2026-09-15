@@ -94,3 +94,60 @@ function place(){
 function boot(){place();[100,300,700,1200,2000,4000,7000].forEach(function(t){setTimeout(place,t);});if(window.MutationObserver)new MutationObserver(function(){place();}).observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
+
+/* ACROW Factory 5 — Add the missing efficiency-loss reasons button */
+(function(){
+'use strict';
+var REASONS=['نقص خامات','عطل ماكينة','إعداد وتجهيز','نقص عمالة','تغيير منتج','جودة وإعادة تشغيل','انتظار تعليمات','أخرى'];
+function saveReason(reason,details){
+ try{
+  var key='acrowEfficiencyReasons';
+  var arr=[];try{arr=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(arr))arr=[];}catch(e){arr=[];}
+  arr.push({date:new Date().toISOString(),shift:window.currentShift||'',reason:reason,details:details||''});
+  localStorage.setItem(key,JSON.stringify(arr));
+  try{if(window.store){store.efficiencyReasons=arr;if(typeof saveStore==='function')saveStore();}}catch(e){}
+ }catch(e){}
+}
+function ensureModal(){
+ if(document.getElementById('acrowEfficiencyReasonModal'))return;
+ var o=document.createElement('div');o.id='acrowEfficiencyReasonModal';
+ o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(4,10,18,.78);display:none;align-items:center;justify-content:center;padding:16px;';
+ o.innerHTML='<div dir="rtl" style="width:100%;max-width:430px;max-height:88vh;overflow:auto;background:#111d2b;border:1px solid #2b4054;border-radius:16px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.45);font-family:Tajawal,sans-serif;color:#e9edf1;">'
+ +'<div style="font-size:20px;font-weight:900;margin-bottom:4px;">أسباب نقص كفاءة الإنتاج</div>'
+ +'<div style="font-size:12px;color:#8b98a5;margin-bottom:14px;">اختر سبب النقص وسجّل الملاحظة إن وجدت</div>'
+ +'<select id="acrowEfficiencyReasonSelect" style="width:100%;padding:12px;border-radius:9px;background:#07101b;color:#fff;border:1px solid #2b4054;font-family:Tajawal;font-size:14px;margin-bottom:10px;">'
+ +'<option value="">اختر السبب</option>'+REASONS.map(function(r){return '<option value="'+r+'">'+r+'</option>';}).join('')+'</select>'
+ +'<textarea id="acrowEfficiencyReasonDetails" placeholder="ملاحظات إضافية" style="width:100%;min-height:90px;resize:vertical;padding:11px;border-radius:9px;background:#07101b;color:#fff;border:1px solid #2b4054;font-family:Tajawal;font-size:13px;margin-bottom:12px;"></textarea>'
+ +'<div style="display:flex;gap:8px;justify-content:flex-start;">'
+ +'<button id="acrowEfficiencyReasonSave" type="button" style="background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:1px solid #22c55e;padding:10px 18px;border-radius:9px;font-family:Tajawal;font-weight:800;cursor:pointer;">حفظ السبب</button>'
+ +'<button id="acrowEfficiencyReasonClose" type="button" style="background:#334155;color:#fff;border:1px solid #64748b;padding:10px 18px;border-radius:9px;font-family:Tajawal;font-weight:800;cursor:pointer;">إغلاق</button>'
+ +'</div></div>';
+ document.body.appendChild(o);
+ o.addEventListener('click',function(e){if(e.target===o)o.style.display='none';});
+ document.getElementById('acrowEfficiencyReasonClose').onclick=function(){o.style.display='none';};
+ document.getElementById('acrowEfficiencyReasonSave').onclick=function(){
+  var r=document.getElementById('acrowEfficiencyReasonSelect').value;
+  if(!r){alert('اختر سبب نقص الكفاءة أولاً');return;}
+  saveReason(r,document.getElementById('acrowEfficiencyReasonDetails').value.trim());
+  document.getElementById('acrowEfficiencyReasonSelect').value='';
+  document.getElementById('acrowEfficiencyReasonDetails').value='';
+  o.style.display='none';
+ };
+}
+function place(){
+ ensureModal();
+ var b=document.getElementById('acrowReasonBtn');
+ if(!b){
+  b=document.createElement('button');b.id='acrowReasonBtn';b.type='button';b.textContent='أسباب نقص كفاءة الإنتاج';
+  b.style.cssText='display:flex!important;width:100%!important;margin:8px 0 10px!important;box-sizing:border-box!important;background:linear-gradient(135deg,#0f6fff,#20b8ff)!important;color:#fff!important;border:1px solid #20b8ff!important;padding:12px 16px!important;border-radius:10px!important;font-family:Tajawal,sans-serif!important;font-weight:800!important;font-size:14px!important;cursor:pointer!important;justify-content:center!important;align-items:center!important;';
+  b.onclick=function(){ensureModal();document.getElementById('acrowEfficiencyReasonModal').style.display='flex';};
+  document.body.appendChild(b);
+ }
+ var a=document.getElementById('selectMachinesBtn');
+ if(!a){var all=Array.from(document.querySelectorAll('button'));a=all.find(function(x){return /اختيار\s*الماكينات\s*المنتجة\s*اليوم/.test((x.textContent||'').replace(/\s+/g,' ').trim());});}
+ if(a&&b.parentElement===document.body){a.insertAdjacentElement('afterend',b);}
+ if(a){b.style.setProperty('display','flex','important');b.style.setProperty('width','100%','important');}
+}
+function boot(){place();[100,300,700,1200,2000,4000,7000].forEach(function(t){setTimeout(place,t);});if(window.MutationObserver)new MutationObserver(function(){place();}).observe(document.body,{childList:true,subtree:true});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
