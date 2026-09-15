@@ -1,0 +1,42 @@
+name: Place efficiency reason button
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  place-button:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Append placement script
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('machine-targets-fixed.js')
+          s=p.read_text(encoding='utf-8')
+          marker='/* ACROW Factory 5 — place daily efficiency reason button under produced-machines selector */'
+          if marker not in s:
+              s += r'''\n\n/* ACROW Factory 5 — place daily efficiency reason button under produced-machines selector */
+(function(){
+'use strict';
+function place(){
+ var b=document.getElementById('acrowReasonBtn'); if(!b)return;
+ var els=[...document.querySelectorAll('button,label,div,h2,h3,span')];
+ var a=els.find(function(e){return /الماكينات\s*المنتجة\s*اليوم|اختيار\s*الماكينات\s*المنتجة\s*اليوم/.test((e.textContent||'').replace(/\s+/g,' ').trim());});
+ if(!a)return;
+ try{a.insertAdjacentElement('afterend',b);}catch(e){}
+}
+function boot(){place();[300,800,1500,2500,4000].forEach(function(t){setTimeout(place,t)});new MutationObserver(function(){place()}).observe(document.body,{childList:true,subtree:true});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+'''
+              p.write_text(s,encoding='utf-8')
+          PY
+      - name: Commit placement
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add machine-targets-fixed.js
+          git diff --cached --quiet || git commit -m 'Move efficiency reason button under produced machines'
+          git push
