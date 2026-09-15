@@ -40,3 +40,17 @@ function renderReport(){var rows=collectRows(),body=document.getElementById('acr
 function printReport(rows,title){var o=overlay(),c=document.getElementById('acrContent');c.innerHTML='<div class="acr-print"><h2>'+esc(title)+'</h2><p>تقرير أسباب عدم اكتمال كفاءة الإنتاج</p><table class="acr-table"><thead><tr><th>التاريخ</th><th>النوع</th><th>السبب</th><th>الماكينات</th><th>التأثر</th><th>التفاصيل</th></tr></thead><tbody>'+rows.map(function(r){return '<tr><td>'+fmt(r.date)+'</td><td>'+esc(r.category||'—')+'</td><td>'+esc(r.reason||'—')+'</td><td>'+esc(r.machines||'—')+'</td><td>'+(r.lossPercent==null?'—':r.lossPercent+'%')+'</td><td>'+esc(r.notes||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';o.classList.add('open');setTimeout(function(){window.print();},150);}
 function boot(){ensureStyle();makeButton();setInterval(makeButton,1500);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
+
+/* ACROW Factory 5 — place daily efficiency reason button under produced-machines selector */
+(function(){
+'use strict';
+function place(){
+ var b=document.getElementById('acrowReasonBtn'); if(!b)return;
+ var els=[...document.querySelectorAll('button,label,div,h2,h3,span')];
+ var a=els.find(function(e){return /الماكينات\s*المنتجة\s*اليوم|اختيار\s*الماكينات\s*المنتجة\s*اليوم/.test((e.textContent||'').replace(/\s+/g,' ').trim());});
+ if(!a)return;
+ try{a.insertAdjacentElement('afterend',b);}catch(e){}
+}
+function boot(){place();[300,800,1500,2500,4000].forEach(function(t){setTimeout(place,t)});new MutationObserver(function(){place()}).observe(document.body,{childList:true,subtree:true});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
