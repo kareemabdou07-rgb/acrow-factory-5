@@ -52,18 +52,45 @@ function place(){
     a=all.find(function(x){return /اختيار\s*الماكينات\s*المنتجة\s*اليوم/.test((x.textContent||'').replace(/\s+/g,' ').trim());});
   }
   if(!a)return;
-  if(a.nextElementSibling!==b){
-    try{a.insertAdjacentElement('afterend',b);}catch(e){}
-  }
+  if(a.nextElementSibling!==b){try{a.insertAdjacentElement('afterend',b);}catch(e){}}
   b.style.setProperty('display','flex','important');
   b.style.setProperty('width','100%','important');
   b.style.setProperty('margin-top','0','important');
   b.style.setProperty('order','2','important');
 }
-function boot(){
-  place();
-  [100,300,700,1200,2000,4000,7000].forEach(function(t){setTimeout(place,t);});
-  if(window.MutationObserver)new MutationObserver(function(){place();}).observe(document.body,{childList:true,subtree:true});
+function boot(){place();[100,300,700,1200,2000,4000,7000].forEach(function(t){setTimeout(place,t);});if(window.MutationObserver)new MutationObserver(function(){place();}).observe(document.body,{childList:true,subtree:true});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+
+/* ACROW Factory 5 — QUICK: production entry beside/above barcode-clear button */
+(function(){
+'use strict';
+function findClear(){
+ var bs=Array.from(document.querySelectorAll('button'));
+ return bs.find(function(b){return /مسح\s*(الباركود|الباركود\s*)?/i.test((b.textContent||'').replace(/\s+/g,' ').trim());});
 }
+function findProduction(){
+ var bs=Array.from(document.querySelectorAll('button'));
+ return bs.find(function(b){return /تسجيل\s*الإنتاج/.test((b.textContent||'').replace(/\s+/g,' ').trim());});
+}
+function place(){
+ var clear=findClear(); if(!clear)return;
+ var b=document.getElementById('acrowQuickProductionBtn');
+ if(!b){
+  b=document.createElement('button');b.id='acrowQuickProductionBtn';b.type='button';
+  b.textContent='إدخال الإنتاج';
+  b.style.cssText='display:flex!important;width:100%;margin:6px 0!important;background:linear-gradient(135deg,#0f6fff,#20b8ff)!important;color:#fff!important;border:1px solid #20b8ff!important;padding:10px 14px;border-radius:9px;font-family:Tajawal,sans-serif;font-weight:800;font-size:13px;cursor:pointer;justify-content:center;align-items:center;';
+  b.onclick=function(){
+   var p=findProduction();
+   if(p){p.click();return;}
+   var all=Array.from(document.querySelectorAll('button'));
+   var q=all.find(function(x){return /الوردية\s*الأولى/.test(x.textContent||'')&&/إنتاج/.test(x.textContent||'');});
+   if(q)q.click();
+  };
+ }
+ if(clear.parentElement && b.parentElement!==clear.parentElement){clear.parentElement.insertBefore(b,clear);}
+ else if(clear.previousElementSibling!==b){try{clear.insertAdjacentElement('beforebegin',b);}catch(e){}}
+}
+function boot(){place();[100,300,700,1200,2000,4000,7000].forEach(function(t){setTimeout(place,t);});if(window.MutationObserver)new MutationObserver(function(){place();}).observe(document.body,{childList:true,subtree:true});}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
