@@ -1,7 +1,8 @@
 /* ACROW Factory 5 — buttons colors only. No functionality changes. */
-/* v2 */
+/* v3 — yellow flash before command */
 (function(){
 'use strict';
+var SEL='button[data-acrow-main-color="1"]';
 function apply(){
   document.querySelectorAll('button').forEach(function(b){
     var t=(b.textContent||'').trim();
@@ -19,10 +20,18 @@ function installStyle(){
   if(document.getElementById('acrow-button-colors-style')) return;
   var s=document.createElement('style');
   s.id='acrow-button-colors-style';
-  s.textContent='button[data-acrow-main-color="1"]:active{background:#fff176!important;color:#1769aa!important;border-color:#fff176!important;}';
+  s.textContent=SEL+'{background:#1769aa!important;color:#fff!important;border-color:#1769aa!important;}'+SEL+'.acrow-yellow-flash{background:#fff176!important;color:#1769aa!important;border-color:#fff176!important;box-shadow:0 0 0 2px rgba(255,241,118,.45)!important;}'+SEL+':active{background:#fff176!important;color:#1769aa!important;border-color:#fff176!important;}';
   document.head.appendChild(s);
 }
-function boot(){installStyle();apply();}
+function boot(){
+  installStyle(); apply();
+  document.addEventListener('click',function(e){
+    var b=e.target.closest&&e.target.closest(SEL);
+    if(!b) return;
+    b.classList.add('acrow-yellow-flash');
+    setTimeout(function(){b.classList.remove('acrow-yellow-flash');},1000);
+  },true);
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,300);});else setTimeout(boot,300);
 new MutationObserver(function(){apply();}).observe(document.documentElement,{childList:true,subtree:true});
 })();
