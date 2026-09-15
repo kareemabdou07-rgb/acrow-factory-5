@@ -39,3 +39,31 @@ function redraw(){ensureAll();hookBuildMachines();hook('rebuildMachines');hook('
 function boot(){redraw();[100,300,700,1200,2000,4000,7000].forEach(function(t){setTimeout(redraw,t);});setInterval(function(){ensureAll();hookBuildMachines();hook('rebuildMachines');hook('renderMachineSelectList');hook('render');hook('renderAll');},1000);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
+
+/* ACROW Factory 5 — FINAL: put efficiency-reason button directly under daily produced-machines selector */
+(function(){
+'use strict';
+function place(){
+  var b=document.getElementById('acrowReasonBtn');
+  if(!b)return;
+  var a=document.getElementById('selectMachinesBtn');
+  if(!a){
+    var all=Array.from(document.querySelectorAll('button'));
+    a=all.find(function(x){return /اختيار\s*الماكينات\s*المنتجة\s*اليوم/.test((x.textContent||'').replace(/\s+/g,' ').trim());});
+  }
+  if(!a)return;
+  if(a.nextElementSibling!==b){
+    try{a.insertAdjacentElement('afterend',b);}catch(e){}
+  }
+  b.style.setProperty('display','flex','important');
+  b.style.setProperty('width','100%','important');
+  b.style.setProperty('margin-top','0','important');
+  b.style.setProperty('order','2','important');
+}
+function boot(){
+  place();
+  [100,300,700,1200,2000,4000,7000].forEach(function(t){setTimeout(place,t);});
+  if(window.MutationObserver)new MutationObserver(function(){place();}).observe(document.body,{childList:true,subtree:true});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
