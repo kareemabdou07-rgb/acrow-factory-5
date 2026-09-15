@@ -33,10 +33,37 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 '''
               p.write_text(s,encoding='utf-8')
           PY
+      - name: Make efficiency reason button yellow and blue
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('machine-targets-fixed.js')
+          s=p.read_text(encoding='utf-8')
+          marker='/* ACROW Factory 5 — yellow-blue efficiency reason button */'
+          if marker not in s:
+              s += r'''\n\n/* ACROW Factory 5 — yellow-blue efficiency reason button */
+(function(){
+'use strict';
+function style(){
+ var b=document.getElementById('acrowReasonBtn');
+ if(!b)return;
+ b.style.setProperty('background','linear-gradient(135deg,#ffd54a,#ffea70)','important');
+ b.style.setProperty('color','#0757a6','important');
+ b.style.setProperty('border-color','#0757a6','important');
+ b.style.setProperty('font-weight','900','important');
+ b.style.setProperty('box-shadow','0 2px 8px rgba(7,87,166,.25)','important');
+}
+function boot(){style();[200,500,1000,2000,4000].forEach(function(t){setTimeout(style,t);});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+if(window.MutationObserver)new MutationObserver(function(){style();}).observe(document.body,{childList:true,subtree:true});
+})();
+'''
+              p.write_text(s,encoding='utf-8')
+          PY
       - name: Commit placement
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add machine-targets-fixed.js
-          git diff --cached --quiet || git commit -m 'Move efficiency reason button under produced machines'
+          git diff --cached --quiet || git commit -m 'Make efficiency reason button yellow with blue text'
           git push
