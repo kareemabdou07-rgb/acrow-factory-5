@@ -24,6 +24,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Inject main screen button colors
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          marker='<!-- ACROW MAIN SCREEN BUTTON COLORS V6 -->'
+          if marker not in s:
+              css='''\n<style id="acrow-main-screen-button-colors-v6">\nbutton.acrow-main-command{background:linear-gradient(135deg,#19a974 0%,#25b7e8 100%) !important;color:#fff !important;border-color:#25b7e8 !important;font-weight:900 !important;transition:background .15s ease,color .15s ease !important;}\nbutton.acrow-main-command.acrow-command-active{background:#fff4a3 !important;color:#1769aa !important;border-color:#fff4a3 !important;box-shadow:0 0 0 2px rgba(255,244,163,.45) !important;}\n</style>\n<script id="acrow-main-screen-button-colors-script-v6">\n(function(){\n  function mark(){\n    document.querySelectorAll('button').forEach(function(b){\n      var t=(b.textContent||'').replace(/\\s+/g,' ').trim();\n      if(/طباعة التقارير|إدارة الأعطال|الخطة الشهرية|التعديل|تسجيل الإنتاج|أسباب نقص الكفاءة/.test(t)) b.classList.add('acrow-main-command');\n    });\n  }\n  function boot(){\n    mark();\n    document.addEventListener('click',function(e){\n      var b=e.target.closest && e.target.closest('button.acrow-main-command');\n      if(!b)return;\n      document.querySelectorAll('button.acrow-main-command.acrow-command-active').forEach(function(x){if(x!==b)x.classList.remove('acrow-command-active');});\n      b.classList.add('acrow-command-active');\n      mark();\n    },true);\n  }\n  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();\n  new MutationObserver(mark).observe(document.documentElement,{childList:true,subtree:true});\n})();\n</script>\n'''
+              s=s.replace('</head>',marker+css+'</head>',1)
+              p.write_text(s,encoding='utf-8')
+          PY
+
       - name: Inject machine-card repair
         run: |
           python - <<'PY'
