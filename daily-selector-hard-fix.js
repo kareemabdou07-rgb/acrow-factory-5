@@ -1,8 +1,8 @@
-/* ACROW Factory 5 — v222: requested three daily machines keep their manual checkbox state */
+/* ACROW Factory 5 — v223: last five machines in daily-production selector are fully manual */
 (function(){
 'use strict';
 var KEY='acrow_daily_favorites_override';
-var DISABLED_KEY='acrow_daily_three_disabled_v222';
+var DISABLED_KEY='acrow_daily_five_disabled_v223';
 var EXTRA_DAILY=[
  {id:'2',name:'مكبس فريم كونكتور',dept:'daily'},
  {id:'8',name:'تليسكوب',dept:'daily'},
@@ -10,16 +10,14 @@ var EXTRA_DAILY=[
  {id:'10',name:'اسبيجوت',dept:'daily'},
  {id:'forming-frame',name:'فريم تشكيل',dept:'daily'}
 ];
-/* Only these two stay fixed. These three are fully manual: 8=telescope, 10=spigot, forming-frame=frame forming. */
-var FIXED_IDS=['2','9'];
-var TOGGLE_IDS=['8','10','forming-frame'];
+/* All five bottom machines are manual. None is forced back on. */
+var FIXED_IDS=[];
+var TOGGLE_IDS=['2','8','9','10','forming-frame'];
 function sid(v){return String(v==null?'':v).trim();}
 function getDisabled(){try{var x=JSON.parse(localStorage.getItem(DISABLED_KEY)||'[]');return Array.isArray(x)?x.map(sid):[];}catch(e){return [];}}
 function setDisabled(a){try{localStorage.setItem(DISABLED_KEY,JSON.stringify(Array.isArray(a)?a.map(sid):[]));}catch(e){}}
-function isDisabled(id){return getDisabled().indexOf(sid(id))>=0;}
 function fixed(a){
  a=Array.isArray(a)?a.map(sid).filter(Boolean):[];
- FIXED_IDS.forEach(function(id){if(a.indexOf(id)<0)a.push(id);});
  var dis=getDisabled();
  TOGGLE_IDS.forEach(function(id){if(dis.indexOf(id)>=0)a=a.filter(function(x){return sid(x)!==id;});});
  return a;
