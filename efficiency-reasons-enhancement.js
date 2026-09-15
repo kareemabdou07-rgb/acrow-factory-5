@@ -3,92 +3,14 @@
 'use strict';
 var timer;
 function findBaseOpen(){return typeof window.openEntry==='function'?window.openEntry:null;}
-function addGasReason(){
-  try{
-    var sel=document.getElementById('acrCat');
-    if(sel && !Array.from(sel.options).some(function(o){return o.value==='نقص غاز';})){
-      var o=document.createElement('option');o.value='نقص غاز';o.textContent='نقص غاز';sel.appendChild(o);
-    }
-  }catch(e){}
-}
-function forceButton(){
- var btn=document.getElementById('acrowReasonBtn'); if(!btn)return;
- btn.textContent='أسباب نقص الكفاءة';
- btn.style.setProperty('background','#ffd54a','important');
- btn.style.setProperty('color','#0645ad','important');
- btn.style.setProperty('border','2px solid #0645ad','important');
- btn.style.setProperty('font-weight','900','important');
- if(btn.dataset.menuBound==='1')return;
- btn.dataset.menuBound='1';
- btn.onclick=function(e){e.preventDefault();e.stopPropagation();openMenu();};
-}
-function ensureMenu(){
- if(document.getElementById('acrQuickMenu'))return;
- var s=document.createElement('style');s.id='acrQuickMenuStyle';s.textContent='#acrQuickMenu{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100001;display:none;align-items:center;justify-content:center;padding:15px}#acrQuickMenu.open{display:flex}.acr-qbox{width:min(440px,100%);background:#111d2b;border:2px solid #ffd54a;border-radius:18px;padding:18px;color:#fff;text-align:center}.acr-qbox h3{margin:0 0 6px;font-size:20px}.acr-qbox p{margin:0 0 16px;color:#aeb9c4;font-size:12px}.acr-qbtn{display:block;width:100%;margin:9px 0;padding:13px;border-radius:11px;border:2px solid #0645ad;background:#ffd54a;color:#0645ad;font-weight:900;font-size:15px}.acr-qbtn.dark{background:#123b59;color:#fff;border-color:#2b4054}.acr-qclose{background:transparent;border:0;color:#fff;font-size:25px;float:left;cursor:pointer}';document.head.appendChild(s);
- var o=document.createElement('div');o.id='acrQuickMenu';o.innerHTML='<div class="acr-qbox"><button class="acr-qclose" id="acrQClose">×</button><h3>أسباب نقص الكفاءة</h3><p>اختار العملية التي تريدها</p><button class="acr-qbtn" id="acrQAdd">إضافة سبب جديد</button><button class="acr-qbtn" id="acrQReports">التقارير</button><button class="acr-qbtn" id="acrQChart">الرسم البياني</button><button class="acr-qbtn" id="acrQPareto">باريتو</button></div>';
- document.body.appendChild(o);
- o.onclick=function(e){if(e.target===o)closeMenu();};
- document.getElementById('acrQClose').onclick=closeMenu;
- document.getElementById('acrQAdd').onclick=function(){closeMenu();var f=findBaseOpen();if(f)f();setTimeout(function(){addGasReason();addDuration();},80);};
- document.getElementById('acrQReports').onclick=function(){closeMenu();openExistingReport();};
- document.getElementById('acrQChart').onclick=function(){closeMenu();openExistingReport('chart');};
- document.getElementById('acrQPareto').onclick=function(){closeMenu();openExistingReport('pareto');};
-}
-function openMenu(){ensureMenu();document.getElementById('acrQuickMenu').classList.add('open');}
-function closeMenu(){var o=document.getElementById('acrQuickMenu');if(o)o.classList.remove('open');}
-function addDuration(){
- var root=document.getElementById('acrContent');if(!root)return;
- if(document.getElementById('acrDuration'))return;
- var grid=root.querySelector('.acr-grid');if(!grid)return;
- var d=document.createElement('div');d.className='acr-field';d.innerHTML='<label>مدة السبب</label><div style="display:flex;gap:6px"><input id="acrDuration" type="number" min="0" step="0.25" value="1" placeholder="المدة"><select id="acrDurationUnit"><option value="hour">ساعة</option><option value="minute">دقيقة</option></select></div>';
- grid.appendChild(d);
- addGasReason();
-}
-function openExistingReport(mode){
- var btn=document.getElementById('acrReports');
- if(btn){btn.click();setTimeout(function(){enhanceReport(mode);},120);return;}
- var f=window.openReport;if(typeof f==='function'){f();setTimeout(function(){enhanceReport(mode);},120);}
-}
-function enhanceReport(mode){
- var c=document.getElementById('acrContent');if(!c)return;
- var filters=c.querySelector('.acr-report-filters');
- if(filters){
-   var f=filters.querySelector('#acrFrom'),t=filters.querySelector('#acrTo');
-   if(f&&t){f.value=f.value||new Date().toISOString().slice(0,10);t.value=t.value||f.value;}
- }
- var note=document.getElementById('acrRangeNote');
- if(!note){note=document.createElement('div');note.id='acrRangeNote';note.style.cssText='margin:8px 0;color:#8b98a5;font-size:11px';note.textContent='اختار تاريخ البداية والنهاية: يومين أو 3 أيام أو أسبوع أو شهر أو أي عدد أيام.';c.insertBefore(note,c.firstChild);}
- var old=c.querySelector('#acrDurationSummary');if(old)old.remove();
- var table=c.querySelector('.acr-table');
- if(table){
-   var rows=Array.from(table.querySelectorAll('tbody tr')),total=0;
-   rows.forEach(function(tr){var txt=tr.textContent||'';var m=txt.match(/(\d+(?:\.\d+)?)\s*(?:ساعة|ساعات|دقيقة|دقائق)/);if(m)total+=Number(m[1])*(/دقيقة/.test(m[0])?1:60);});
-   var box=document.createElement('div');box.id='acrDurationSummary';box.style.cssText='margin:12px 0;padding:12px;border:1px solid #ffd54a;border-radius:10px;background:#18283a;font-weight:900;color:#ffd54a';box.textContent='إجمالي مدة أسباب نقص الكفاءة في الفترة: '+Math.floor(total/60)+' ساعة '+(total%60)+' دقيقة';c.insertBefore(box,c.firstChild);
- }
- if(mode){
-   var headings=Array.from(c.querySelectorAll('h2,h3,.acr-title')).filter(function(x){return /رسم|باريتو|Pareto/i.test(x.textContent||'');});
-   if(mode==='chart'&&headings.length)headings[0].scrollIntoView({behavior:'smooth',block:'start'});
-   if(mode==='pareto'&&headings.length)headings[headings.length-1].scrollIntoView({behavior:'smooth',block:'start'});
- }
-}
-function hookSave(){
- var save=document.getElementById('acrSave');if(!save||save.dataset.enhanced2==='1')return;
- save.dataset.enhanced2='1';save.addEventListener('click',function(){setTimeout(function(){
-  try{
-   var date=document.getElementById('acrDate')?.value;
-   var data=JSON.parse(localStorage.getItem('acrow_daily_efficiency_reasons_v1')||'{}');
-   if(date&&data[date]){
-    var n=Number(document.getElementById('acrDuration')?.value||0),u=document.getElementById('acrDurationUnit')?.value||'hour';
-    data[date].durationMinutes=u==='hour'?Math.round(n*60):Math.round(n);
-    localStorage.setItem('acrow_daily_efficiency_reasons_v1',JSON.stringify(data));
-   }
-  }catch(e){}
- },100);});
-}
-function ready(){
- forceButton();ensureMenu();
- var root=document.getElementById('acrContent');if(root){addGasReason();addDuration();hookSave();}
-}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(ready,500);});else setTimeout(ready,500);
-new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(ready,40);}).observe(document.documentElement,{childList:true,subtree:true});
-})();
+function addGasReason(){try{var sel=document.getElementById('acrCat');if(sel&&!Array.from(sel.options).some(function(o){return o.value==='نقص غاز';})){var o=document.createElement('option');o.value='نقص غاز';o.textContent='نقص غاز';sel.appendChild(o);}}catch(e){}}
+function forceButton(){var btn=document.getElementById('acrowReasonBtn');if(!btn)return;btn.textContent='أسباب نقص الكفاءة';btn.style.setProperty('background','#ffd54a','important');btn.style.setProperty('color','#0645ad','important');btn.style.setProperty('border','2px solid #0645ad','important');btn.style.setProperty('font-weight','900','important');if(btn.dataset.menuBound==='1')return;btn.dataset.menuBound='1';btn.onclick=function(e){e.preventDefault();e.stopPropagation();openMenu();};}
+function ensureMenu(){if(document.getElementById('acrQuickMenu'))return;var s=document.createElement('style');s.id='acrQuickMenuStyle';s.textContent='#acrQuickMenu{position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100001;display:none;align-items:center;justify-content:center;padding:15px}#acrQuickMenu.open{display:flex}.acr-qbox{width:min(440px,100%);background:#111d2b;border:2px solid #ffd54a;border-radius:18px;padding:18px;color:#fff;text-align:center}.acr-qbox h3{margin:0 0 6px;font-size:20px}.acr-qbox p{margin:0 0 16px;color:#aeb9c4;font-size:12px}.acr-qbtn{display:block;width:100%;margin:9px 0;padding:13px;border-radius:11px;border:2px solid #0645ad;background:#ffd54a;color:#0645ad;font-weight:900;font-size:15px}.acr-qclose{background:transparent;border:0;color:#fff;font-size:25px;float:left;cursor:pointer}';document.head.appendChild(s);var o=document.createElement('div');o.id='acrQuickMenu';o.innerHTML='<div class="acr-qbox"><button class="acr-qclose" id="acrQClose">×</button><h3>أسباب نقص الكفاءة</h3><p>اختار العملية التي تريدها</p><button class="acr-qbtn" id="acrQAdd">إضافة سبب جديد</button><button class="acr-qbtn" id="acrQReports">التقارير</button><button class="acr-qbtn" id="acrQChart">الرسم البياني</button><button class="acr-qbtn" id="acrQPareto">باريتو</button></div>';document.body.appendChild(o);o.onclick=function(e){if(e.target===o)closeMenu();};document.getElementById('acrQClose').onclick=closeMenu;document.getElementById('acrQAdd').onclick=function(){closeMenu();var f=findBaseOpen();if(f)f();setTimeout(function(){addGasReason();addDuration();},80);};document.getElementById('acrQReports').onclick=function(){closeMenu();openExistingReport();};document.getElementById('acrQChart').onclick=function(){closeMenu();openExistingReport('chart');};document.getElementById('acrQPareto').onclick=function(){closeMenu();openExistingReport('pareto');};}
+function openMenu(){ensureMenu();document.getElementById('acrQuickMenu').classList.add('open');}function closeMenu(){var o=document.getElementById('acrQuickMenu');if(o)o.classList.remove('open');}
+function addDuration(){var root=document.getElementById('acrContent');if(!root)return;if(document.getElementById('acrDuration'))return;var grid=root.querySelector('.acr-grid');if(!grid)return;var d=document.createElement('div');d.className='acr-field';d.innerHTML='<label>مدة السبب</label><div style="display:flex;gap:6px"><input id="acrDuration" type="number" min="0" step="0.25" value="1" placeholder="المدة"><select id="acrDurationUnit"><option value="hour">ساعة</option><option value="minute">دقيقة</option></select></div>';grid.appendChild(d);addGasReason();}
+function openExistingReport(mode){var btn=document.getElementById('acrReports');if(btn){btn.click();setTimeout(function(){enhanceReport(mode);},120);return;}var f=window.openReport;if(typeof f==='function'){f();setTimeout(function(){enhanceReport(mode);},120);}}
+function enhanceReport(mode){var c=document.getElementById('acrContent');if(!c)return;var filters=c.querySelector('.acr-report-filters');if(filters){var f=filters.querySelector('#acrFrom'),t=filters.querySelector('#acrTo');if(f&&t){f.value=f.value||new Date().toISOString().slice(0,10);t.value=t.value||f.value;}}var note=document.getElementById('acrRangeNote');if(!note){note=document.createElement('div');note.id='acrRangeNote';note.style.cssText='margin:8px 0;color:#8b98a5;font-size:11px';note.textContent='اختار تاريخ البداية والنهاية: يومين أو 3 أيام أو أسبوع أو شهر أو أي عدد أيام.';c.insertBefore(note,c.firstChild);}var old=c.querySelector('#acrDurationSummary');if(old)old.remove();var table=c.querySelector('.acr-table');if(table){var rows=Array.from(table.querySelectorAll('tbody tr')),total=0;rows.forEach(function(tr){var txt=tr.textContent||'';var m=txt.match(/(\d+(?:\.\d+)?)\s*(?:ساعة|ساعات|دقيقة|دقائق)/);if(m)total+=Number(m[1])*(/دقيقة/.test(m[0])?1:60);});var box=document.createElement('div');box.id='acrDurationSummary';box.style.cssText='margin:12px 0;padding:12px;border:1px solid #ffd54a;border-radius:10px;background:#18283a;font-weight:900;color:#ffd54a';box.textContent='إجمالي مدة أسباب نقص الكفاءة في الفترة: '+Math.floor(total/60)+' ساعة '+(total%60)+' دقيقة';c.insertBefore(box,c.firstChild);}if(mode){var headings=Array.from(c.querySelectorAll('h2,h3,.acr-title')).filter(function(x){return /رسم|باريتو|Pareto/i.test(x.textContent||'');});if(mode==='chart'&&headings.length)headings[0].scrollIntoView({behavior:'smooth',block:'start'});if(mode==='pareto'&&headings.length)headings[headings.length-1].scrollIntoView({behavior:'smooth',block:'start'});}}
+function hookSave(){var save=document.getElementById('acrSave');if(!save||save.dataset.enhanced2==='1')return;save.dataset.enhanced2='1';save.addEventListener('click',function(){setTimeout(function(){try{var date=document.getElementById('acrDate')?.value;var data=JSON.parse(localStorage.getItem('acrow_daily_efficiency_reasons_v1')||'{}');if(date&&data[date]){var n=Number(document.getElementById('acrDuration')?.value||0),u=document.getElementById('acrDurationUnit')?.value||'hour';data[date].durationMinutes=u==='hour'?Math.round(n*60):Math.round(n);localStorage.setItem('acrow_daily_efficiency_reasons_v1',JSON.stringify(data));}}catch(e){}},100);});}
+function ready(){forceButton();ensureMenu();var root=document.getElementById('acrContent');if(root){addGasReason();addDuration();hookSave();}}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(ready,500);});else setTimeout(ready,500);new MutationObserver(function(){clearTimeout(timer);timer=setTimeout(ready,40);}).observe(document.documentElement,{childList:true,subtree:true});})();
+(function(){function loadPatch(){if(document.getElementById('acrMobileReportFixScript'))return;var s=document.createElement('script');s.id='acrMobileReportFixScript';s.src='efficiency-reasons-mobile-report-fix.js?v=20260915';s.async=false;(document.head||document.documentElement).appendChild(s);}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadPatch);else loadPatch();})();
