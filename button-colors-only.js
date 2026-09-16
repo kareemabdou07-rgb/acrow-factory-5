@@ -1,9 +1,9 @@
 /* ACROW Factory 5 — main-screen button colors only. No functionality changes. */
-/* v9 — blue-dominant; light yellow accent; active button remains blue */
+/* v10 — blue main buttons with light yellow accent; active button yellow */
 (function(){
 'use strict';
 var activeButton=null;
-var base='linear-gradient(135deg,#155f9f 0%,#237fba 52%,#cdb85a 100%)';
+var base='linear-gradient(135deg,#145fa3 0%,#237fbd 62%,#d9c56a 100%)';
 function isMainButton(b){
   var t=(b.textContent||'').replace(/\s+/g,' ').trim();
   return /طباعة التقارير|إدارة الأعطال|الخطة الشهرية|التعديل|تسجيل الإنتاج|أسباب نقص الكفاءة|الصيانة/.test(t);
@@ -11,15 +11,15 @@ function isMainButton(b){
 function paint(b,active){
   if(!b)return;
   b.setAttribute('data-acrow-main-color','1');
-  b.style.setProperty('background-image',base,'important');
-  b.style.setProperty('background-color','#237fba','important');
-  b.style.setProperty('color','#ffffff','important');
-  b.style.setProperty('border','2px solid #cdb85a','important');
+  b.style.setProperty('background-image',active?'linear-gradient(135deg,#ffd84d 0%,#ffe98a 100%)':base,'important');
+  b.style.setProperty('background-color',active?'#ffd84d':'#237fbd','important');
+  b.style.setProperty('color',active?'#17324d':'#ffffff','important');
+  b.style.setProperty('border','2px solid '+(active?'#e4bd35':'#d9c56a'),'important');
   b.style.setProperty('font-weight','900','important');
   b.style.setProperty('transition','filter .15s ease,transform .15s ease,box-shadow .15s ease','important');
   if(active){
-    b.style.setProperty('box-shadow','0 0 0 2px rgba(205,184,90,.32),0 5px 14px rgba(21,95,159,.28)','important');
-    b.style.setProperty('filter','brightness(1.03) saturate(1.03)','important');
+    b.style.setProperty('box-shadow','0 0 0 2px rgba(255,216,77,.38),0 5px 14px rgba(21,95,159,.22)','important');
+    b.style.setProperty('filter','brightness(1.03)','important');
   }else{
     b.style.removeProperty('box-shadow');
     b.style.removeProperty('filter');
