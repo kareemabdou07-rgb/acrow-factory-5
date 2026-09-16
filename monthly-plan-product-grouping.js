@@ -1,6 +1,7 @@
 /* ACROW Factory 5 — monthly plan product grouping
-   Groups the monthly-plan product breakdown by the requested final product names.
-   Does not change production entry, machine selection, targets, or other reports.
+   Groups the existing monthly-plan table by the requested final products.
+   Keeps the existing monthly-plan layout/style and does not change production entry,
+   machine selection, targets, or other reports.
 */
 (function(){
   'use strict';
@@ -19,6 +20,7 @@
     var dept=String((machine&&machine.dept)||'').trim();
     var dn=String((machine&&machine.deptName)||'').trim();
     var all=(name+' '+dept+' '+dn).toLowerCase();
+
     if(dept==='ledger' || /ليدجر/.test(all)) return 'ليدجر';
     if(/شور\s*بريس/.test(all)) return 'شور بريس';
     if(/فريم\s*كوباية/.test(all)) return 'فريم كوباية';
@@ -26,7 +28,9 @@
     if(/فريم\s*كونيكتور/.test(all)) return 'فريم كونيكتور';
     if(/أسبجوت|اسبيجوت|سبجوت|spigot/i.test(all)) return 'أسبجوت';
     if(dept==='sorting' || /منطقة\s*الفرز/.test(all)) return 'منطقة الفرز';
-    if(dept==='range' || /رينج\s*فيرتكال|رينج\s*فيرتيكال/.test(all)) return 'رينج فيرتكال';
+    if(dept==='range' || /رينج\s*فيرت|رينج\s*فيرتي/.test(all)) return 'رينج فيرتكال';
+
+    // Anything not requested above keeps its existing product/department name.
     return dn || name || 'أخرى';
   }
   function selectedIds(){
@@ -54,9 +58,11 @@
   function render(){
     var box=document.getElementById('planProductBreakdown');
     if(!box || typeof window.MACHINES==='undefined') return;
+
     var base=(document.getElementById('planDate')&&document.getElementById('planDate').value) || new Date().toISOString().slice(0,10);
     var ids=selectedIds();
     if(!ids.size) return;
+
     var dates=monthDates(base), groups={};
     window.MACHINES.forEach(function(machine){
       var id=sid(machine.id);
@@ -66,20 +72,34 @@
       groups[g].actual += actualForMachine(id,dates);
       groups[g].machines += 1;
     });
+
     var rows=Object.values(groups).filter(function(x){return x.actual>0 || x.machines>0;});
     rows.sort(function(a,b){return b.actual-a.actual || a.name.localeCompare(b.name,'ar');});
     var monthActual=rows.reduce(function(s,x){return s+x.actual;},0);
-    var html='<div class="report-table-wrap" style="border:0;border-radius:0;margin-top:10px;">'+
-      '<table class="report-table">'+
-      '<thead><tr><th>المنتج</th><th>عدد الماكينات</th><th>الكمية المحققة</th><th>نسبته من إجمالي المحقق</th></tr></thead><tbody>'+
-      rows.map(function(x){return '<tr><td><b>'+esc(x.name)+'</b></td><td>'+x.machines+'</td><td>'+Math.round(x.actual)+' قطعة</td><td>'+(monthActual>0?Math.round(x.actual/monthActual*1000)/10:0)+'%</td></tr>';}).join('')+
-      '</tbody></table></div>';
-    var marker='data-monthly-plan-grouped-products';
-    var old=box.querySelector('['+marker+']');
+
+    var info=box.querySelector('[data-monthly-plan-group-info]');
+    if(!info){
+      info=document.createElement('div');
+      info.setAttribute('data-monthly-plan-group-info','1');
+      box.insertBefore(info,box.firstChild);
+    }
+    var selectedText=[...ids].map(function(id){
+      var mm=window.MACHINES.find(function(x){return sid(x.id)===sid(id);});
+      return mm ? mm.name+' ('+mm.id+')' : id;
+    }).join(' — ');
+    var monthly=(typeof window.getMonthlyPlan==='function') ? Number(window.getMonthlyPlan(base)||0) : 0;
+    info.style.cssText='padding:12px 14px;margin-bottom:10px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);font-weight:800;';
+    info.innerHTML='المكن الداخلة في خصم الخطة: '+esc(selectedText||'لم يتم اختيار ماكينة')+'<br><span style="font-size:12px;font-weight:500;color:var(--text-dim)">إجمالي إعداد الخطة الشهري: '+Math.round(monthly)+' قطعة — الإنتاج الفعلي يُسحب من نفس بيانات تسجيل الإنتاج والتقارير.</span>';
+
+    var old=box.querySelector('[data-monthly-plan-grouped-products]');
     if(old) old.remove();
     var wrap=document.createElement('div');
-    wrap.setAttribute(marker,'1');
-    wrap.innerHTML='<div class="chart-title" style="margin-top:12px;">تجميع الخطة حسب المنتج النهائي</div>'+html;
+    wrap.setAttribute('data-monthly-plan-grouped-products','1');
+    wrap.innerHTML='<div class="report-table-wrap" style="border:0;border-radius:0;margin-top:10px;">'+
+      '<table class="report-table">'+
+      '<thead><tr><th>المنتج</th><th>عدد الماكينات</th><th>المحقق خلال الشهر</th><th>نسبته من إجمالي المحقق</th></tr></thead><tbody>'+
+      (rows.map(function(x){return '<tr><td><b>'+esc(x.name)+'</b></td><td>'+x.machines+'</td><td>'+Math.round(x.actual)+' قطعة</td><td>'+(monthActual>0?Math.round(x.actual/monthActual*1000)/10:0)+'%</td></tr>';}).join('') || '<tr><td colspan="4">اختار المكن من إعداد الخطة أولاً</td></tr>')+
+      '</tbody></table></div>';
     box.appendChild(wrap);
   }
 
