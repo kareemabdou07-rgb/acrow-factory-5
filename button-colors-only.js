@@ -1,5 +1,5 @@
 /* ACROW Factory 5 — main buttons: blue with an ultra-light yellow border */
-/* v28 — 5S/Safety evaluation cache-busted */
+/* v29 — 5S/Safety evaluation cache-busted */
 (function(){
 'use strict';
 var activeText='';
@@ -10,7 +10,7 @@ function isMainButton(b){var t=textOf(b);return /طباعة التقارير|إ�
 function paint(b,on){if(!b)return;b.setAttribute('data-acrow-main-color','1');b.style.setProperty('background-image',on?active:base,'important');b.style.setProperty('background-color',on?'#f1e8a8':'#3b82b8','important');b.style.setProperty('color',on?'#31475a':'#fff','important');b.style.setProperty('border','2px solid '+(on?'#d8c766':'rgba(216,199,102,.18)'),'important');b.style.setProperty('font-weight','900','important');b.style.setProperty('font-size','1.09em','important');b.style.setProperty('transition','filter .08s ease,box-shadow .08s ease,background-image .08s ease','important');if(on){b.style.setProperty('box-shadow','0 0 7px 2px rgba(226,211,105,.55),0 0 16px 5px rgba(220,200,80,.22)','important');b.style.setProperty('filter','brightness(1.04)','important');}else{b.style.removeProperty('box-shadow');b.style.removeProperty('filter');}}
 function apply(){document.querySelectorAll('button').forEach(function(b){if(isMainButton(b))paint(b,activeText!==''&&textOf(b)===activeText);});}
 function choose(e){var b=e.target.closest&&e.target.closest('button');if(!b||!isMainButton(b))return;activeText=textOf(b);setTimeout(apply,0);}
-function loadSafety(){if(document.getElementById('fss-loader'))return;var s=document.createElement('script');s.id='fss-loader';s.src='./five-s-safety-evaluation.js?v=28';s.async=false;document.head.appendChild(s);}
+function loadSafety(){if(document.getElementById('fss-loader'))return;var s=document.createElement('script');s.id='fss-loader';s.src='./five-s-safety-evaluation.js?v=29';s.async=false;document.head.appendChild(s);}
 function boot(){apply();loadSafety();document.addEventListener('pointerdown',choose,true);document.addEventListener('click',choose,true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,300);});else setTimeout(boot,300);
 new MutationObserver(function(){apply();}).observe(document.documentElement,{childList:true,subtree:true});
