@@ -13,5 +13,5 @@ function choose(e){var b=e.target.closest&&e.target.closest('button');if(!b||!is
 function boot(){apply();document.addEventListener('pointerdown',choose,true);document.addEventListener('click',choose,true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,300);});else setTimeout(boot,300);
 new MutationObserver(function(){apply();}).observe(document.documentElement,{childList:true,subtree:true});
-var s=document.createElement('script');s.src='./five-s-safety-evaluation.js?v=1';s.async=false;document.head.appendChild(s);
+var s=document.createElement('script');s.src='./five-s-safety-evaluation.js?v=2';s.async=false;document.head.appendChild(s);
 })();
