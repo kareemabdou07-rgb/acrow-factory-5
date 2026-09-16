@@ -1,7 +1,7 @@
-/* ACROW Factory 5 — v236: fix five daily-machine toggles at label level */
+/* ACROW Factory 5 — v237: hard-stop toggle conflicts for five daily machines */
 (function(){
 'use strict';
-var KEY='acrow_daily_manual_selection_v236';
+var KEY='acrow_daily_manual_selection_v237';
 var FIXED={'2':1,'8':1,'9':1,'10':1,'forming-frame':1};
 function sid(v){return String(v==null?'':v).trim();}
 function uniq(a){return Array.from(new Set((a||[]).map(sid).filter(Boolean)));}
@@ -12,13 +12,18 @@ function initial(){var m=read();if(m!==null)return m;var s=getStore();return s&&
 function saveNow(){try{if(typeof saveStore==='function')saveStore();}catch(e){}try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}}
 function persist(a){a=uniq(a);var st=getSettings();if(st){st.dailyMachineIds=a.slice();st.dailyMachineIdsConfigured=true;}try{localStorage.setItem(KEY,JSON.stringify(a));}catch(e){}var s=getStore();if(s)s.favorites=a.slice();window.__acrowDailyFavoritesDirty=true;saveNow();}
 function idOf(cb){return cb?sid(cb.getAttribute('data-machine')):'';}
-function checkboxFromTarget(t){if(!t)return null;if(t.matches&&t.matches('#machineSelectList input[type="checkbox"]'))return t;var row=t.closest&&t.closest('#machineSelectList label, #machineSelectList .fav-checkbox-row, #machineSelectList [data-machine-id]');return row&&row.querySelector?row.querySelector('input[type="checkbox"]'):null;}
+function getCb(t){if(!t)return null;if(t.matches&&t.matches('#machineSelectList input[type="checkbox"]'))return t;var row=t.closest&&t.closest('#machineSelectList label, #machineSelectList .fav-checkbox-row, #machineSelectList [data-machine-id]');return row&&row.querySelector?row.querySelector('input[type="checkbox"]'):null;}
 function sync(){var box=document.getElementById('machineSelectList'),m=read();if(!box||m===null)return;box.querySelectorAll('input[type="checkbox"]').forEach(function(cb){var id=idOf(cb);if(FIXED[id])cb.checked=m.indexOf(id)>=0;});}
-function toggle(cb){var id=idOf(cb);if(!FIXED[id])return;var m=initial(),on=m.indexOf(id)<0;if(on)m.push(id);else m=m.filter(function(x){return x!==id;});persist(m);cb.checked=on;}
-function click(e){var cb=checkboxFromTarget(e.target);if(!cb||!FIXED[idOf(cb)])return;e.preventDefault();e.stopImmediatePropagation();e.stopPropagation();toggle(cb);sync();}
-function change(e){var cb=checkboxFromTarget(e.target);if(!cb||!FIXED[idOf(cb)])return;e.preventDefault();e.stopImmediatePropagation();e.stopPropagation();sync();}
+function toggle(cb){var id=idOf(cb);if(!FIXED[id])return;var m=initial(),on=m.indexOf(id)<0;if(on)m.push(id);else m=m.filter(function(x){return x!==id;});persist(m);cb.checked=on;[0,40,120,300].forEach(function(t){setTimeout(sync,t);});}
+function guard(e){var cb=getCb(e.target);if(!cb||!FIXED[idOf(cb)])return;e.preventDefault();e.stopImmediatePropagation();e.stopPropagation();}
+function pointer(e){var cb=getCb(e.target);if(!cb||!FIXED[idOf(cb)])return;guard(e);toggle(cb);}
+function click(e){var cb=getCb(e.target);if(!cb||!FIXED[idOf(cb)])return;guard(e);sync();}
+function change(e){var cb=getCb(e.target);if(!cb||!FIXED[idOf(cb)])return;guard(e);sync();}
+window.addEventListener('pointerdown',pointer,true);
+window.addEventListener('touchstart',pointer,true);
 window.addEventListener('click',click,true);
 window.addEventListener('change',change,true);
 function boot(){sync();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+new MutationObserver(function(){sync();}).observe(document.documentElement,{childList:true,subtree:true});
 })();
