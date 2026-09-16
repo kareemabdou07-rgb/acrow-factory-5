@@ -1,0 +1,20 @@
+/* ACROW Factory 5 — optional 5S & Safety rating per machine */
+(function(){
+'use strict';
+var PANEL_ID='fiveSSafetyPanel';
+function S(){return typeof store!=='undefined'&&store?store:null;}
+function save(){try{if(typeof saveStore==='function')saveStore();}catch(e){}try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}}
+function date(){try{return String(dateInput&&dateInput.value||'').trim();}catch(e){return '';}}
+function shift(){try{return String(currentShift||'').trim()||'1';}catch(e){return '1';}}
+function ensure(){var s=S();if(!s)return null;if(!s.fiveSSafetyRatings)s.fiveSSafetyRatings={};var d=date();if(!d)return null;if(!s.fiveSSafetyRatings[d])s.fiveSSafetyRatings[d]={};var sh=shift();if(!s.fiveSSafetyRatings[d][sh])s.fiveSSafetyRatings[d][sh]={};return s.fiveSSafetyRatings[d][sh];}
+function machines(){var out=[];var seen={};document.querySelectorAll('.machine-card').forEach(function(card){var inp=card.querySelector('.actual-input[data-machine],input[data-machine]');if(!inp)return;var id=String(inp.dataset.machine||'').trim();if(!id||seen[id])return;seen[id]=1;var name=(card.querySelector('.mc-name')||{}).textContent||id;out.push({id:id,name:String(name).replace(/\s+/g,' ').trim()});});return out;}
+function target(){var h=document.querySelectorAll('.dept-header h2');for(var i=0;i<h.length;i++){var t=(h[i].textContent||'').trim();if(/إنتاج/.test(t)){return h[i].closest('.dept-section')||h[i].parentElement;}}return document.querySelector('.container');}
+function selectHtml(id,key,val){var s='<select class="fss-select" data-machine="'+id+'" data-kind="'+key+'"><option value="">اختياري</option>';for(var i=1;i<=5;i++)s+='<option value="'+i+'"'+(String(val||'')===String(i)?' selected':'')+'>'+i+'</option>';return s+'</select>';}
+function render(){var old=document.getElementById(PANEL_ID);if(old)old.remove();var ms=machines();if(!ms.length)return;var data=ensure()||{};var p=document.createElement('section');p.id=PANEL_ID;p.className='dept-section';p.innerHTML='<div class="dept-header"><h2>تقييم 5S والسيفتي لكل ماكينة</h2><span class="count">اختياري — من 1 إلى 5</span></div><div class="fss-grid">'+ms.map(function(m){var r=data[m.id]||{};return '<div class="fss-card"><div class="fss-name">'+m.name+'</div><div class="fss-row"><span>5S</span>'+selectHtml(m.id,'fiveS',r.fiveS)+'</div><div class="fss-row"><span>Safety</span>'+selectHtml(m.id,'safety',r.safety)+'</div></div>';}).join('')+'</div>';
+var css=document.getElementById('fss-style');if(!css){css=document.createElement('style');css.id='fss-style';css.textContent='#fiveSSafetyPanel .fss-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}#fiveSSafetyPanel .fss-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}#fiveSSafetyPanel .fss-name{font-weight:800;font-size:14px}#fiveSSafetyPanel .fss-row{display:flex;align-items:center;gap:10px;font-weight:800}#fiveSSafetyPanel .fss-row>span{width:70px;color:var(--text-dim)}#fiveSSafetyPanel .fss-select{flex:1;background:var(--bg-2);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:7px;font-family:inherit;font-weight:800}';document.head.appendChild(css)}
+var t=target();if(t&&t.parentNode)t.parentNode.insertBefore(p,t.nextSibling);else document.body.appendChild(p);
+p.querySelectorAll('.fss-select').forEach(function(el){el.addEventListener('change',function(){var d=ensure();if(!d)return;var id=String(el.dataset.machine||'');var k=String(el.dataset.kind||'');if(!d[id])d[id]={};if(el.value)d[id][k]=Number(el.value);else delete d[id][k];save();});});}
+function boot(){setTimeout(render,500);setTimeout(render,1500);setTimeout(render,3000);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+new MutationObserver(function(){if(!document.getElementById(PANEL_ID))setTimeout(render,100);}).observe(document.body,{childList:true,subtree:true});
+})();
