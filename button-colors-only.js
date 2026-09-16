@@ -1,5 +1,5 @@
 /* ACROW Factory 5 — main buttons: blue + light yellow, active luminous yellow */
-/* v20 */
+/* v21 — load optional 5S/Safety evaluation module */
 (function(){
 'use strict';
 var activeText='';
@@ -13,4 +13,5 @@ function choose(e){var b=e.target.closest&&e.target.closest('button');if(!b||!is
 function boot(){apply();document.addEventListener('pointerdown',choose,true);document.addEventListener('click',choose,true);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,300);});else setTimeout(boot,300);
 new MutationObserver(function(){apply();}).observe(document.documentElement,{childList:true,subtree:true});
+var s=document.createElement('script');s.src='./five-s-safety-evaluation.js?v=1';s.async=false;document.head.appendChild(s);
 })();
