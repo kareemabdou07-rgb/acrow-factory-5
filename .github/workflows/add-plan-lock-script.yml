@@ -21,15 +21,16 @@ jobs:
           from pathlib import Path
           p = Path('index.html')
           s = p.read_text(encoding='utf-8')
-          tag = '<script src="./plan-machine-lock-fix.js?v=1"></script>'
-          if tag not in s:
+          tag = '<script src="./plan-machine-lock-fix.js?v=2"></script>'
+          if 'plan-machine-lock-fix.js' not in s:
               marker = '<script src="./production-fix.js"></script>'
               if marker not in s:
                   raise SystemExit('production-fix script marker not found')
               s = s.replace(marker, marker + '\n' + tag, 1)
               p.write_text(s, encoding='utf-8')
-          else:
-              print('Plan lock script tag already present')
+          elif 'plan-machine-lock-fix.js?v=2' not in s:
+              s = s.replace('plan-machine-lock-fix.js?v=1', 'plan-machine-lock-fix.js?v=2')
+              p.write_text(s, encoding='utf-8')
           PY
       - name: Commit and push if changed
         shell: bash
