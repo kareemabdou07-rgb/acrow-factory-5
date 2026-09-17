@@ -4,7 +4,7 @@ function st(){return typeof store!=='undefined'&&store?store:null}
 function today(){try{return String(dateInput&&dateInput.value||'').trim()||new Date().toISOString().slice(0,10)}catch(e){return new Date().toISOString().slice(0,10)}}
 function shift(){try{return String(currentShift||'1')}catch(e){return'1'}}
 function save(){try{if(typeof saveStore==='function')saveStore()}catch(e){}try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow()}catch(e){}}
-function voiceSaved(){try{if(!('speechSynthesis' in window))return;window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance('تم حفظ تقييم السلامة والـ 5 إس بنجاح');u.lang='ar-EG';u.rate=0.9;u.pitch=1;window.speechSynthesis.speak(u)}catch(e){}}
+function voiceSaved(){try{if(!('speechSynthesis' in window))return;window.speechSynthesis.cancel();var u=new SpeechSynthesisUtterance('تم تقييم السفتي والفيف اس');u.lang='ar-EG';u.rate=0.9;u.pitch=1;window.speechSynthesis.speak(u)}catch(e){}}
 function esc(v){return String(v==null?'':v).replace(/[&<>\"]/g,function(c){return({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'})[c]})}
 function norm(x){if(x&&typeof x==='object')return String(x.id!=null?x.id:(x.machineId!=null?x.machineId:(x.value!=null?x.value:''))).trim();return String(x==null?'':x).trim()}
 function faultText(el){return (el&&((el.textContent||'')+' '+(el.getAttribute('aria-label')||'')+' '+(el.getAttribute('title')||'')+' '+(el.getAttribute('data-action')||'')+' '+(el.getAttribute('name')||'')).replace(/\s+/g,' ').trim())||''}
