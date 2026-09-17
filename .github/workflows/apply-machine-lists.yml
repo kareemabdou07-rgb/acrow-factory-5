@@ -82,6 +82,109 @@ jobs:
               p.write_text(s + '\n' + patch, encoding='utf-8')
           PY
 
+      - name: Sync monthly plan selector with daily production selector
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('production-fix.js')
+          s = p.read_text(encoding='utf-8')
+          marker = 'ACROW_DAILY_PLAN_MACHINE_LIST_SYNC_V1'
+          if marker not in s:
+              patch = r'''
+/* ACROW_DAILY_PLAN_MACHINE_LIST_SYNC_V1: make the monthly-plan machine selector use exactly the same machine list as today's production selector. */
+(function(){
+  'use strict';
+  function dailyMachines(){
+    var root=document.getElementById('machineSelectList');
+    if(!root)return [];
+    var out=[],seen={};
+    root.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+      var id=String(cb.getAttribute('data-machine')||cb.getAttribute('data-machine-id')||cb.value||'').trim();
+      if(!id||seen[id])return;
+      var row=cb.closest('label,.fav-checkbox-row,[data-machine-id],[data-machine]');
+      var name='';
+      if(row)name=String(row.textContent||'').trim();
+      name=name.replace(/^\s*[✓✔☑]\s*/,'').trim();
+      if(!name)name=id;
+      out.push({id:id,name:name}); seen[id]=1;
+    });
+    return out;
+  }
+  function selectedPlan(){
+    try{return new Set((store.settings&&Array.isArray(store.settings.planMachineIds)?store.settings.planMachineIds:[]).map(String));}catch(e){return new Set();}
+  }
+  function savePlan(set){
+    try{
+      if(!window.store)return;
+      store.settings=store.settings||{};
+      store.settings.planMachineIds=Array.from(set);
+      store.settings.planMachineIdsConfigured=true;
+      store.settings.planStatusMachineIds=Array.from(set);
+      if(typeof saveStore==='function')saveStore();
+    }catch(e){}
+  }
+  function renderPlan(){
+    var list=document.getElementById('planMachineSelectList');
+    var machines=dailyMachines();
+    if(!list||!machines.length)return false;
+    var sel=selectedPlan();
+    var html='<div class="acrow-same-machine-list-title">نفس قائمة الماكينات المنتجة اليوم</div>';
+    html+='<div class="acrow-same-machine-list">';
+    machines.forEach(function(m){
+      html+='<label class="plan-machine-option"><input type="checkbox" class="plan-machine-checkbox" data-machine="'+String(m.id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')+'" '+(sel.has(String(m.id))?'checked':'')+'><span>'+String(m.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span></label>';
+    });
+    html+='</div>';
+    list.innerHTML=html;
+    list.querySelectorAll('.plan-machine-checkbox').forEach(function(cb){
+      cb.addEventListener('change',function(){
+        var set=selectedPlan();
+        if(cb.checked)set.add(String(cb.dataset.machine));else set.delete(String(cb.dataset.machine));
+        savePlan(set);
+      });
+    });
+    return true;
+  }
+  function renderStatus(){
+    var list=document.getElementById('planStatusMachineSelect');
+    var machines=dailyMachines();
+    if(!list||!machines.length)return false;
+    var sel=selectedPlan(),html='';
+    machines.forEach(function(m){
+      html+='<label class="plan-machine-option"><input type="checkbox" class="plan-status-machine-checkbox" data-machine="'+String(m.id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')+'" '+(sel.has(String(m.id))?'checked':'')+'><span>'+String(m.name).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span></label>';
+    });
+    list.innerHTML=html;
+    list.querySelectorAll('.plan-status-machine-checkbox').forEach(function(cb){
+      cb.addEventListener('change',function(){
+        var set=selectedPlan();
+        if(cb.checked)set.add(String(cb.dataset.machine));else set.delete(String(cb.dataset.machine));
+        savePlan(set);
+      });
+    });
+    return true;
+  }
+  function install(){
+    var daily=dailyMachines();
+    if(!daily.length)return;
+    try{window.__acrowDailyPlanMachineList=daily.map(function(x){return {id:x.id,name:x.name};});}catch(e){}
+    renderPlan();
+    renderStatus();
+  }
+  function boot(){
+    install();
+    setTimeout(install,300);
+    setTimeout(install,800);
+    setTimeout(install,1500);
+    setInterval(install,2000);
+  }
+  var st=document.createElement('style');
+  st.textContent='.acrow-same-machine-list-title{font-size:13px;font-weight:900;color:#20b8ff;padding:6px 2px 9px}.acrow-same-machine-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 12px}';
+  document.head.appendChild(st);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
+'''
+              p.write_text(s + '\n' + patch, encoding='utf-8')
+          PY
+
       - name: Commit migration
         run: |
           git config user.name "github-actions[bot]"
@@ -90,6 +193,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "No changes needed"
           else
-            git commit -m "Add full machine list to daily production"
+            git commit -m "Sync monthly plan with daily machine list"
             git push
           fi
