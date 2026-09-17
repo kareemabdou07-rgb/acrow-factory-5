@@ -1,0 +1,45 @@
+name: Add monthly plan lock script
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'plan-machine-lock-fix.js'
+      - '.github/workflows/add-plan-lock-script.yml'
+permissions:
+  contents: write
+jobs:
+  patch-index:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Add script tag to index
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('index.html')
+          s = p.read_text(encoding='utf-8')
+          tag = '<script src="./plan-machine-lock-fix.js?v=1"></script>'
+          if tag not in s:
+              marker = '<script src="./production-fix.js"></script>'
+              if marker not in s:
+                  raise SystemExit('production-fix script marker not found')
+              s = s.replace(marker, marker + '\n' + tag, 1)
+              p.write_text(s, encoding='utf-8')
+          else:
+              print('Plan lock script tag already present')
+          PY
+      - name: Commit and push if changed
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git diff --quiet; then
+            echo 'No changes to commit.'
+            exit 0
+          fi
+          git add index.html
+          git commit -m 'Load persistent monthly plan machine selection lock'
+          git push
