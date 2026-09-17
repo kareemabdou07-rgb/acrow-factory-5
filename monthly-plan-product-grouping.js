@@ -53,7 +53,7 @@
     });
     return total;
   }
-  function esc(v){ return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];}); }
+  function esc(v){ return String(v==null?'':v).replace(/[&<>\\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\\"':'&quot;',"'":'&#39;'}[c];}); }
 
   function render(){
     var box=document.getElementById('planProductBreakdown');
@@ -118,4 +118,83 @@
   },true);
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',bind); else bind();
   setInterval(bind,1200);
+})();
+
+/* ACROW_DAILY_PLAN_MACHINE_LIST_SYNC_V1: exact same machine list in daily production and monthly plan. */
+(function(){
+  'use strict';
+  function readDaily(){
+    var root=document.getElementById('machineSelectList');
+    if(!root)return [];
+    var out=[],seen={};
+    root.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+      var id=sid(cb.getAttribute('data-machine')||cb.getAttribute('data-machine-id')||cb.value||'');
+      if(!id||seen[id])return;
+      var row=cb.closest('label,.fav-checkbox-row,[data-machine-id],[data-machine]');
+      var name=row?String(row.textContent||'').trim():id;
+      name=name.replace(/^\s*[✓✔☑]\s*/,'').trim()||id;
+      out.push({id:id,name:name});
+      seen[id]=1;
+    });
+    return out;
+  }
+  function planIds(){
+    try{return new Set((store.settings&&Array.isArray(store.settings.planMachineIds)?store.settings.planMachineIds:[]).map(sid));}catch(e){return new Set();}
+  }
+  function save(ids){
+    try{
+      if(!window.store)return;
+      store.settings=store.settings||{};
+      store.settings.planMachineIds=Array.from(ids);
+      store.settings.planMachineIdsConfigured=true;
+      store.settings.planStatusMachineIds=Array.from(ids);
+      if(typeof saveStore==='function')saveStore();
+    }catch(e){}
+  }
+  function esc2(v){return String(v==null?'':v).replace(/[&<>\"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c];});}
+  function renderPlan(){
+    var list=document.getElementById('planMachineSelectList'), machines=readDaily();
+    if(!list||!machines.length)return false;
+    var selected=planIds(), html='<div style="font-size:13px;font-weight:900;color:#20b8ff;padding:6px 2px 9px">نفس قائمة الماكينات المنتجة اليوم</div><div class="acrow-same-machine-list">';
+    machines.forEach(function(m){
+      html+='<label class="plan-machine-option"><input type="checkbox" class="plan-machine-checkbox" data-machine="'+esc2(m.id)+'" '+(selected.has(m.id)?'checked':'')+'><span>'+esc2(m.name)+'</span></label>';
+    });
+    html+='</div>';
+    list.innerHTML=html;
+    list.querySelectorAll('.plan-machine-checkbox').forEach(function(cb){
+      cb.addEventListener('change',function(){var ids=planIds();if(cb.checked)ids.add(sid(cb.dataset.machine));else ids.delete(sid(cb.dataset.machine));save(ids);});
+    });
+    return true;
+  }
+  function renderStatus(){
+    var list=document.getElementById('planStatusMachineSelect'), machines=readDaily();
+    if(!list||!machines.length)return false;
+    var selected=planIds(), html='';
+    machines.forEach(function(m){
+      html+='<label class="plan-machine-option"><input type="checkbox" class="plan-status-machine-checkbox" data-machine="'+esc2(m.id)+'" '+(selected.has(m.id)?'checked':'')+'><span>'+esc2(m.name)+'</span></label>';
+    });
+    list.innerHTML=html;
+    list.querySelectorAll('.plan-status-machine-checkbox').forEach(function(cb){
+      cb.addEventListener('change',function(){var ids=planIds();if(cb.checked)ids.add(sid(cb.dataset.machine));else ids.delete(sid(cb.dataset.machine));save(ids);});
+    });
+    return true;
+  }
+  function install(){
+    var machines=readDaily();
+    if(!machines.length)return;
+    window.__acrowDailyPlanMachineList=machines.slice();
+    renderPlan();
+    renderStatus();
+  }
+  function boot(){
+    install();
+    setTimeout(install,300);
+    setTimeout(install,800);
+    setTimeout(install,1500);
+    setInterval(install,2000);
+  }
+  var st=document.createElement('style');
+  st.textContent='.acrow-same-machine-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 12px}';
+  document.head.appendChild(st);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 })();
