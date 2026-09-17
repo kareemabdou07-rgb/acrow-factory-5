@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v241: stable daily machine selector + immediate production cloud sync */
+/* ACROW Factory 5 — v242: stable daily machine selector + immediate production cloud sync */
 (function(){
 'use strict';
 var KEY='acrow_daily_manual_selection_v240';
@@ -16,18 +16,41 @@ function click(e){var root=document.getElementById('machineSelectList');if(!root
 function done(e){var b=e.target&&e.target.closest?e.target.closest('#doneMachineSelectBtn'):null;if(!b)return;setTimeout(function(){persist(boxes().filter(function(x){return x.checked;}).map(idOf));},30);}
 document.addEventListener('click',click,true);
 document.addEventListener('click',done,true);
-/* Immediate production sync: stamp the shared store and push after every production entry. */
-function productionPush(){
+function cloudPush(){try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}}
+function productionPush(input){
+ try{
+  if(input&&typeof getRecord==='function'&&typeof dateInput!=='undefined'){
+   var id=sid(input.dataset&&input.dataset.machine||'');
+   if(id){
+    var r=getRecord(dateInput.value,currentShift,id);
+    if(r){var raw=String(input.value==null?'':input.value).trim();r.actual=raw===''?null:Number(raw);r.productionFixed=raw!=='';r._productionUpdatedAt=Date.now();}
+   }
+  }
+ }catch(e){}
  try{if(window.store)store._productionUpdatedAt=Date.now();}catch(e){}
  try{if(typeof window.saveStore==='function')window.saveStore();}catch(e){}
- try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}
- setTimeout(function(){try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}},150);
- setTimeout(function(){try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}},600);
+ cloudPush();
+ setTimeout(cloudPush,120);
+ setTimeout(cloudPush,500);
+}
+var lastProductionKey='';
+function productionTick(){
+ try{
+  var t=document.activeElement;
+  if(!t||!t.classList||!t.classList.contains('actual-input'))return;
+  var id=sid(t.dataset&&t.dataset.machine||'');
+  var d=(typeof dateInput!=='undefined'&&dateInput)?dateInput.value:'';
+  var sh=(typeof currentShift!=='undefined')?currentShift:'';
+  var val=String(t.value==null?'':t.value);
+  var key=d+'|'+sh+'|'+id+'|'+val;
+  if(key&&key!==lastProductionKey){lastProductionKey=key;productionPush(t);}
+ }catch(e){}
 }
 function productionEvents(){
  if(window.__acrowImmediateProductionSync)return;
  window.__acrowImmediateProductionSync=true;
- ['input','change','blur'].forEach(function(type){document.addEventListener(type,function(e){var t=e.target;if(t&&t.classList&&t.classList.contains('actual-input'))productionPush();},true);});
+ ['input','change','blur'].forEach(function(type){document.addEventListener(type,function(e){var t=e.target;if(t&&t.classList&&t.classList.contains('actual-input'))productionPush(t);},true);});
+ setInterval(productionTick,150);
 }
 function boot(){sync();productionEvents();}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
