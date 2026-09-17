@@ -73,3 +73,18 @@ function boot(){mergeIntoDaily();setTimeout(mergeIntoDaily,200);setTimeout(merge
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 if(window.MutationObserver)new MutationObserver(function(){setTimeout(mergeIntoDaily,60)}).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+/* ACROW FIX: monthly plan machine selection is persistent and changes only by explicit user action. */
+(function(){
+'use strict';
+var KEY='planMachineIds',LOCK='planMachineIdsLocked';
+function ready(){return window.store&&store.settings&&typeof window.saveStore==='function'}
+function ids(v){return Array.isArray(v)?v.map(String):[]}
+function same(a,b){a=ids(a).sort();b=ids(b).sort();return a.length===b.length&&a.every(function(x,i){return x===b[i]})}
+function saved(){if(!ready())return [];if(Array.isArray(store.settings[LOCK]))return ids(store.settings[LOCK]);if(Array.isArray(store.settings[KEY]))return ids(store.settings[KEY]);return []}
+function restore(){if(!ready())return;var s=saved();if(!Array.isArray(store.settings[LOCK])){store.settings[LOCK]=s.slice();store.settings.planMachineIdsConfigured=true;saveStore()}else if(!same(store.settings[KEY],s)){store.settings[KEY]=s.slice();store.settings.planMachineIdsConfigured=true;saveStore()}}
+function manualSave(v){if(!ready())return;v=Array.from(new Set(ids(v)));store.settings[KEY]=v.slice();store.settings[LOCK]=v.slice();store.settings.planMachineIdsConfigured=true;saveStore()}
+function bindRoot(id,marker){var root=document.getElementById(id);if(!root||root.dataset[marker])return;root.dataset[marker]='1';root.addEventListener('change',function(e){var cb=e.target;if(!cb||cb.tagName!=='INPUT'||cb.type!=='checkbox')return;var value=String(cb.value||cb.getAttribute('data-machine')||cb.getAttribute('data-machine-id')||'').trim();if(!value)return;var set=new Set(saved().map(String));if(cb.checked)set.add(value);else set.delete(value);manualSave(Array.from(set))},true)}
+function boot(){if(!ready()){setTimeout(boot,300);return}restore();bindRoot('planMachineSelectList','acrowPlanLockBound');bindRoot('planStatusMachineSelect','acrowPlanStatusLockBound');setInterval(function(){if(!ready())return;var s=saved();if(!same(store.settings[KEY],s)){store.settings[KEY]=s.slice();try{saveStore()}catch(e){}}bindRoot('planMachineSelectList','acrowPlanLockBound');bindRoot('planStatusMachineSelect','acrowPlanStatusLockBound')},1000)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+})();
