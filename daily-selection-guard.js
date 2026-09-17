@@ -1,4 +1,4 @@
-/* ACROW Factory 5 — v242: stable daily machine selector + immediate production cloud sync */
+/* ACROW Factory 5 — v243: stable daily machine selector + immediate production cloud sync + 5S/Safety daily filter */
 (function(){
 'use strict';
 var KEY='acrow_daily_manual_selection_v240';
@@ -52,7 +52,29 @@ function productionEvents(){
  ['input','change','blur'].forEach(function(type){document.addEventListener(type,function(e){var t=e.target;if(t&&t.classList&&t.classList.contains('actual-input'))productionPush(t);},true);});
  setInterval(productionTick,150);
 }
-function boot(){sync();productionEvents();}
+function filterFiveSSafety(){
+ try{
+  var allowed=read();
+  var set={};allowed.forEach(function(x){set[sid(x)]=true;});
+  var panel=document.getElementById('fss-report-panel');
+  if(panel){
+   panel.querySelectorAll('tbody tr').forEach(function(tr){
+    var b=tr.querySelector('.fss-eval-row');
+    if(!b)return;
+    var id=sid(b.getAttribute('data-fss-id')||'');
+    tr.style.display=set[id]?'':'none';
+   });
+  }
+  document.querySelectorAll('.machine-card').forEach(function(card){
+   var id=sid(card.dataset&&card.dataset.machine||card.getAttribute('data-machine-id')||'');
+   var btn=card.querySelector('.fss-btn');
+   if(btn)btn.style.display=set[id]?'':'none';
+  });
+ }catch(e){}
+}
+function fiveSTick(){filterFiveSSafety();}
+function boot(){sync();productionEvents();filterFiveSSafety();setTimeout(filterFiveSSafety,300);setTimeout(filterFiveSSafety,1000);setTimeout(filterFiveSSafety,2500);}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 setInterval(sync,1000);
+setInterval(fiveSTick,700);
 })();
