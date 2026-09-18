@@ -1427,11 +1427,18 @@ document.querySelectorAll('#viewToggle .shift-tab').forEach(btn=>{
 
 function renderMachineSelectList(){
   const listDiv = document.getElementById('machineSelectList');
+  const FIXED_EXTRA_IDS = ['2','8','9','10','forming-frame'];
+
+  // Keep the normal factory machines in their existing department sections.
+  // The five extra production machines are deliberately rendered once, in one
+  // fixed block at the bottom, so they never jump between departments or reorder.
   let html = '';
   DEPARTMENTS.forEach(dept=>{
+    const deptMachines = MACHINES.filter(m=>m.dept===dept.id && !FIXED_EXTRA_IDS.includes(String(m.id)));
+    if(!deptMachines.length) return;
     html += `<div style="margin-bottom:14px;"><div class="fav-group-title">${dept.name}</div>`;
-    MACHINES.filter(m=>m.dept===dept.id).forEach(m=>{
-      const checked = store.favorites.includes(m.id) ? 'checked' : '';
+    deptMachines.forEach(m=>{
+      const checked = store.favorites.some(x=>String(x)===String(m.id)) ? 'checked' : '';
       html += `<label class="fav-checkbox-row">
         <input type="checkbox" data-machine="${m.id}" class="fav-checkbox" ${checked}>
         ${machineDisplayName(m)}
@@ -1439,18 +1446,41 @@ function renderMachineSelectList(){
     });
     html += `</div>`;
   });
+
+  const fixedExtras = FIXED_EXTRA_IDS
+    .map(id=>MACHINES.find(m=>String(m.id)===id))
+    .filter(Boolean);
+
+  if(fixedExtras.length){
+    html += `<div class="acrow-fixed-extra-group" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+      <div class="fav-group-title">ماكينات إنتاج اليوم</div>`;
+    fixedExtras.forEach(m=>{
+      const checked = store.favorites.some(x=>String(x)===String(m.id)) ? 'checked' : '';
+      html += `<label class="fav-checkbox-row acrow-fixed-extra-row" data-fixed-machine="${m.id}">
+        <input type="checkbox" data-machine="${m.id}" class="fav-checkbox" ${checked}>
+        ${machineDisplayName(m)}
+      </label>`;
+    });
+    html += `</div>`;
+  }
+
   listDiv.innerHTML = html;
-  listDiv.querySelectorAll('.fav-checkbox').forEach(cb=>{
-    cb.addEventListener('change', ()=>{
-      const id = cb.dataset.machine;
+
+  // One delegated listener only: checking one of the five never rebuilds the list.
+  if(listDiv.dataset.acrowStableChooserBound!=='1'){
+    listDiv.dataset.acrowStableChooserBound='1';
+    listDiv.addEventListener('change', (e)=>{
+      const cb = e.target.closest ? e.target.closest('.fav-checkbox') : null;
+      if(!cb) return;
+      const id = String(cb.dataset.machine||'');
       if(cb.checked){
-        if(!store.favorites.includes(id)) store.favorites.push(id);
+        if(!store.favorites.some(x=>String(x)===id)) store.favorites.push(id);
       }else{
-        store.favorites = store.favorites.filter(x=>x!==id);
+        store.favorites = store.favorites.filter(x=>String(x)!==id);
       }
       saveStore();
     });
-  });
+  }
 }
 
 document.getElementById('selectMachinesBtn').addEventListener('click', ()=>{
@@ -4778,7 +4808,7 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
 </script>
 <script src="./firebase-realtime.js"></script>
 <script src="./live-production-sync.js?v=2"></script>
-<script src="./production-fix.js?v=4"></script>
+<script src="./production-fix.js?v=5"></script>
 <script src="./plan-machine-lock-fix.js?v=2"></script>
 <script src="./production-keyboard-lock-fix.js?v=1"></script>
 <script src="./production-keyboard-lock-fix.js?v=2"></script>
