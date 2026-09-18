@@ -276,7 +276,7 @@ function acrowDailyBoot(){
   acrowSyncDailyChooser();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',acrowDailyBoot);else acrowDailyBoot();
-setInterval(acrowDailyBoot,500);
+
 
 /* 2) Monthly-plan machine chooser: keep KEY and LOCK identical to the visible checkboxes. */
 function acrowPlanSync(id){
@@ -303,7 +303,7 @@ function acrowPlanBind(id){
 }
 function acrowPlanBoot(){acrowPlanBind('planMachineSelectList');acrowPlanBind('planStatusMachineSelect');}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',acrowPlanBoot);else acrowPlanBoot();
-setInterval(acrowPlanBoot,500);
+
 
 /* 3) Fault photo: put a real camera button inside the fault window and save
       the photo on the exact fault record. */
@@ -399,8 +399,8 @@ function acrowPhotoBoot(){
   acrowDecorateFaultList();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',acrowPhotoBoot);else acrowPhotoBoot();
-setInterval(acrowPhotoBoot,500);
-if(window.MutationObserver)new MutationObserver(function(){setTimeout(acrowDecorateFaultList,0);}).observe(document.body,{childList:true,subtree:true});
+
+
 
 /* When the user takes a photo before registering a NEW fault, attach it to that new record. */
 document.addEventListener('click',function(e){
