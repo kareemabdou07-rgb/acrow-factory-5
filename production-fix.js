@@ -83,3 +83,141 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
  install();setTimeout(install,100);setTimeout(install,500);setTimeout(install,1500);
 })();
 })();
+
+/* ACROW FIX 2026-09-18 — make the extra daily/monthly machines truly independent.
+   No machine in this set is forced on by this fix. The checkbox state is the authority. */
+(function(){
+'use strict';
+var INDEPENDENT_IDS=['2','8','9','10','forming-frame'];
+var INDEPENDENT_NAMES={
+  '2':'مكبس فريم كونيكتور',
+  '8':'تليسكوب',
+  '9':'شور بريس',
+  '10':'اسبيجوت',
+  'forming-frame':'فريم تشكيل'
+};
+function iid(v){return String(v==null?'':v).trim();}
+function unique(a){return Array.from(new Set((a||[]).map(iid).filter(Boolean)));}
+function appStore(){return (typeof window.store!=='undefined'&&window.store)?window.store:null;}
+function appSettings(){
+  var s=appStore(); if(!s)return null;
+  if(!s.settings)s.settings={};
+  return s.settings;
+}
+function readIndependentSelection(){
+  var st=appSettings();
+  if(st&&st.dailyMachineIdsConfigured===true&&Array.isArray(st.dailyMachineIds)) return unique(st.dailyMachineIds);
+  try{
+    var x=JSON.parse(localStorage.getItem('acrow_daily_manual_selection_v240')||'null');
+    if(Array.isArray(x)) return unique(x);
+  }catch(e){}
+  var s=appStore();
+  return s&&Array.isArray(s.favorites)?unique(s.favorites):[];
+}
+function saveIndependentSelection(a){
+  a=unique(a);
+  var st=appSettings();
+  if(st){
+    st.dailyMachineIds=a.slice();
+    st.dailyMachineIdsConfigured=true;
+  }
+  var s=appStore();
+  if(s)s.favorites=a.slice();
+  try{localStorage.setItem('acrow_daily_manual_selection_v240',JSON.stringify(a));}catch(e){}
+  try{localStorage.setItem('acrow_daily_independent_selection_v1',JSON.stringify(a));}catch(e){}
+  try{window.__acrowDailyFavoritesDirty=true;if(typeof window.saveStore==='function')window.saveStore();}catch(e){}
+  try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}
+}
+function checkboxId(cb){
+  if(!cb)return '';
+  var id=cb.getAttribute('data-machine')||cb.getAttribute('data-machine-id')||cb.value;
+  if(id)return iid(id);
+  var row=cb.closest&&cb.closest('#machineSelectList label,#machineSelectList .fav-checkbox-row,#machineSelectList [data-machine-id]');
+  return row?iid(row.getAttribute('data-machine-id')||row.getAttribute('data-machine')||''):'';
+}
+function dailyBoxes(){
+  var root=document.getElementById('machineSelectList');
+  return root?Array.from(root.querySelectorAll('input[type="checkbox"]')):[];
+}
+function captureDailyState(){
+  var a=readIndependentSelection();
+  dailyBoxes().forEach(function(cb){
+    var id=checkboxId(cb);
+    if(INDEPENDENT_IDS.indexOf(id)<0)return;
+    a=a.filter(function(x){return x!==id;});
+    if(cb.checked)a.push(id);
+  });
+  saveIndependentSelection(a);
+}
+function bindDaily(){
+  var root=document.getElementById('machineSelectList');
+  if(!root||root.dataset.acrowIndependentExtra==='1')return;
+  root.dataset.acrowIndependentExtra='1';
+  root.addEventListener('change',function(e){
+    var cb=e.target&&e.target.closest?e.target.closest('input[type="checkbox"]'):null;
+    if(!cb)return;
+    var id=checkboxId(cb);
+    if(INDEPENDENT_IDS.indexOf(id)<0)return;
+    captureDailyState();
+  },true);
+  root.addEventListener('click',function(e){
+    var cb=e.target&&e.target.closest?e.target.closest('input[type="checkbox"]'):null;
+    if(!cb)return;
+    var id=checkboxId(cb);
+    if(INDEPENDENT_IDS.indexOf(id)<0)return;
+    setTimeout(captureDailyState,0);
+  },true);
+}
+function bindDone(){
+  var b=document.getElementById('doneMachineSelectBtn');
+  if(!b||b.dataset.acrowIndependentDone==='1')return;
+  b.dataset.acrowIndependentDone='1';
+  b.addEventListener('click',function(){captureDailyState();},true);
+}
+function protectDailyRender(){
+  /* Re-apply only the saved state for these IDs after the app finishes rendering.
+     This prevents unrelated render code from grouping/reselecting them. */
+  var root=document.getElementById('machineSelectList');
+  if(!root)return;
+  var saved=readIndependentSelection(), set={};
+  saved.forEach(function(x){set[iid(x)]=true;});
+  root.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+    var id=checkboxId(cb);
+    if(INDEPENDENT_IDS.indexOf(id)>=0) cb.checked=!!set[id];
+  });
+}
+function bindPlanRoot(id){
+  var root=document.getElementById(id);
+  if(!root||root.dataset.acrowIndependentPlan==='1')return;
+  root.dataset.acrowIndependentPlan='1';
+  root.addEventListener('change',function(e){
+    var cb=e.target;
+    if(!cb||cb.tagName!=='INPUT'||cb.type!=='checkbox')return;
+    var value=iid(cb.value||cb.getAttribute('data-machine')||cb.getAttribute('data-machine-id'));
+    if(!value)return;
+    var st=appSettings(); if(!st)return;
+    var key='planMachineIds',lock='planMachineIdsLocked';
+    var cur=Array.isArray(st[lock])?unique(st[lock]):(Array.isArray(st[key])?unique(st[key]):[]);
+    var set=new Set(cur);
+    if(cb.checked)set.add(value);else set.delete(value);
+    var next=Array.from(set);
+    st[key]=next.slice(); st[lock]=next.slice(); st.planMachineIdsConfigured=true;
+    try{if(typeof window.saveStore==='function')window.saveStore();}catch(e){}
+  },true);
+}
+function boot(){
+  bindDaily(); bindDone();
+  bindPlanRoot('planMachineSelectList');
+  bindPlanRoot('planStatusMachineSelect');
+  protectDailyRender();
+  setTimeout(protectDailyRender,80);
+  setTimeout(protectDailyRender,300);
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
+if(window.MutationObserver)new MutationObserver(function(){
+  bindDaily();bindDone();bindPlanRoot('planMachineSelectList');bindPlanRoot('planStatusMachineSelect');
+}).observe(document.documentElement,{childList:true,subtree:true});
+setInterval(function(){
+  bindDaily();bindDone();bindPlanRoot('planMachineSelectList');bindPlanRoot('planStatusMachineSelect');
+},1000);
+})();
