@@ -221,3 +221,204 @@ setInterval(function(){
   bindDaily();bindDone();bindPlanRoot('planMachineSelectList');bindPlanRoot('planStatusMachineSelect');
 },1000);
 })();
+
+
+/* ACROW FIX 2026-09-18 v2 — chooser state + fault photo capture */
+(function(){
+'use strict';
+
+/* 1) Daily-machine chooser: the DOM checkbox is never forced back on.
+      store.favorites is the single source of truth, including the extra machines. */
+function acrowFavIds(){
+  try{return Array.from(new Set((Array.isArray(store.favorites)?store.favorites:[]).map(String)));}catch(e){return [];}
+}
+function acrowSyncDailyChooser(){
+  var root=document.getElementById('machineSelectList');
+  var modal=document.getElementById('machineSelectModal');
+  if(!root||!modal||!modal.classList.contains('open'))return;
+  var set=new Set(acrowFavIds());
+  root.querySelectorAll('input[type="checkbox"]').forEach(function(cb){
+    var id=String(cb.getAttribute('data-machine')||cb.value||'').trim();
+    if(id) cb.checked=set.has(id);
+  });
+}
+function acrowSaveDailyFromDom(){
+  var root=document.getElementById('machineSelectList'); if(!root)return;
+  var ids=[];
+  root.querySelectorAll('input[type="checkbox"]:checked').forEach(function(cb){
+    var id=String(cb.getAttribute('data-machine')||cb.value||'').trim();
+    if(id)ids.push(id);
+  });
+  try{
+    store.favorites=Array.from(new Set(ids));
+    if(typeof saveStore==='function')saveStore();
+    if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();
+  }catch(e){}
+  setTimeout(acrowSyncDailyChooser,40);
+}
+function acrowBindDailyStrong(){
+  var root=document.getElementById('machineSelectList');
+  if(!root||root.dataset.acrowStrongChooser==='1')return;
+  root.dataset.acrowStrongChooser='1';
+  root.addEventListener('change',function(e){
+    var cb=e.target&&e.target.closest?e.target.closest('input[type="checkbox"]'):null;
+    if(!cb)return;
+    setTimeout(acrowSaveDailyFromDom,30);
+  },false);
+  root.addEventListener('click',function(e){
+    var cb=e.target&&e.target.closest?e.target.closest('input[type="checkbox"]'):null;
+    if(!cb)return;
+    setTimeout(acrowSaveDailyFromDom,60);
+  },false);
+}
+function acrowDailyBoot(){
+  acrowBindDailyStrong();
+  acrowSyncDailyChooser();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',acrowDailyBoot);else acrowDailyBoot();
+setInterval(acrowDailyBoot,500);
+
+/* 2) Monthly-plan machine chooser: keep KEY and LOCK identical to the visible checkboxes. */
+function acrowPlanSync(id){
+  var root=document.getElementById(id);
+  if(!root||!root.parentElement)return;
+  var boxes=root.querySelectorAll('input[type="checkbox"]'), ids=[];
+  boxes.forEach(function(cb){if(cb.checked){var v=String(cb.value||cb.getAttribute('data-machine')||cb.getAttribute('data-machine-id')||'').trim();if(v)ids.push(v);}});
+  try{
+    store.settings=store.settings||{};
+    store.settings.planMachineIds=Array.from(new Set(ids));
+    store.settings.planMachineIdsLocked=store.settings.planMachineIds.slice();
+    store.settings.planMachineIdsConfigured=true;
+    if(typeof saveStore==='function')saveStore();
+  }catch(e){}
+}
+function acrowPlanBind(id){
+  var root=document.getElementById(id);
+  if(!root||root.dataset.acrowStrongPlan==='1')return;
+  root.dataset.acrowStrongPlan='1';
+  root.addEventListener('change',function(e){
+    if(!e.target||e.target.type!=='checkbox')return;
+    setTimeout(function(){acrowPlanSync(id);},40);
+  },false);
+}
+function acrowPlanBoot(){acrowPlanBind('planMachineSelectList');acrowPlanBind('planStatusMachineSelect');}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',acrowPlanBoot);else acrowPlanBoot();
+setInterval(acrowPlanBoot,500);
+
+/* 3) Fault photo: put a real camera button inside the fault window and save
+      the photo on the exact fault record. */
+var pendingFaultPhoto=null, targetFaultIndex=null;
+function acrowPhotoCompress(file){
+  return new Promise(function(resolve,reject){
+    var fr=new FileReader();
+    fr.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var max=900, scale=Math.min(1,max/Math.max(img.width,img.height));
+        var c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(img.width*scale)); c.height=Math.max(1,Math.round(img.height*scale));
+        var ctx=c.getContext('2d'); ctx.drawImage(img,0,0,c.width,c.height);
+        resolve(c.toDataURL('image/jpeg',.58));
+      };
+      img.onerror=reject; img.src=fr.result;
+    };
+    fr.onerror=reject; fr.readAsDataURL(file);
+  });
+}
+function acrowEnsureFaultPhotoUI(){
+  var modal=document.getElementById('faultModal'), desc=document.getElementById('faultDescription');
+  if(!modal||!desc)return;
+  var row=document.getElementById('acrowFaultPhotoRow');
+  if(!row){
+    row=document.createElement('div'); row.id='acrowFaultPhotoRow';
+    row.style.cssText='display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 10px;';
+    row.innerHTML='<button type="button" class="btn-ghost" id="acrowFaultPhotoBtn">التقاط صورة للعطل</button><span id="acrowFaultPhotoStatus" style="font-size:12px;color:var(--text-dim)">لا توجد صورة</span><img id="acrowFaultPhotoPreview" style="display:none;width:72px;height:52px;object-fit:cover;border-radius:7px;border:1px solid var(--border)"><input id="acrowFaultPhotoInput" type="file" accept="image/*" capture="environment" style="display:none">';
+    desc.parentElement.insertAdjacentElement('afterend',row);
+    document.getElementById('acrowFaultPhotoBtn').addEventListener('click',function(){targetFaultIndex=null;document.getElementById('acrowFaultPhotoInput').click();});
+    document.getElementById('acrowFaultPhotoInput').addEventListener('change',async function(e){
+      var file=e.target.files&&e.target.files[0]; e.target.value='';
+      if(!file)return;
+      try{
+        pendingFaultPhoto=await acrowPhotoCompress(file);
+        var st=document.getElementById('acrowFaultPhotoStatus'), im=document.getElementById('acrowFaultPhotoPreview');
+        if(st)st.textContent='تم التقاط صورة للعطل';
+        if(im){im.src=pendingFaultPhoto;im.style.display='block';}
+        if(targetFaultIndex!==null)acrowSaveFaultPhoto(targetFaultIndex,pendingFaultPhoto);
+      }catch(err){alert('تعذر تجهيز صورة العطل، حاول مرة أخرى.');}
+    });
+  }
+}
+function acrowCurrentFaultRecord(){
+  try{
+    var id=String(activeMachineId||'').trim();
+    if(!id)return null;
+    return getRecord(dateInput.value,currentShift,id);
+  }catch(e){return null;}
+}
+function acrowSaveFaultPhoto(idx,data){
+  var r=acrowCurrentFaultRecord(); if(!r||!r.faults||!r.faults[idx]||!data)return;
+  r.faults[idx].photo=data;
+  try{saveStore();if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}
+  if(typeof renderFaultList==='function')setTimeout(renderFaultList,30);
+}
+function acrowDecorateFaultList(){
+  acrowEnsureFaultPhotoUI();
+  var list=document.getElementById('faultList'); if(!list)return;
+  list.querySelectorAll('.fault-item').forEach(function(item){
+    if(item.dataset.acrowPhotoBound==='1')return;
+    item.dataset.acrowPhotoBound='1';
+    var idx=Number(item.getAttribute('data-fault-detail'));
+    var r=acrowCurrentFaultRecord(), f=r&&r.faults? r.faults[idx]:null;
+    var actions=item.querySelector('.f-mins');
+    var btn=document.createElement('button');
+    btn.type='button'; btn.className='btn-ghost'; btn.style.cssText='padding:6px 9px;font-size:11px;';
+    btn.textContent=f&&f.photo?'تغيير الصورة':'التقاط صورة';
+    btn.addEventListener('click',function(e){
+      e.preventDefault();e.stopPropagation();
+      targetFaultIndex=idx;
+      document.getElementById('acrowFaultPhotoInput').click();
+    });
+    if(actions)actions.insertAdjacentElement('afterend',btn);else item.appendChild(btn);
+    if(f&&f.photo&&!item.querySelector('.acrow-fault-thumb')){
+      var im=document.createElement('img'); im.className='acrow-fault-thumb'; im.src=f.photo;
+      im.style.cssText='width:46px;height:36px;object-fit:cover;border-radius:5px;border:1px solid var(--border);';
+      item.appendChild(im);
+    }
+  });
+}
+function acrowWrapFaultRender(){
+  if(typeof window.renderFaultList!=='function'||window.renderFaultList.__acrowPhotoWrapped)return;
+  var original=window.renderFaultList;
+  function wrapped(){var out=original.apply(this,arguments);setTimeout(acrowDecorateFaultList,0);return out;}
+  wrapped.__acrowPhotoWrapped=true;
+  window.renderFaultList=wrapped;
+}
+function acrowPhotoBoot(){
+  acrowEnsureFaultPhotoUI();
+  acrowWrapFaultRender();
+  acrowDecorateFaultList();
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',acrowPhotoBoot);else acrowPhotoBoot();
+setInterval(acrowPhotoBoot,500);
+if(window.MutationObserver)new MutationObserver(function(){setTimeout(acrowDecorateFaultList,0);}).observe(document.body,{childList:true,subtree:true});
+
+/* When the user takes a photo before registering a NEW fault, attach it to that new record. */
+document.addEventListener('click',function(e){
+  if(!e.target||e.target.id!=='addFaultBtn')return;
+  var photo=pendingFaultPhoto;
+  if(!photo)return;
+  setTimeout(function(){
+    try{
+      var r=acrowCurrentFaultRecord();
+      if(r&&Array.isArray(r.faults)&&r.faults.length){
+        for(var i=r.faults.length-1;i>=0;i--){
+          if(!r.faults[i].photo){r.faults[i].photo=photo;break;}
+        }
+        saveStore();if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();
+        pendingFaultPhoto=null;
+      }
+    }catch(x){}
+  },120);
+},true);
+
+})();
