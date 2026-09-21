@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>متابعة الخطة الإنتاجية</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Tahoma,sans-serif;background:#f4f7fb;color:#172033}
+header{background:#0d5ea8;color:#fff;padding:22px 5%;display:flex;align-items:center;justify-content:space-between;gap:15px}
+header h1{margin:0;font-size:25px}header p{margin:6px 0 0;font-size:14px;opacity:.9}
+main{max-width:1200px;margin:20px auto;padding:0 14px}.panel{background:#fff;border-radius:12px;padding:18px;margin-bottom:18px;box-shadow:0 3px 12px #00000012}
+h2{margin:0 0 14px;color:#0d5ea8;font-size:20px}.filters,.summary,.formgrid{display:grid;gap:12px}.filters{grid-template-columns:repeat(4,1fr)}.formgrid{grid-template-columns:repeat(4,1fr)}
+label{font-weight:bold;font-size:14px}input,select,button{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:8px;font-size:15px}
+button{background:#0d5ea8;color:#fff;border:0;font-weight:bold;cursor:pointer}button.secondary{background:#e8eef5;color:#0d5ea8}button.danger{background:#b42318}
+.summary{grid-template-columns:repeat(4,1fr)}.card{background:#eef6ff;border-radius:10px;padding:15px;text-align:center}.card b{display:block;font-size:24px;color:#0d5ea8;margin-top:7px}
+table{width:100%;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid #e5e7eb;text-align:center}th{background:#edf4fb;color:#174b77}
+.status{font-weight:bold;color:#0d5ea8}.good{color:#16803a}.bad{color:#b42318}
+.actions{display:flex;gap:8px}.actions button{width:auto;min-width:100px}
+.note{background:#fff8df;padding:12px;border-radius:8px;margin-top:12px;color:#6b5500}
+@media(max-width:800px){header{padding:18px 14px}header h1{font-size:20px}.filters,.summary,.formgrid{grid-template-columns:1fr 1fr}.actions{flex-direction:column}.actions button{width:100%}table{font-size:13px;display:block;overflow-x:auto;white-space:nowrap}}
+@media(max-width:500px){.filters,.summary,.formgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div><h1>متابعة الخطة الإنتاجية</h1><p>اليومية والأسبوعية والشهرية</p></div><strong id="today"></strong></header>
+<main>
+<section class="panel"><h2>الفترة</h2><div class="filters">
+<div><label>من</label><input id="from" type="date"></div><div><label>إلى</label><input id="to" type="date"></div>
+<div><label>المنتج</label><select id="productFilter"><option value="">كل المنتجات</option></select></div>
+<div><label>&nbsp;</label><button id="refresh">عرض الفترة</button></div>
+</div></section>
+
+<section class="summary">
+<div class="card">المستهدف <b id="target">0</b></div><div class="card">الفعلي <b id="actual">0</b></div><div class="card">المتبقي <b id="remain">0</b></div><div class="card">نسبة الإنجاز <b id="percent">0%</b></div>
+</section>
+
+<section class="panel"><h2>إدارة المنتجات</h2><div class="formgrid">
+<div><label>اسم المنتج</label><input id="newProduct" placeholder="اكتب اسم المنتج"></div>
+<div><label>المستهدف الشهري</label><input id="monthlyTarget" type="number" min="0" value="0"></div>
+<div><label>&nbsp;</label><button id="addProduct">إضافة منتج</button></div>
+<div><label>&nbsp;</label><button class="secondary" id="showHidden">إظهار المنتجات المخفية</button></div>
+</div><div id="productList"></div></section>
+
+<section class="panel"><h2>المنتجات العاملة اليوم</h2><table><thead><tr><th>المنتج</th><th>المستهدف اليوم</th><th>الفعلي</th><th>المتبقي</th><th>الإنجاز</th><th>تشغيل</th></tr></thead><tbody id="dailyBody"></tbody></table></section>
+
+<section class="panel"><h2>تسجيل الإنتاج اليومي</h2><div class="formgrid">
+<div><label>المنتج</label><select id="prodSelect"></select></div><div><label>التاريخ</label><input id="prodDate" type="date"></div><div><label>الكمية الفعلية</label><input id="qty" type="number" min="0" value="0"></div><div><label>&nbsp;</label><button id="saveProd">حفظ الإنتاج</button></div>
+</div></section>
+
+<section class="panel"><h2>تسجيل توقف / عطل</h2><div class="formgrid">
+<div><label>التصنيف</label><select id="faultCat"><option>عطل ماكينة</option><option>خامة</option><option>إكسسوار</option><option>صيانة</option><option>عمالة</option><option>معوق إنتاج</option></select></div>
+<div><label>البداية</label><input id="faultStart" type="datetime-local"></div><div><label>النهاية</label><input id="faultEnd" type="datetime-local"></div><div><label>التفاصيل</label><input id="faultDetails" placeholder="اكتب السبب"></div>
+</div><button id="saveFault" style="margin-top:12px">تسجيل التوقف</button><div id="faultList"></div></section>
+
+<section class="panel"><h2>حضور الورديات</h2><div class="formgrid">
+<div><label>العمالة المطلوبة</label><input id="required" type="number" min="0" value="0"></div><div><label>حضور وردية 1</label><input id="shift1" type="number" min="0" value="0"></div><div><label>حضور وردية 2</label><input id="shift2" type="number" min="0" value="0"></div><div><label>&nbsp;</label><button id="saveAtt">حفظ الحضور</button></div>
+</div><div id="attResult" class="note">لم يتم تسجيل الحضور بعد.</div></section>
+
+<section class="panel"><h2>حالة الخطة</h2><div id="planStatus" class="status">في الخطة</div><div class="note">المستهدف الشهري يُقسم تلقائيا على 4 أسابيع، والعجز أو الزيادة يُرحّل للأسبوع التالي مع الاحتفاظ ببيانات الإنتاج والتقارير.</div></section>
+</main>
+<script>
+const KEY='production_plan_v1';
+const productsDefault=['كاب لوك ليدجر','رينج لوك ليدجر','كاب لوك فيرتكال','رنج لوك فيرتكال','شور بريس','تليسكوب','أكرو فريم','اسبيجوت','فريم كونيكتور'];
+let state=JSON.parse(localStorage.getItem(KEY)||'null')||{products:productsDefault.map((name,i)=>({id:i+1,name,target:0,hidden:false})),production:[],faults:[],attendance:{}};
+const $=id=>document.getElementById(id), today=new Date().toISOString().slice(0,10);
+$('today').textContent=new Date().toLocaleDateString('ar-EG');
+$('from').value=today;$('to').value=today;$('prodDate').value=today;
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function active(){return state.products.filter(p=>!p.hidden)}
+function refreshSelects(){
+ const list=active(); $('productFilter').innerHTML='<option value="">كل المنتجات</option>'+list.map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join('');
+ $('prodSelect').innerHTML=list.map(p=>'<option value="'+p.id+'">'+p.name+'</option>').join('');
+}
+function dayTarget(p){return Math.ceil((Number(p.target)||0)/26)}
+function actualFor(id,from,to){return state.production.filter(x=>x.productId==id&&x.date>=from&&x.date<=to).reduce((s,x)=>s+Number(x.qty||0),0)}
+function render(){
+ refreshSelects();
+ const from=$('from').value,to=$('to').value,filter=$('productFilter').value;
+ const ps=active().filter(p=>!filter||p.id==filter);let T=0,A=0;
+ ps.forEach(p=>{T+=(Number(p.target)||0);A+=actualFor(p.id,from,to)});
+ $('target').textContent=T;$('actual').textContent=A;$('remain').textContent=Math.max(T-A,0);$('percent').textContent=(T?Math.round(A/T*100):0)+'%';
+ $('dailyBody').innerHTML=ps.map(p=>{let a=actualFor(p.id,today,today),t=dayTarget(p),r=Math.max(t-a,0),pc=t?Math.round(a/t*100):0;return '<tr><td>'+p.name+'</td><td>'+t+'</td><td>'+a+'</td><td>'+r+'</td><td>'+pc+'%</td><td><button class="secondary" onclick="toggleDay('+p.id+')">تشغيل</button></td></tr>'}).join('');
+ $('productList').innerHTML=state.products.map(p=>'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #eee"><span>'+p.name+' — مستهدف شهري: '+(p.target||0)+(p.hidden?' — مخفي':'')+'</span><div class="actions"><button class="secondary" onclick="setTarget('+p.id+')">تعديل</button><button class="'+(p.hidden?'':'danger')+'" onclick="toggleHidden('+p.id+')">'+(p.hidden?'إظهار':'إخفاء')+'</button></div></div>').join('');
+ $('faultList').innerHTML=state.faults.slice(-10).reverse().map(f=>'<div style="padding:8px 0;border-bottom:1px solid #eee">'+f.cat+' | '+f.start+' → '+(f.end||'مفتوح')+' | '+f.details+'</div>').join('');
+ const rate=T?A/T*100:0;$('planStatus').textContent=rate>100?'زيادة':rate<100?'متأخر':'في الخطة';$('planStatus').className='status '+(rate>100?'good':rate<100?'bad':'');
+}
+window.toggleHidden=id=>{let p=state.products.find(x=>x.id==id);p.hidden=!p.hidden;save();render()};
+window.setTarget=id=>{let p=state.products.find(x=>x.id==id),v=prompt('المستهدف الشهري لـ '+p.name,p.target||0);if(v!==null){p.target=Math.max(0,Number(v));save();render()}};
+window.toggleDay=id=>{alert('المنتج أصبح ضمن منتجات اليوم. يمكن تسجيل الإنتاج له من نموذج تسجيل الإنتاج.')};
+$('addProduct').onclick=()=>{let n=$('newProduct').value.trim(),t=Number($('monthlyTarget').value)||0;if(!n)return alert('اكتب اسم المنتج');if(state.products.some(p=>p.name===n))return alert('المنتج موجود بالفعل');state.products.push({id:Date.now(),name:n,target:t,hidden:false});$('newProduct').value='';$('monthlyTarget').value=0;save();render()};
+$('showHidden').onclick=()=>{state.products.forEach(p=>p.hidden=false);save();render()};
+$('saveProd').onclick=()=>{let id=Number($('prodSelect').value),d=$('prodDate').value,q=Number($('qty').value)||0;if(!id||!d)return alert('اختر المنتج والتاريخ');state.production.push({productId:id,date:d,qty:q});save();render();alert('تم حفظ الإنتاج')};
+$('saveFault').onclick=()=>{let s=$('faultStart').value,e=$('faultEnd').value;if(!s)return alert('حدد بداية التوقف');state.faults.push({cat:$('faultCat').value,start:s,end:e,details:$('faultDetails').value});$('faultDetails').value='';save();render();alert('تم تسجيل التوقف')};
+$('saveAtt').onclick=()=>{let r=Number($('required').value)||0,a=Number($('shift1').value)||0,b=Number($('shift2').value)||0;state.attendance[today]={required:r,shift1:a,shift2:b};save();$('attResult').textContent='المطلوب: '+r+' | وردية 1: '+a+' | وردية 2: '+b+' | إجمالي الحضور: '+(a+b)+' | العجز: '+Math.max(r-(a+b),0);};
+$('refresh').onclick=render;render();
+</script>
+</body></html>
