@@ -1827,9 +1827,12 @@ function render(){
   const deptDiv = document.getElementById('departments');
   deptDiv.innerHTML = '';
 
-  const filterActive = viewMode==='active' && store.favorites.length>0;
+  // Once the user has saved a daily-machine selection, an empty selection means
+  // no machines should appear in production — never fall back to showing all machines.
+  const dailySelectionConfigured = !!(store.settings && store.settings.dailyMachineIdsConfigured===true);
+  const filterActive = viewMode==='active' && (dailySelectionConfigured || store.favorites.length>0);
 
-  if(viewMode==='active' && store.favorites.length===0){
+  if(viewMode==='active' && filterActive && store.favorites.length===0){
     const banner = document.createElement('div');
     banner.className = 'hint-banner';
     banner.innerHTML = `<span>لسه معملتش اختيار للمكن الشغالة — كل المكن ظاهرة دلوقتي</span><button id="hintSelectBtn">اختيار المكن</button>`;
