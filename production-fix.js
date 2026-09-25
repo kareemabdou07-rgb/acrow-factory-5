@@ -495,3 +495,53 @@ setTimeout(acrowInstallOptionalDailyChooser,50);
 setTimeout(acrowInstallOptionalDailyChooser,300);
 setTimeout(acrowInstallOptionalDailyChooser,1000);
 })();
+
+/* ACROW FINAL FIX 2026-09-25 — one authoritative daily chooser handler.
+   Prevent older chooser handlers from restoring unchecked machines. */
+(function(){
+'use strict';
+var FINAL_DAILY_IDS=['2','8','9','10','forming-frame'];
+
+function finalId(v){return String(v==null?'':v).trim();}
+
+function finalSaveDaily(){
+  if(typeof store==='undefined')return;
+  var root=document.getElementById('machineSelectList');
+  if(!root)return;
+  var current=Array.isArray(store.favorites)?store.favorites.map(String):[];
+  var chosen=new Set(current);
+  root.querySelectorAll('input.fav-checkbox').forEach(function(cb){
+    var id=finalId(cb.getAttribute('data-machine')||cb.value);
+    if(!id)return;
+    if(cb.checked) chosen.add(id);
+    else chosen.delete(id);
+  });
+  store.favorites=Array.from(chosen);
+  if(store.settings){
+    store.settings.dailyMachineIds=store.favorites.slice();
+    store.settings.dailyMachineIdsConfigured=true;
+  }
+  try{saveStore();}catch(e){}
+  try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}
+}
+
+function bindFinalDaily(){
+  var root=document.getElementById('machineSelectList');
+  if(!root || root.dataset.acrowFinalDailyBound==='1')return;
+  root.dataset.acrowFinalDailyBound='1';
+
+  root.addEventListener('change',function(e){
+    var cb=e.target&&e.target.closest?e.target.closest('input.fav-checkbox'):null;
+    if(!cb)return;
+    /* This is the only change handler allowed to save the chooser. */
+    e.stopImmediatePropagation();
+    finalSaveDaily();
+  },true);
+}
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bindFinalDaily);
+else bindFinalDaily();
+setTimeout(bindFinalDaily,100);
+setTimeout(bindFinalDaily,500);
+setTimeout(bindFinalDaily,1200);
+})();
