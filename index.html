@@ -2525,7 +2525,7 @@ document.getElementById('addFaultBtn').addEventListener('click',()=>{
 function dashboardDates(){ return periodDates(document.getElementById('dashboardDate').value || dateInput.value, document.getElementById('dashboardRange').value); }
 function dashboardData(){
   const dept=document.getElementById('dashboardDept').value, sh=document.getElementById('dashboardShift').value, dates=new Set(dashboardDates());
-  const rows=MACHINES.filter(m=>dept==='all'||m.dept===dept).map(m=>({m,a:0,t:0,faults:0,faultReasons:{}}));
+  const rows=MACHINES.filter(m=>(!m.dailyOnly || store.favorites.includes(m.id)) && (dept==='all'||m.dept===dept)).map(m=>({m,a:0,t:0,faults:0,faultReasons:{}}));
   const byId=Object.fromEntries(rows.map(x=>[x.m.id,x]));
   Object.keys(store.records).forEach(k=>{ const parts=k.split('_'), shift=parts[parts.length-2], id=parts[parts.length-1], date=parts.slice(0,parts.length-2).join('_'); if(!dates.has(date)||(sh!=='all'&&sh!==shift)||!byId[id])return; const r=store.records[k], x=byId[id]; x.a+=Number(r.actual)||0; x.t+=effectiveTarget(x.m,r,shift)||0; (r.faults||[]).forEach(f=>{const mins=Number(f.mins)||0;x.faults+=mins;x.faultReasons[f.reason]=(x.faultReasons[f.reason]||0)+mins;}); });
   return rows;
