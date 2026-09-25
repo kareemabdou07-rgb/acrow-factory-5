@@ -422,3 +422,76 @@ document.addEventListener('click',function(e){
 },true);
 
 })();
+
+
+/* ACROW FIX 2026-09-25 — extra production machines are optional, never fixed in the daily chooser.
+   The five machines below must disappear when unchecked and must not be re-added by the chooser renderer. */
+(function(){
+'use strict';
+var OPTIONAL_DAILY_IDS=['2','8','9','10','forming-frame'];
+
+function acrowOptionalDailyId(v){return String(v==null?'':v).trim();}
+
+function acrowRenderMachineSelectListOptional(){
+  var listDiv=document.getElementById('machineSelectList');
+  if(!listDiv || typeof MACHINES==='undefined' || !Array.isArray(MACHINES)) return;
+
+  var html='';
+  var departments=Array.isArray(DEPARTMENTS)?DEPARTMENTS:[];
+
+  departments.forEach(function(dept){
+    var deptMachines=MACHINES.filter(function(m){
+      return m && m.dept===dept.id;
+    });
+    if(!deptMachines.length)return;
+
+    html+='<div style="margin-bottom:14px;"><div class="fav-group-title">'+(dept.name||'')+'</div>';
+    deptMachines.forEach(function(m){
+      var id=acrowOptionalDailyId(m.id);
+      var checked=(typeof store!=='undefined' && Array.isArray(store.favorites) &&
+        store.favorites.some(function(x){return acrowOptionalDailyId(x)===id;}))?' checked':'';
+      html+='<label class="fav-checkbox-row">'+
+        '<input type="checkbox" data-machine="'+id+'" class="fav-checkbox"'+checked+'>'+
+        (typeof machineDisplayName==='function'?machineDisplayName(m):(id+' — '+(m.name||'')))+
+        '</label>';
+    });
+    html+='</div>';
+  });
+
+  /* Do NOT append a separate fixed "ماكينات إنتاج اليوم" group.
+     These five machines are ordinary optional machines and their checked state
+     comes only from store.favorites. */
+  listDiv.innerHTML=html;
+
+  if(listDiv.dataset.acrowOptionalChooserBound!=='1'){
+    listDiv.dataset.acrowOptionalChooserBound='1';
+    listDiv.addEventListener('change',function(e){
+      var cb=e.target&&e.target.closest?e.target.closest('.fav-checkbox'):null;
+      if(!cb)return;
+      var id=acrowOptionalDailyId(cb.getAttribute('data-machine')||cb.value);
+      if(!id)return;
+      var fav=(typeof store!=='undefined' && Array.isArray(store.favorites))?store.favorites.slice():[];
+      fav=fav.filter(function(x){return acrowOptionalDailyId(x)!==id;});
+      if(cb.checked)fav.push(id);
+      if(typeof store!=='undefined')store.favorites=Array.from(new Set(fav.map(String)));
+      try{if(typeof saveStore==='function')saveStore();}catch(err){}
+      try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(err){}
+    },true);
+  }
+}
+
+function acrowInstallOptionalDailyChooser(){
+  if(typeof window.renderMachineSelectList!=='function')return;
+  window.renderMachineSelectList=acrowRenderMachineSelectListOptional;
+  window.__acrowOptionalDailyChooserInstalled=true;
+}
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded',acrowInstallOptionalDailyChooser);
+}else{
+  acrowInstallOptionalDailyChooser();
+}
+setTimeout(acrowInstallOptionalDailyChooser,50);
+setTimeout(acrowInstallOptionalDailyChooser,300);
+setTimeout(acrowInstallOptionalDailyChooser,1000);
+})();
