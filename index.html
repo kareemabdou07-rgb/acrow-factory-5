@@ -397,8 +397,7 @@ button.select-machines-btn,.filter-bar button{border-color:#2d638d;}
 #maintenanceBtn{background:linear-gradient(135deg,#16a34a,#0f8a40)!important;color:#fff!important;}
 #adminMenuBtn{background:linear-gradient(135deg,#0879d1,#075ca3)!important;color:#fff!important;}
 #analysisBtn{background:linear-gradient(135deg,#f5b400,#d99100)!important;color:#17212b!important;}
-/* إزالة دخول الإدارة والإدارات مع الإبقاء على التعديل والصيانة */
-#deptLoginBtn{display:none!important;} #dashboardBtn{display:flex!important;}
+/* إزالة دخول الإدارة والإدارات مع الإبقاء على التعديل والصيانة */#deptLoginBtn{display:none!important;} #dashboardBtn{display:flex!important;}
 #adminMenuBtn{display:flex!important;}
 
 /* اختيار الماكينات المنتجة اليوم — زر رئيسي كبير وواضح */
@@ -797,8 +796,7 @@ html,body{margin:0 !important;padding:0 !important;}
     </div>
     <div class="shift-tabs no-print" id="analysisRangeTabs" style="margin:0 0 16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;">
       <button class="shift-tab" data-range="shift1">الوردية الأولى</button>
-      <button class="shift-tab" data-range="shift2">الوردية الثانية</button>
-      <button class="shift-tab active" data-range="day">اليوم</button>
+      <button class="shift-tab" data-range="shift2">الوردية الثانية</button>      <button class="shift-tab active" data-range="day">اليوم</button>
       <button class="shift-tab" data-range="week1">الأسبوع الأول</button>
       <button class="shift-tab" data-range="week2">الأسبوع الثاني</button>
       <button class="shift-tab" data-range="week3">الأسبوع الثالث</button>
@@ -1197,8 +1195,7 @@ function renderStopReasonSelects(){
 function addCustomStopReason(){
   const label=(prompt('اكتب اسم العطل / المعوق الجديد:')||'').trim();
   if(!label)return;
-  const existing=allStopReasons().find(r=>r.label===label);
-  if(existing){ alert(`هذا العطل موجود بالفعل بالكود ${existing.code}`); return; }
+  const existing=allStopReasons().find(r=>r.label===label);  if(existing){ alert(`هذا العطل موجود بالفعل بالكود ${existing.code}`); return; }
   store.customStopReasons.push(label); saveStore(); renderStopReasonSelects();
   const code=allStopReasons().find(r=>r.label===label)?.code || '';
   alert(`تمت إضافة العطل الجديد بالكود ${code}`);
@@ -1597,8 +1594,7 @@ function buildPlanPrint(dates){
   const actual=rows.reduce((s,r)=>s+Number(r[2]),0),target=rows.reduce((s,r)=>s+Number(r[3]),0),gap=Math.max(0,target-actual);
   const pareto={}; rows.forEach(r=>{pareto[r[0]]={mins:Math.max(0,Number(r[4])),count:1};});
   return printKpis([['الخطة الشهرية',`${Math.round(monthly)} قطعة`],['المستهدف للفترة',`${Math.round(target)} قطعة`],['المحقق',`${Math.round(actual)} قطعة`],['العجز',`${Math.round(gap)} قطعة`]])+printPareto('باريتو العجز عن الخطة',pareto,'قطعة')+`<div class="chart-wrap report-details-toggleable"><div class="chart-title">تفصيل الخطة حسب اليوم</div>${reportTable(['التاريخ','اليوم','المحقق','المستهدف','المتبقي','نسبة التحقيق'],rows)}</div>`;
-}
-function buildAllPrint(dates){
+}function buildAllPrint(dates){
   return buildProductionPrint(dates)+`<hr style="margin:24px 0">`+buildEfficiencyPrint(dates)+`<hr style="margin:24px 0">`+buildFaultPrint(dates,false)+`<hr style="margin:24px 0">`+buildObstaclePrint(dates)+`<hr style="margin:24px 0">`+buildFaultPrint(dates,true)+`<hr style="margin:24px 0">`+buildPlanPrint(dates);
 }
 function buildPrintReport(){
@@ -1997,8 +1993,7 @@ function render(){
       const btn=e.target.closest('.mc-btn[data-machine]');
       if(!btn) return;
       e.preventDefault();
-      e.stopPropagation();
-      const id=String(btn.dataset.machine||'').trim();
+      e.stopPropagation();      const id=String(btn.dataset.machine||'').trim();
       const machine=MACHINES.find(m=>String(m.id)===id);
       openFaultModal(id, machine ? machine.name : (btn.dataset.name||id));
     });
@@ -2397,8 +2392,7 @@ function calcMinutesBetween(start,end){
   if(b<a) b+=24*60;
   return b-a;
 }
-function setFaultDuration(){
-  const mins=calcMinutesBetween(document.getElementById('faultStartTime').value,document.getElementById('faultEndTime').value);
+function setFaultDuration(){  const mins=calcMinutesBetween(document.getElementById('faultStartTime').value,document.getElementById('faultEndTime').value);
   document.getElementById('faultMins').value=mins===null?'':String(mins);
   return mins;
 }
@@ -2797,8 +2791,7 @@ document.querySelectorAll('#analysisModeTabs .shift-tab').forEach(btn=>{
     analysisMode = btn.dataset.mode;
     document.querySelectorAll('.analysis-efficiency').forEach(el=>el.style.display = analysisMode==='efficiency' ? '' : 'none');
     const faultsWrap=document.getElementById('faultsAnalysisWrap'); if(faultsWrap) faultsWrap.style.display = analysisMode==='faults' ? '' : 'none';
-    renderAllAnalysis();
-  });
+    renderAllAnalysis();  });
 });
 
 let analysisMachineScope = 'all';
@@ -3197,8 +3190,7 @@ function renderMaintenance(){
   const entries=Object.entries(totals).sort((a,b)=>b[1].mins-a[1].mins), largest=entries.slice(0,5), smallest=entries.slice().sort((a,b)=>a[1].mins-b[1].mins).slice(0,5);
   document.getElementById('maintenanceSummary').innerHTML=`<div class="maint-card" style="grid-column:1/-1"><div>الفترة المحددة</div><div class="v" style="font-size:18px">${maintenancePeriodText()}</div></div><div class="maint-card"><div>إجمالي الأعطال وطلبات الإصلاح</div><div class="v">${count}</div></div><div class="maint-card"><div>إجمالي التوقف</div><div class="v">${totalMins} دقيقة</div></div><div class="maint-card"><div>عدد الماكينات المتأثرة</div><div class="v">${machineCount}</div></div><div class="maint-card"><div>أكبر مشكلة</div><div class="v" style="font-size:15px">${entries[0]?entries[0][0]:'لا توجد'}</div></div>`;
   const wrap=document.getElementById('maintenancePareto');
-  if(!entries.length) wrap.innerHTML='<div class="pareto-empty">لا توجد أعطال صيانة في الفترة المحددة</div>';
-  else {const max=entries[0][1].mins||1,total=entries.reduce((a,e)=>a+e[1].mins,0);let cum=0;wrap.innerHTML='<div class="column-chart">'+entries.map(([name,o])=>{cum+=o.mins;return `<div class="col-item"><div class="col-value">${o.mins} د</div><div class="col-bar" style="height:${Math.max(5,Math.round(o.mins/max*205))}px"></div><div class="col-label">${name}<br><span style="color:var(--text-faint)">${o.type} · ${o.count} مرة · ${Math.round(cum/total*100)}% تراكمي</span></div></div>`}).join('')+'</div>';}
+  if(!entries.length) wrap.innerHTML='<div class="pareto-empty">لا توجد أعطال صيانة في الفترة المحددة</div>';  else {const max=entries[0][1].mins||1,total=entries.reduce((a,e)=>a+e[1].mins,0);let cum=0;wrap.innerHTML='<div class="column-chart">'+entries.map(([name,o])=>{cum+=o.mins;return `<div class="col-item"><div class="col-value">${o.mins} د</div><div class="col-bar" style="height:${Math.max(5,Math.round(o.mins/max*205))}px"></div><div class="col-label">${name}<br><span style="color:var(--text-faint)">${o.type} · ${o.count} مرة · ${Math.round(cum/total*100)}% تراكمي</span></div></div>`}).join('')+'</div>';}
   const req=document.getElementById('maintenanceRequests');
   req.innerHTML='<div class="maintenance-period-selected" style="margin:0 0 12px;padding:10px 14px;border-radius:8px;border:1px solid var(--border);font-weight:700;text-align:center">التفاصيل للفترة: '+maintenancePeriodText()+'</div>'+(rows.length?'<table class="maintenance-table"><thead><tr><th>الحالة</th><th>النوع</th><th>التاريخ</th><th>اليوم</th><th>الساعة</th><th>الوردية</th><th>الماكينة</th><th>طلب الإصلاح / المشكلة</th><th>البداية</th><th>النهاية</th><th>المدة</th><th class="no-print">التفاصيل</th></tr></thead><tbody>'+rows.slice().sort((a,b)=>b.mins-a.mins).map((x,i)=>{const day=new Date(x.date+'T00:00:00').toLocaleDateString('ar-EG',{weekday:'long'}); return `<tr><td>${x.fault.endTime?'تم الإصلاح':'قائم الآن'}</td><td>${x.type}</td><td>${x.date}</td><td>${day}</td><td>${x.fault.time||x.fault.endTime||x.fault.startTime||'—'}</td><td>${shiftLabel(x.shift)}</td><td>${x.machine.id}</td><td>${x.fault.reason}${x.fault.description?' — '+x.fault.description:''}</td><td>${x.fault.startTime||'—'}</td><td>${x.fault.endTime||'قائم الآن'}</td><td>${x.mins} دقيقة</td><td class="no-print"><button type="button" class="btn-ghost" data-maint-detail="${i}">تفاصيل وطباعة</button></td></tr>`}).join('')+'</tbody></table>':'<div class="fault-empty">لا توجد طلبات إصلاح أو أعطال صيانة في الفترة المحددة</div>');
   const problems=document.getElementById('maintenanceProblems');
@@ -3597,8 +3589,7 @@ canvas[id*="production"], canvas[id*="efficiency"], canvas[id*="chart3"] {
 }
 </style>
 </head><body><h1 style="font-family:Tajawal,Arial;margin-bottom:16px">${title}</h1>${clone.outerHTML}
-<style id="v88-front-building-login">
-/* v88: show more of the administration facade, with logo above the login control */
+<style id="v88-front-building-login">/* v88: show more of the administration facade, with logo above the login control */
 #acrowSplash{background-size:contain !important;background-position:center center !important;background-repeat:no-repeat !important;background-color:#183b59 !important;}
 #acrowSplash:after{background:linear-gradient(to bottom,rgba(0,0,0,.18) 0%,rgba(0,0,0,.04) 35%,rgba(0,0,0,.08) 70%,rgba(0,0,0,.28) 100%) !important;}
 #acrowSplash .splash-card{transform:translateY(0) !important;width:min(270px,68vw) !important;padding:12px 14px 14px !important;background:rgba(255,255,255,.94) !important;}
@@ -3997,8 +3988,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
 .topbar .shift-controls > .shift-tabs > button.shift-tab.clicked-yellow{
   background:#ffd54a !important;
   color:#111 !important;
-  border-color:#f0b400 !important;
-  box-shadow:0 0 0 2px rgba(240,180,0,.22),0 0 16px rgba(240,180,0,.45) !important;
+  border-color:#f0b400 !important;  box-shadow:0 0 0 2px rgba(240,180,0,.22),0 0 16px rgba(240,180,0,.45) !important;
 }
 </style>
 <script id="v135-main-shift-fix-js">
@@ -4397,8 +4387,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
     bottom:auto !important;
     transform:translateX(-50%) !important;
   }
-}
-</style>
+}</style>
 <style id="v100-clear-background">
 /* v100: make the administration facade clearer and more visible */
 #acrowSplash{background-image:linear-gradient(rgba(0,0,0,.12),rgba(0,0,0,.20)),url("https://static.mubasher.info/File.Story_Image/04f0ccfbc69968bfff2da47c43183782/640.jpg") !important;background-size:cover !important;background-position:center 48% !important;background-repeat:no-repeat !important;}
@@ -4797,8 +4786,7 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
 <script src="./production-keyboard-lock-fix.js?v=1"></script>
 <script src="./production-keyboard-lock-fix.js?v=2"></script>
 <script src="./production-keyboard-lock-fix.js?v=2"></script>
-<script src="./production-keyboard-lock-fix.js?v=2"></script>
-<script src="./production-keyboard-lock-fix.js?v=2"></script>
+<script src="./production-keyboard-lock-fix.js?v=2"></script><script src="./production-keyboard-lock-fix.js?v=2"></script>
 <script src="./production-keyboard-lock-fix.js?v=2"></script>
 <script src="./production-keyboard-lock-fix.js?v=2"></script>
 <script src="./production-keyboard-lock-fix.js?v=2"></script>
@@ -5021,3 +5009,4 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
   setInterval(bind,500);
 })();
 </script>
+<script src="./daily-extra-machines-final-lock.js?v=1"></script>
