@@ -3,12 +3,12 @@
    is exactly what appears in production. */
 (function(){
 'use strict';
-function S(){ return (typeof window.store!=='undefined'&&window.store) ? window.store : null; }
+function S(){ try{ return (typeof store!=='undefined'&&store) ? store : null; }catch(e){ return null; } }
 function A(){ var s=S(); if(!s)return null; if(!s.settings)s.settings={}; return s; }
-function ids(){ var s=S(); return s&&Array.isArray(window.MACHINES)?window.MACHINES.map(function(m){return String(m.id)}):[]; }
+function ids(){ var s=S(); return s&&Array.isArray(MACHINES)?MACHINES.map(function(m){return String(m.id)}):[]; }
 function save(){
-  try{ if(typeof window.saveStore==='function') window.saveStore(); }catch(e){}
-  try{ if(typeof window.__acrowCloudSaveNow==='function') window.__acrowCloudSaveNow(); }catch(e){}
+  try{ if(typeof saveStore==='function') saveStore(); }catch(e){}
+  try{ if(typeof __acrowCloudSaveNow==='function') __acrowCloudSaveNow(); }catch(e){}
 }
 function normalize(){
   var s=A(); if(!s)return [];
@@ -20,16 +20,16 @@ function normalize(){
 }
 function renderChooser(){
   var root=document.getElementById('machineSelectList'), s=S();
-  if(!root||!s||!Array.isArray(window.MACHINES))return;
+  if(!root||!s||!Array.isArray(MACHINES))return;
   var selected=new Set(normalize()), html='';
-  var deps=Array.isArray(window.DEPARTMENTS)?window.DEPARTMENTS:[];
+  var deps=Array.isArray(DEPARTMENTS)?DEPARTMENTS:[];
   deps.forEach(function(d){
-    var ms=window.MACHINES.filter(function(m){return m.dept===d.id});
+    var ms=MACHINES.filter(function(m){return m.dept===d.id});
     if(!ms.length)return;
     html+='<div style="margin-bottom:14px;"><div class="fav-group-title">'+d.name+'</div>';
     ms.forEach(function(m){
       var id=String(m.id);
-      html+='<label class="fav-checkbox-row"><input type="checkbox" class="fav-checkbox" data-machine="'+id+'" '+(selected.has(id)?'checked':'')+'>'+ (typeof window.machineDisplayName==='function'?window.machineDisplayName(m):(id+' — '+m.name))+'</label>';
+      html+='<label class="fav-checkbox-row"><input type="checkbox" class="fav-checkbox" data-machine="'+id+'" '+(selected.has(id)?'checked':'')+'>'+ (typeof machineDisplayName==='function'?machineDisplayName(m):(id+' — '+m.name))+'</label>';
     });
     html+='</div>';
   });
@@ -62,7 +62,7 @@ function bind(){
   var done=document.getElementById('doneMachineSelectBtn');
   if(done && done.dataset.acrowAuthoritative!=='1'){
     done.dataset.acrowAuthoritative='1';
-    done.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();normalize();save();document.getElementById('machineSelectModal').classList.remove('open');if(typeof window.render==='function')window.render();},true);
+    done.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();normalize();save();document.getElementById('machineSelectModal').classList.remove('open');if(typeof render==='function')render();},true);
   }
   var clear=document.getElementById('clearAllMachinesLink');
   if(clear && clear.dataset.acrowAuthoritative!=='1'){
