@@ -1090,6 +1090,7 @@ const DEPARTMENTS = [
   { id:'drill', name:'مثقاب', target:350, count:3, prefix:'DR' },
   { id:'saw', name:'منشار RSA', target:1000, count:1, prefix:'SW' },
   { id:'sorting', name:'منطقة الفرز', target:0, count:1, prefix:'SR' },
+  { id:'special_daily', name:'ماكينات خاصة', target:0, count:5, prefix:'SP' },
 ];
 
 // قائمة الماكينات الفعلية المعتمدة بالمصنع. يمكن تعديل الرقم أو الاسم أو حذف/إضافة ماكينة من شاشة التعديل.
@@ -1106,12 +1107,23 @@ const DEFAULT_MACHINE_LIST = [
   ['1502','منطقة الفرز','sorting']
 ];
 
+// ماكينات خاصة تظهر فقط في «الماكينات المنتجة اليوم» و«الخطة الشهرية».
+// لها أكواد مستقلة حتى لا تختلط بيانات الإنتاج بينها وبين أي ماكينة أخرى.
+const DAILY_ONLY_MACHINE_LIST = [
+  ['SPECIAL-FRAME-CONNECTOR','مكبس فريم كونيكتور','special_daily'],
+  ['SPECIAL-TELESCOPE','تليسكوب','special_daily'],
+  ['SPECIAL-SHORE-PRESS','شور برس','special_daily'],
+  ['SPECIAL-SPIGOT','اسبيجوت','special_daily'],
+  ['SPECIAL-FORMING-FRAME','فريم تشكيل','special_daily']
+];
+
 function machineDisplayName(m){ return `${m.id} — ${m.name}`; }
 
 function buildMachines(){
-  return DEFAULT_MACHINE_LIST.map(([id,name,dept])=>{
+  const all = DEFAULT_MACHINE_LIST.concat(DAILY_ONLY_MACHINE_LIST);
+  return all.map(([id,name,dept])=>{
     const d=DEPARTMENTS.find(x=>x.id===dept) || {};
-    return {id,name,dept,deptName:d.name||dept,target:d.target||null};
+    return {id,name,dept,deptName:d.name||dept,target:d.target||null, dailyOnly:dept==='special_daily'};
   });
 }
 
@@ -1847,7 +1859,8 @@ function render(){
 
   // Factory-wide totals now match the "الشغالة فقط" filter: when specific machines are marked
   // as running, the overall efficiency reflects just those — not idle/unselected machines dragging it down.
-  const sessionMachines = sessionDept==='all' ? MACHINES : MACHINES.filter(m=>m.dept===sessionDept);
+  const visibleAllMachines = MACHINES.filter(m=>!m.dailyOnly || filterActive);
+  const sessionMachines = sessionDept==='all' ? visibleAllMachines : visibleAllMachines.filter(m=>m.dept===sessionDept);
   const summaryMachines = filterActive ? sessionMachines.filter(m=>store.favorites.includes(m.id)) : sessionMachines;
   summaryMachines.forEach(m=>{
     const rec = getRecord(dateStr, shift, m.id);
@@ -1857,7 +1870,7 @@ function render(){
   });
 
   DEPARTMENTS.filter(dept=>sessionDept==='all'||dept.id===sessionDept).forEach(dept=>{
-    let deptMachines = MACHINES.filter(m=>m.dept===dept.id);
+    let deptMachines = MACHINES.filter(m=>m.dept===dept.id && (!m.dailyOnly || filterActive));
     if(filterActive) deptMachines = deptMachines.filter(m=>store.favorites.includes(m.id));
     if(deptMachines.length===0) return; // nothing selected in this department — skip its whole section
     let deptActual = 0, deptTarget = 0;
@@ -3359,7 +3372,7 @@ document.getElementById('machineManagerClose').addEventListener('click',()=>docu
 function renderMachineManager(){
   const ds=document.getElementById('newMachineDept'); ds.innerHTML=DEPARTMENTS.map(d=>`<option value="${d.id}">${d.name}</option>`).join('');
   const box=document.getElementById('machineManagerList');
-  box.innerHTML=MACHINES.map(m=>`<div class="machine-admin-row"><div><b>${m.id}</b></div><div>${m.name}</div><div>${m.deptName||''}</div><div>${m.target??'—'}</div><div><button class="btn-ghost" data-edit-machine="${m.id}">تعديل</button><button class="btn-ghost" data-delete-machine="${m.id}">حذف</button></div><div class="barcode-mini"><svg id="bc-${m.id}"></svg><button class="btn-ghost" data-print-bc="${m.id}">طباعة الباركود</button></div></div>`).join('') || '<div class="fault-empty">لا توجد ماكينات</div>';
+  box.innerHTML=MACHINES.filter(m=>!m.dailyOnly).map(m=>`<div class="machine-admin-row"><div><b>${m.id}</b></div><div>${m.name}</div><div>${m.deptName||''}</div><div>${m.target??'—'}</div><div><button class="btn-ghost" data-edit-machine="${m.id}">تعديل</button><button class="btn-ghost" data-delete-machine="${m.id}">حذف</button></div><div class="barcode-mini"><svg id="bc-${m.id}"></svg><button class="btn-ghost" data-print-bc="${m.id}">طباعة الباركود</button></div></div>`).join('') || '<div class="fault-empty">لا توجد ماكينات</div>';
   MACHINES.forEach(m=>{try{JsBarcode('#bc-'+m.id,m.id,{format:'CODE128',displayValue:true,fontSize:10,height:28,margin:2});}catch(e){}});
   box.querySelectorAll('[data-edit-machine]').forEach(b=>b.onclick=()=>{
     const m=MACHINES.find(x=>x.id===b.dataset.editMachine); if(!m)return;
