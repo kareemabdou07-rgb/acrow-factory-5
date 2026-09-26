@@ -1859,7 +1859,8 @@ function render(){
 
   // Factory-wide totals now match the "الشغالة فقط" filter: when specific machines are marked
   // as running, the overall efficiency reflects just those — not idle/unselected machines dragging it down.
-  const visibleAllMachines = MACHINES.filter(m=>!m.dailyOnly || store.favorites.includes(m.id));
+  const selectedDailyIds = new Set((Array.isArray(store.favorites)?store.favorites:[]).map(String));
+  const visibleAllMachines = MACHINES.filter(m=>!m.dailyOnly || selectedDailyIds.has(String(m.id)));
   const sessionMachines = sessionDept==='all' ? visibleAllMachines : visibleAllMachines.filter(m=>m.dept===sessionDept);
   const summaryMachines = filterActive ? sessionMachines.filter(m=>store.favorites.includes(m.id)) : sessionMachines;
   summaryMachines.forEach(m=>{
@@ -1870,7 +1871,7 @@ function render(){
   });
 
   DEPARTMENTS.filter(dept=>sessionDept==='all'||dept.id===sessionDept).forEach(dept=>{
-    let deptMachines = MACHINES.filter(m=>m.dept===dept.id && (!m.dailyOnly || store.favorites.includes(m.id)));
+    let deptMachines = MACHINES.filter(m=>m.dept===dept.id && (!m.dailyOnly || selectedDailyIds.has(String(m.id))));
     if(filterActive) deptMachines = deptMachines.filter(m=>store.favorites.includes(m.id));
     if(deptMachines.length===0) return; // nothing selected in this department — skip its whole section
     let deptActual = 0, deptTarget = 0;
