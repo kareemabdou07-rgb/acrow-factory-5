@@ -14,8 +14,7 @@ function syncInput(t){
     if(key===lastKey&&value===lastValue)return;
     lastKey=key; lastValue=value;
     if(typeof getRecord==='function'&&typeof dateInput!=='undefined'&&id){
-      var r=getRecord(date,id);
-      if(!r&&typeof currentShift!=='undefined')r=getRecord(date,currentShift,id);
+      var r=getRecord(date,currentShift,id);
       if(r){r.actual=value===''?null:Number(value);r.productionFixed=value!=='';r._productionUpdatedAt=Date.now();}
     }
     if(typeof window.saveStore==='function')window.saveStore();
