@@ -42,12 +42,11 @@ function parseVoice(s){
 }
 
 function finishVoice(){
-  if(!recDone)return;
+  if(!recDone||!recEnded)return;
   clearTimeout(finalTimer);
-  finalTimer=setTimeout(saveVoiceResult,700);
+  finalTimer=setTimeout(saveVoiceResult,400);
 }
 function saveVoiceResult(){
-  clearTimeout(finalTimer);
   const p=parseVoice(textResult);
   if(!p||!p.name){
     $("status").textContent="تم التسجيل — الصوت محفوظ. اكتب بيانات العامل الآن";
@@ -109,6 +108,9 @@ async function start(){
       recognition.onresult=e=>{let live="";for(let i=e.resultIndex;i<e.results.length;i++){live+=e.results[i][0].transcript+" ";if(e.results[i].isFinal)textResult+=(e.results[i][0].transcript+" ").trim()+" ";}if(live)$("status").textContent="تم سماع الكلام: "+live.trim();};
       recognition.onend=()=>{recEnded=true;finishVoice()}; recognition.onerror=e=>{recEnded=true;$("status").textContent=(e.error==="no-speech"?"لم يتم سماع الكلام — اتكلم بوضوح واضغط الميكروفون مرة أخرى":e.error==="not-allowed"?"Chrome لم يسمح بتحويل الصوت إلى كتابة":"تعذر تحويل الصوت إلى كتابة: "+e.error);finishVoice()};
       setTimeout(()=>{try{recognition.start()}catch(e){$("status").textContent="تعذر تشغيل تحويل الصوت إلى كتابة"}} ,250);
+    }else{
+      recEnded=true;
+      finishVoice();
     }
   }catch(e){
     recording=false;paint(false);
@@ -119,11 +121,9 @@ async function start(){
 function stop(){
   if(!recording)return;
   recording=false;paint(false);
-  try{recognition&&recognition.stop()}catch(e){}
   try{rec&&rec.stop()}catch(e){}
-  if(stream)stream.getTracks().forEach(t=>t.stop());
-  clearTimeout(finalTimer);
-  finalTimer=setTimeout(()=>{ if(!recDone){ recDone=true; } saveVoiceResult(); },3500);
+  // Let Arabic speech recognition finish its final result before closing the mic stream.
+  setTimeout(()=>{try{recognition&&recognition.stop()}catch(e){};if(stream)stream.getTracks().forEach(t=>t.stop());},1400);
 }
 
 const b=$("mic");
