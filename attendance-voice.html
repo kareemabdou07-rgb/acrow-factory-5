@@ -118,9 +118,9 @@ async function start(){
 function stop(){
   if(!recording)return;
   recording=false;paint(false);
-  try{recognition&&recognition.stop()}catch(e){}
   try{rec&&rec.stop()}catch(e){}
-  if(stream)stream.getTracks().forEach(t=>t.stop());
+  // Let Arabic speech recognition finish its final result before closing the mic stream.
+  setTimeout(()=>{try{recognition&&recognition.stop()}catch(e){};if(stream)stream.getTracks().forEach(t=>t.stop());},1400);
 }
 
 const b=$("mic");
