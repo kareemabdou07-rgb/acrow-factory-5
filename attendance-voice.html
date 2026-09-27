@@ -64,7 +64,7 @@ function saveVoiceResult(){
     $("status").textContent="تم حفظ البيانات: "+w.name;
   }
   const ok=mark(w,textResult);
-  if(ok)$("status").textContent="تم التسجيل والحضور: "+w.name;
+  if(ok){$("status").textContent="تم التسجيل والحضور: "+w.name;}else{$("status").textContent="تم التسجيل بالفعل: "+w.name;}
   $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
 }
 
