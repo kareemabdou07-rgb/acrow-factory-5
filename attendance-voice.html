@@ -104,7 +104,7 @@ async function start(){
     try{
       recognition=new R();
       recognition.lang="ar-EG";
-      recognition.continuous=false;
+      recognition.continuous=true;
       recognition.interimResults=true;
       recognition.maxAlternatives=5;
       recognition.onresult=e=>{
@@ -121,14 +121,20 @@ async function start(){
         }
       };
       recognition.onend=()=>{
-        if(!textResult.trim() && window.__liveTranscript)
-          textResult=window.__liveTranscript;
+        if(recording){
+          try{recognition.start()}catch(e){}
+          return;
+        }
+        if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
         recEnded=true;finishVoice();
       };
       recognition.onerror=e=>{
         if(e.error==="aborted")return;
-        if(!textResult.trim() && window.__liveTranscript)
-          textResult=window.__liveTranscript;
+        if(recording && (e.error==="no-speech" || e.error==="network")){
+          try{recognition.stop()}catch(x){}
+          return;
+        }
+        if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
         recEnded=true;
         if(e.error!=="no-speech")
           $("status").textContent=e.error==="not-allowed"
