@@ -1,223 +1,142 @@
-<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>حضور العمال - أكرو مصر</title><style>body{font-family:Tahoma,Arial;margin:0;background:#f3f6fa;color:#17202a}header{background:#07549b;color:white;padding:20px;text-align:center}main{max-width:800px;margin:auto;padding:14px}.card{background:white;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 3px 15px #0002}button,input,select{width:100%;box-sizing:border-box;padding:13px;margin:5px 0;border-radius:10px;border:1px solid #ccd5df;font-size:16px}button{background:#07549b;color:white;border:0;font-weight:bold}.mic{width:230px;height:230px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:15px auto;background:#f2c400;color:#17202a;font-size:18px;touch-action:none;user-select:none;-webkit-user-select:none}.mic.on{background:#19a85b;color:#fff}.big{font-size:70px}.status{text-align:center;font-weight:bold;min-height:28px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}</style><header><h2>برنامج حضور العمال — شركة أكرو مصر</h2><div id="clock"></div></header><main><section class="card"><h3>تسجيل الحضور بالصوت</h3><button id="mic" class="mic"><span class="big">🎙️</span><span id="mt">اضغط وتكلم</span></button><div id="status" class="status">جاهز</div><audio id="audio" controls style="width:100%;display:none"></audio></section><section class="card"><h3>إضافة عامل</h3><input id="name" placeholder="اسم العامل"><input id="job" placeholder="المهنة"><select id="type"><option>معين</option><option>يومية</option></select><input id="fp" placeholder="الرقم الثابت / البصمة"><button id="add">حفظ العامل</button></section><section class="card"><h3>تسجيل يدوي</h3><select id="workers"></select><button id="att">تسجيل الحضور</button></section><section class="card"><h3>آخر تسجيلات</h3><div id="list"></div></section></main><script>const $=id=>document.getElementById(id);
-let W=JSON.parse(localStorage.getItem("acrow_workers")||"[]"),A=JSON.parse(localStorage.getItem("acrow_att")||"[]"),rec=null,stream=null,recording=false,recognition=null,textResult="",pointer=false,recDone=false,recEnded=false,finalTimer=null,audioChunks=[];
+<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>حضور العمال - أكرو مصر</title><style>
+body{font-family:Tahoma,Arial;margin:0;background:#f3f6fa;color:#17202a}
+header{background:#07549b;color:white;padding:20px;text-align:center}
+main{max-width:850px;margin:auto;padding:14px}
+.card{background:white;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 3px 15px #0002}
+button,input,select{width:100%;box-sizing:border-box;padding:13px;margin:5px 0;border-radius:10px;border:1px solid #ccd5df;font-size:16px}
+button{background:#07549b;color:white;border:0;font-weight:bold}
+.mic{width:230px;height:230px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:15px auto;background:#f2c400;color:#17202a;font-size:18px;touch-action:none;user-select:none;-webkit-user-select:none}
+.mic.on{background:#19a85b;color:#fff}
+.big{font-size:28px;font-weight:bold}.status{text-align:center;font-weight:bold;min-height:28px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:right}th{background:#eef3f8}
+.small{font-size:13px;color:#566}.ok{color:#168447}.warn{color:#a56a00}
+@media print{header,.noPrint,.mic{display:none!important}body{background:#fff}.card{box-shadow:none}}
+</style><header><h2>برنامج حضور العمال — شركة أكرو مصر</h2><div id="clock"></div></header><main><section class="card"><h3>تسجيل الحضور بالصوت</h3><button id="mic" class="mic"><span class="big">🎙️</span><span id="mt">اضغط وتكلم</span></button><div id="status" class="status">جاهز</div><audio id="audio" controls style="width:100%;display:none"></audio></section><section class="card"><h3>إضافة عامل</h3><input id="name" placeholder="اسم العامل"><input id="job" placeholder="المهنة"><select id="type"><option>معين</option><option>يومية</option></select><input id="fp" placeholder="الرقم الثابت / البصمة"><button id="add">حفظ العامل</button></section><section class="card"><h3>تسجيل يدوي</h3>
+<select id="workers"></select><button id="att">تسجيل الحضور</button>
+</section>
+<section class="card">
+<h3>التقارير</h3>
+<div class="row"><input id="from" type="date"><input id="to" type="date"></div>
+<div class="row"><button id="report">عرض التقرير</button><button id="print">طباعة التقرير</button></div>
+<div id="reportBox"></div>
+</section><section class="card"><h3>آخر تسجيلات</h3><div id="list"></div></section></main><script>
+const $=id=>document.getElementById(id);
+let W=JSON.parse(localStorage.getItem("acrow_workers")||"[]"),
+A=JSON.parse(localStorage.getItem("acrow_att")||"[]"),
+rec=null,stream=null,recording=false,recognition=null,textResult="",pointer=false,recDone=false,recEnded=false,finalTimer=null;
 
 function save(){localStorage.setItem("acrow_workers",JSON.stringify(W));localStorage.setItem("acrow_att",JSON.stringify(A))}
-const DBP=new Promise((resolve,reject)=>{const q=indexedDB.open("acrow_attendance_voice",1);q.onupgradeneeded=()=>q.result.createObjectStore("audio",{keyPath:"id"});q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error)});
-async function saveAudio(blob){const db=await DBP;return new Promise((resolve,reject)=>{const tx=db.transaction("audio","readwrite");const id=Date.now();tx.objectStore("audio").put({id,created:new Date().toISOString(),blob});tx.oncomplete=()=>resolve(id);tx.onerror=()=>reject(tx.error)})}
+function clean(s){return(s||"").replace(/[،,؛;]/g," ").replace(/\\s+/g," ").trim()}
+function today(){return new Date().toISOString().slice(0,10)}
 function clock(){let d=new Date();$("clock").textContent=d.toLocaleString("ar-EG",{dateStyle:"full",timeStyle:"short"})}
 setInterval(clock,1000);clock();
 
 function refresh(){
-  $("workers").innerHTML='<option value="">اختر العامل</option>'+W.map(w=>'<option value="'+w.id+'">'+w.name+' — '+(w.job||"")+' — '+w.type+' — '+(w.fp||"")+'</option>').join("");
-  $("list").innerHTML=A.slice(-20).reverse().map(a=>'<div style="padding:8px 0;border-bottom:1px solid #eee">'+a.time+' — '+a.name+' — '+(a.text||"حضور")+'</div>').join("")||"لا يوجد تسجيلات";
+ $("workers").innerHTML='<option value="">اختر العامل</option>'+W.map(w=>'<option value="'+w.id+'">'+w.name+' — '+(w.job||"")+' — '+w.type+' — '+(w.fp||"")+'</option>').join("");
+ $("list").innerHTML=A.slice(-20).reverse().map(a=>'<div style="padding:8px 0;border-bottom:1px solid #eee">'+a.time+' — '+a.name+' — '+(a.text||"حضور")+'</div>').join("")||"لا يوجد تسجيلات";
 }
 
 function mark(w,text){
-  let day=new Date().toISOString().slice(0,10),time=new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"});
-  if(A.some(x=>x.id===w.id&&x.day===day))return false;
-  A.push({id:w.id,name:w.name,day,time,text:text||"تسجيل يدوي"});
-  save();refresh();return true;
-}
-
-function clean(s){
-  return (s||"").replace(/[،,؛;]/g," ").replace(/\s+/g," ").trim();
+ let day=today(),time=new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"});
+ if(A.some(x=>x.id===w.id&&x.day===day))return false;
+ A.push({id:w.id,name:w.name,day,time,text:text||"تسجيل يدوي"});
+ save();refresh();return true;
 }
 
 function parseVoice(s){
-  s=clean(s);
-  if(!s)return null;
-  let type=/يومية|يوميه/.test(s)?"يومية":/معين/.test(s)?"معين":"معين";
-  let fp="";
-  let m=s.match(/(?:الرقم\s*(?:الثابت)?|رقم\s*(?:الثابت)?|البصمة)\s*[:：-]?\s*(\d{2,6})/i);
-  if(m)fp=m[1];
-  else{let nums=s.match(/\b\d{2,6}\b/g);if(nums&&nums.length)fp=nums[nums.length-1]}
-  let job="";
-  const jobs=["ملاحظ إنتاج","ملاحظ انتاج","عامل إنتاج","عامل انتاج","لحام","لحامين","مراقب جودة","جودة","سائق","فني","نجار","كهربائي","ميكانيكي","مخزن","مخازن","مشرف","مهندس"];
-  for(const j of jobs){if(s.includes(j)){job=j;break}}
-  let name=s;
-  name=name.replace(/^(اسم العامل|العامل)\s*[:：-]?\s*/,"");
-  name=name.split(/\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\b/i)[0];
-  name=name.replace(/\b(?:معين|يومية)\b/g,"").trim();
-  return {name:clean(name),job,type,fp,raw:s};
-}
-
-function finishVoice(){
-  if(!recDone||!recEnded)return;
-  clearTimeout(finalTimer);
-  finalTimer=setTimeout(()=>{
-    if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
-    saveVoiceResult();
-  },800);
+ s=clean(s);if(!s)return null;
+ let type=/يومية|يوميه/.test(s)?"يومية":/معين/.test(s)?"معين":"معين",fp="";
+ let m=s.match(/(?:الرقم\\s*(?:الثابت)?|رقم\\s*(?:الثابت)?|البصمة)\\s*[:：-]?\\s*(\\d{2,6})/i);
+ if(m)fp=m[1];else{let nums=s.match(/\\b\\d{2,6}\\b/g);if(nums&&nums.length)fp=nums[nums.length-1]}
+ let job="",jobs=["ملاحظ إنتاج","ملاحظ انتاج","عامل إنتاج","عامل انتاج","لحام","لحامين","مراقب جودة","جودة","سائق","فني","نجار","كهربائي","ميكانيكي","مخزن","مخازن","مشرف","مهندس"];
+ for(const j of jobs){if(s.includes(j)){job=j;break}}
+ let name=s.replace(/^(اسم العامل|العامل)\\s*[:：-]?\\s*/,"");
+ name=name.split(/\\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\\b/i)[0];
+ name=name.replace(/\\b(?:معين|يومية)\\b/g,"").trim();
+ return{name:clean(name),job,type,fp,raw:s};
 }
 
 function saveVoiceResult(){
-  if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
-  let raw=(textResult||window.__liveTranscript||"").trim();
-  const p=parseVoice(raw);
-  if(!p||!p.name){
-    const typed=$("name").value.trim();
-    if(typed){
-      p={name:typed,job:$("job").value.trim(),type:$("type").value||"معين",fp:$("fp").value.trim(),raw:raw||"تسجيل يدوي"};
-    }else{
-      $("status").textContent="لم يصل نص عربي من الميكروفون. اكتب الاسم مرة واحدة وسيتم الحفظ والحضور تلقائيًا.";
-      return;
-    }
-  }
-  let w=W.find(x=>clean(x.name)===clean(p.name));
-  if(!w){
-    w={id:Date.now(),name:p.name,job:p.job,type:p.type,fp:p.fp};
-    W.push(w);
-    save();refresh();
-    $("status").textContent="تم التسجيل: "+w.name;
-  }else{
-    if(p.job&&!w.job)w.job=p.job;
-    if(p.fp&&!w.fp)w.fp=p.fp;
-    if(p.type)w.type=p.type;
-    save();refresh();
-    $("status").textContent="تم حفظ البيانات: "+w.name;
-  }
-  const ok=mark(w,textResult);
-  if(ok){$("status").textContent="تم التسجيل والحضور: "+w.name;}else{$("status").textContent="تم التسجيل بالفعل: "+w.name;}
-  $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
+ let raw=(textResult||window.__liveTranscript||"").trim(),p=parseVoice(raw);
+ if(!p||!p.name){
+  const typed=$("name").value.trim();
+  if(!typed){$("status").textContent="لم يتم تحويل الكلام إلى كتابة. اكتب الاسم في خانة إضافة عامل ثم اضغط حفظ العامل.";return}
+  p={name:typed,job:$("job").value.trim(),type:$("type").value||"معين",fp:$("fp").value.trim(),raw:raw||"تسجيل يدوي"};
+ }
+ let w=W.find(x=>clean(x.name)===clean(p.name));
+ if(!w){w={id:Date.now(),name:p.name,job:p.job,type:p.type,fp:p.fp};W.push(w)}
+ else{if(p.job)w.job=p.job;if(p.fp)w.fp=p.fp;if(p.type)w.type=p.type}
+ save();refresh();
+ $("status").textContent=mark(w,raw||"تسجيل صوتي")?"تم التسجيل والحضور: "+w.name:"تم التسجيل بالفعل: "+w.name;
+ $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
 }
 
 $("add").onclick=()=>{
-  let name=$("name").value.trim();
-  if(!name)return alert("اكتب اسم العامل");
-  let w={id:Date.now(),name,job:$("job").value.trim(),type:$("type").value,fp:$("fp").value.trim()};
-  W.push(w);save();refresh();
-  $("status").textContent="تم التسجيل: "+name;
-  $("name").value=$("job").value=$("fp").value="";
+ let name=$("name").value.trim();if(!name)return alert("اكتب اسم العامل");
+ let old=W.find(x=>clean(x.name)===clean(name));
+ if(old){old.job=$("job").value.trim();old.type=$("type").value;old.fp=$("fp").value.trim()}
+ else W.push({id:Date.now(),name,job:$("job").value.trim(),type:$("type").value,fp:$("fp").value.trim()});
+ save();refresh();$("status").textContent="تم حفظ بيانات العامل: "+name;
 };
 
 $("att").onclick=()=>{
-  let w=W.find(x=>String(x.id)===$("workers").value);
-  if(!w)return;
-  $("status").textContent=mark(w,"تسجيل يدوي")?"تم الحضور: "+w.name:"العامل مسجل حضور اليوم بالفعل";
+ let w=W.find(x=>String(x.id)===$("workers").value);if(!w)return;
+ $("status").textContent=mark(w,"تسجيل يدوي")?"تم الحضور: "+w.name:"العامل مسجل حضور اليوم بالفعل";
 };
 
 function paint(on){$("mic").classList.toggle("on",on);$("mt").textContent=on?"جاري التسجيل...":"اضغط وتكلم"}
 
 async function start(){
-  if(recording)return;
-  recording=true;paint(true);
-  $("status").textContent="الميكروفون يعمل الآن";
-  textResult="";window.__liveTranscript="";recDone=false;recEnded=false;
-
-  let R=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(R){
-    try{
-      recognition=new R();
-      recognition.lang="ar-EG";
-      recognition.continuous=true;
-      recognition.interimResults=true;
-      recognition.maxAlternatives=5;
-      if("processLocally" in recognition) recognition.processLocally=true;
-      recognition.onresult=e=>{
-        let live="";
-        for(let i=e.resultIndex;i<e.results.length;i++){
-          const t=(e.results[i][0]?.transcript||"").trim();
-          if(!t)continue;
-          live+=(t+" ");
-          if(e.results[i].isFinal)textResult+=(t+" ");
-        }
-        if(live){
-          window.__liveTranscript=(window.__liveTranscript+" "+live).trim();
-          $("status").textContent="تم سماع الكلام: "+window.__liveTranscript;
-        }
-      };
-      recognition.onend=()=>{
-        if(recording){
-          try{
-        if(R.available){
-          R.available({langs:["ar-EG"],processLocally:true,quality:"dictation"}).then(async state=>{
-            if(!recording)return;
-            if(state==="available"){ recognition.start(); return; }
-            if(state==="downloadable" && R.install){
-              $("status").textContent="جاري تجهيز التعرف على الصوت العربي لأول مرة...";
-              const ok=await R.install({langs:["ar-EG"]});
-              if(ok && recording){ $("status").textContent="الميكروفون يعمل الآن"; recognition.start(); return; }
-            }
-            recognition.processLocally=false;
-            recognition.start();
-          }).catch(()=>{recognition.processLocally=false;recognition.start()});
-        }else{
-          recognition.processLocally=false;
-          recognition.start();
-        }
-      }catch(e){
-        try{recognition.processLocally=false;recognition.start()}catch(x){}
-      }
-          return;
-        }
-        if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
-        recEnded=true;finishVoice();
-      };
-      recognition.onerror=e=>{
-        if(e.error==="aborted")return;
-        if(recording && (e.error==="no-speech" || e.error==="network")){
-          $("status").textContent=e.error==="network"?"جاري إعادة الاتصال بالتعرف على الصوت...":"اتكلم بوضوح الآن...";
-          try{recognition.stop()}catch(x){}
-          setTimeout(()=>{
-            if(!recording||!recognition)return;
-            try{recognition.start()}catch(x){}
-          },350);
-          return;
-        }
-        if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
-        recEnded=true;
-        if(e.error!=="no-speech")
-          $("status").textContent=e.error==="not-allowed"
-            ?"Chrome لم يسمح بتحويل الصوت إلى كتابة"
-            :"تعذر تحويل الصوت إلى كتابة: "+e.error;
-        finishVoice();
-      };
-      try{recognition.start()}catch(e){}
-    }catch(e){recognition=null;recEnded=true;}
-  }else{
-    recEnded=true;
-  }
-
+ if(recording)return;recording=true;paint(true);$("status").textContent="الميكروفون يعمل الآن — اتكلم بالجملة كاملة";
+ textResult="";window.__liveTranscript="";recDone=false;recEnded=false;
+ let R=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(R){
   try{
-    stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    let opts={};
-    if(MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))opts.mimeType="audio/webm;codecs=opus";
-    rec=new MediaRecorder(stream,opts);
-    let chunks=[];
-    rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-    rec.onstop=async()=>{
-      let blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});
-      $("audio").src=URL.createObjectURL(blob);
-      $("audio").style.display="block";
-      try{await saveAudio(blob);$("status").textContent="تم حفظ التسجيل الصوتي";}catch(e){$("status").textContent="تم التسجيل، لكن تعذر حفظ ملف الصوت";}
-      recDone=true;finishVoice();
-    };
-    rec.start();
-  }catch(e){
-    recording=false;paint(false);
-    try{recognition&&recognition.stop()}catch(x){}
-    $("status").textContent=e.name==="NotAllowedError"
-      ?"تم رفض إذن الميكروفون من Chrome للموقع"
-      :"تعذر تشغيل الميكروفون: "+e.message;
-  }
+   recognition=new R();recognition.lang="ar-EG";recognition.continuous=true;recognition.interimResults=true;
+   recognition.onresult=e=>{
+    let all="";
+    for(let i=e.resultIndex;i<e.results.length;i++){let t=(e.results[i][0]?.transcript||"").trim();if(t){all+=(t+" ");if(e.results[i].isFinal)textResult+=(t+" ")}}
+    if(all){window.__liveTranscript=(window.__liveTranscript+" "+all).trim();$("status").textContent="تم سماع: "+window.__liveTranscript}
+   };
+   recognition.onerror=e=>{if(e.error!=="aborted")$("status").textContent="التسجيل الصوتي يعمل، لكن تحويل الكلام لكتابة غير متاح في المتصفح. يمكنك إكمال البيانات يدويًا."};
+   recognition.onend=()=>{if(recording){try{recognition.start()}catch(e){}}else{recEnded=true;finishVoice()}};
+   recognition.start();
+  }catch(e){recognition=null}
+ }
+ try{
+  stream=await navigator.mediaDevices.getUserMedia({audio:true});
+  rec=new MediaRecorder(stream);let chunks=[];
+  rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+  rec.onstop=()=>{let blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});$("audio").src=URL.createObjectURL(blob);$("audio").style.display="block";recDone=true;finishVoice()};
+  rec.start();
+ }catch(e){recording=false;paint(false);$("status").textContent="تعذر تشغيل الميكروفون. اسمح للموقع باستخدام الميكروفون من إعدادات Chrome."}
 }
-
+function finishVoice(){clearTimeout(finalTimer);finalTimer=setTimeout(()=>{if(!textResult.trim()&&window.__liveTranscript)textResult=window.__liveTranscript;saveVoiceResult()},500)}
 function stop(){
-  if(!recording)return;
-  recording=false;paint(false);
-  try{recognition&&recognition.stop()}catch(e){}
-  try{rec&&rec.stop()}catch(e){}
-  setTimeout(()=>{
-    if(!recEnded){
-      if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
-      recEnded=true;finishVoice();
-    }
-    if(stream)stream.getTracks().forEach(t=>t.stop());
-  },1800);
+ if(!recording)return;recording=false;paint(false);try{recognition&&recognition.stop()}catch(e){}try{rec&&rec.stop()}catch(e){}
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ setTimeout(()=>{if(!recDone){recDone=true;finishVoice()}},1200);
 }
-
 const b=$("mic");
-b.addEventListener("pointerdown",e=>{e.preventDefault();pointer=true;b.setPointerCapture&&b.setPointerCapture(e.pointerId);start()});
+b.addEventListener("pointerdown",e=>{e.preventDefault();pointer=true;b.setPointerCapture?.(e.pointerId);start()});
 b.addEventListener("pointerup",e=>{e.preventDefault();if(pointer){pointer=false;stop()}});
-b.addEventListener("pointercancel",e=>{pointer=false;stop()});
-refresh();</script></html>
+b.addEventListener("pointercancel",()=>{pointer=false;stop()});
+
+function showReport(){
+ let f=$("from").value||today(),t=$("to").value||today();
+ let rows=A.filter(a=>a.day>=f&&a.day<=t);
+ let ids=new Set(rows.map(a=>a.id)),workers=W.filter(w=>ids.has(w.id));
+ let معين=workers.filter(w=>w.type==="معين").length,يومية=workers.filter(w=>w.type==="يومية").length;
+ let jobs={};workers.forEach(w=>{let j=w.job||"غير محدد";jobs[j]=(jobs[j]||0)+1});
+ let html='<p><b>الفترة:</b> '+f+' إلى '+t+'</p><p><b>إجمالي الحضور:</b> '+rows.length+' | <b>معين:</b> '+معين+' | <b>يومية:</b> '+يومية+'</p>';
+ html+='<table><tr><th>المهنة</th><th>العدد</th></tr>'+Object.entries(jobs).map(([j,n])=>'<tr><td>'+j+'</td><td>'+n+'</td></tr>').join("")+'</table>';
+ html+='<table><tr><th>التاريخ</th><th>الوقت</th><th>الاسم</th><th>المهنة</th><th>النوع</th><th>الرقم</th></tr>';
+ rows.slice().reverse().forEach(a=>{let w=W.find(x=>x.id===a.id)||{};html+='<tr><td>'+a.day+'</td><td>'+a.time+'</td><td>'+a.name+'</td><td>'+(w.job||"")+'</td><td>'+(w.type||"")+'</td><td>'+(w.fp||"")+'</td></tr>'});
+ html+='</table>';$("reportBox").innerHTML=html;
+}
+$("report").onclick=showReport;
+$("print").onclick=()=>{showReport();setTimeout(()=>window.print(),100)};
+
+let d=today();$("from").value=d;$("to").value=d;refresh();
+</script></html>
