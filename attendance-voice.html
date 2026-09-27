@@ -42,13 +42,14 @@ function parseVoice(s){
 }
 
 function finishVoice(){
-  if(!recDone)return;
+  if(!recDone||!recEnded)return;
   clearTimeout(finalTimer);
   finalTimer=setTimeout(()=>{
-    recEnded=true;
+    if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
     saveVoiceResult();
-  },500);
+  },800);
 }
+
 function saveVoiceResult(){
   if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
   const p=parseVoice(textResult);
@@ -97,15 +98,14 @@ async function start(){
   $("status").textContent="الميكروفون يعمل الآن";
   textResult="";window.__liveTranscript="";recDone=false;recEnded=false;
 
-  // Start Arabic speech recognition immediately so Chrome does not lose the user gesture.
   let R=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(R){
     try{
       recognition=new R();
       recognition.lang="ar-EG";
-      recognition.continuous=true;
+      recognition.continuous=false;
       recognition.interimResults=true;
-      recognition.maxAlternatives=3;
+      recognition.maxAlternatives=5;
       recognition.onresult=e=>{
         let live="";
         for(let i=e.resultIndex;i<e.results.length;i++){
@@ -120,25 +120,23 @@ async function start(){
         }
       };
       recognition.onend=()=>{
-        if(recording){
-          try{recognition.start();return}catch(e){}
-        }
+        if(!textResult.trim() && window.__liveTranscript)
+          textResult=window.__liveTranscript;
         recEnded=true;finishVoice();
       };
       recognition.onerror=e=>{
         if(e.error==="aborted")return;
-        if(recording && (e.error==="no-speech"||e.error==="network")){
-          try{recognition.stop()}catch(x){}
-          return;
-        }
+        if(!textResult.trim() && window.__liveTranscript)
+          textResult=window.__liveTranscript;
         recEnded=true;
-        $("status").textContent=e.error==="not-allowed"
-          ?"Chrome لم يسمح بتحويل الصوت إلى كتابة"
-          :"تعذر تحويل الصوت إلى كتابة: "+e.error;
+        if(e.error!=="no-speech")
+          $("status").textContent=e.error==="not-allowed"
+            ?"Chrome لم يسمح بتحويل الصوت إلى كتابة"
+            :"تعذر تحويل الصوت إلى كتابة: "+e.error;
         finishVoice();
       };
       try{recognition.start()}catch(e){}
-    }catch(e){ recognition=null; recEnded=true; }
+    }catch(e){recognition=null;recEnded=true;}
   }else{
     recEnded=true;
   }
@@ -170,14 +168,15 @@ async function start(){
 function stop(){
   if(!recording)return;
   recording=false;paint(false);
+  try{recognition&&recognition.stop()}catch(e){}
   try{rec&&rec.stop()}catch(e){}
-  // Give speech recognition time to deliver its final Arabic result.
   setTimeout(()=>{
-    try{recognition&&recognition.stop()}catch(e){}
+    if(!recEnded){
+      if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
+      recEnded=true;finishVoice();
+    }
     if(stream)stream.getTracks().forEach(t=>t.stop());
-    if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
-    if(!rec) {recDone=true;recEnded=true;finishVoice();}
-  },1200);
+  },1800);
 }
 
 const b=$("mic");
