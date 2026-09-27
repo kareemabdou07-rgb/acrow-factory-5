@@ -1,1 +1,123 @@
-<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>حضور العمال - أكرو مصر</title><style>body{font-family:Tahoma,Arial;margin:0;background:#f3f6fa;color:#17202a}header{background:#07549b;color:white;padding:20px;text-align:center}main{max-width:800px;margin:auto;padding:14px}.card{background:white;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 3px 15px #0002}button,input,select{width:100%;box-sizing:border-box;padding:13px;margin:5px 0;border-radius:10px;border:1px solid #ccd5df;font-size:16px}button{background:#07549b;color:white;border:0;font-weight:bold}.mic{width:230px;height:230px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:15px auto;background:#f2c400;color:#17202a;font-size:18px;touch-action:none;user-select:none;-webkit-user-select:none}.mic.on{background:#19a85b;color:#fff}.big{font-size:70px}.status{text-align:center;font-weight:bold;min-height:28px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}</style><header><h2>برنامج حضور العمال — شركة أكرو مصر</h2><div id="clock"></div></header><main><section class="card"><h3>تسجيل الحضور بالصوت</h3><button id="mic" class="mic"><span class="big">🎙️</span><span id="mt">اضغط وتكلم</span></button><div id="status" class="status">جاهز</div><audio id="audio" controls style="width:100%;display:none"></audio></section><section class="card"><h3>إضافة عامل</h3><input id="name" placeholder="اسم العامل"><input id="job" placeholder="المهنة"><select id="type"><option>معين</option><option>يومية</option></select><input id="fp" placeholder="الرقم الثابت / البصمة"><button id="add">حفظ العامل</button></section><section class="card"><h3>تسجيل يدوي</h3><select id="workers"></select><button id="att">تسجيل الحضور</button></section><section class="card"><h3>آخر تسجيلات</h3><div id="list"></div></section></main><script>const $=id=>document.getElementById(id);let W=JSON.parse(localStorage.getItem("acrow_workers")||"[]"),A=JSON.parse(localStorage.getItem("acrow_att")||"[]"),rec=null,stream=null,recording=false,recognition=null,textResult="",pointer=false;function save(){localStorage.setItem("acrow_workers",JSON.stringify(W));localStorage.setItem("acrow_att",JSON.stringify(A))}function clock(){let d=new Date();$("clock").textContent=d.toLocaleString("ar-EG",{dateStyle:"full",timeStyle:"short"})}setInterval(clock,1000);clock();function refresh(){workers.innerHTML='<option value="">اختر العامل</option>'+W.map(w=>'<option value="'+w.id+'">'+w.name+' — '+w.job+' — '+w.type+' — '+(w.fp||"")+'</option>').join("");list.innerHTML=A.slice(-20).reverse().map(a=>'<div>'+a.time+' — '+a.name+' — '+a.text+'</div>').join("")||"لا يوجد تسجيلات"}function mark(w,text){let day=new Date().toISOString().slice(0,10),time=new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"});if(A.some(x=>x.id===w.id&&x.day===day))return false;A.push({id:w.id,name:w.name,day,time,text:text||"تسجيل يدوي"});save();refresh();return true}$("add").onclick=()=>{let name=$("name").value.trim();if(!name)return alert("اكتب اسم العامل");let w={id:Date.now(),name,job:$("job").value.trim(),type:$("type").value,fp:$("fp").value.trim()};W.push(w);save();refresh();$("name").value=$("job").value=$("fp").value="";$("status").textContent="تم التسجيل"};$("att").onclick=()=>{let w=W.find(x=>String(x.id)===$("workers").value);if(!w)return;$("status").textContent=mark(w,"تسجيل يدوي")?"تم الحضور":"العامل مسجل حضور اليوم بالفعل"};function paint(on){$("mic").classList.toggle("on",on);$("mt").textContent=on?"جاري التسجيل...":"اضغط وتكلم"}async function start(){if(recording)return;recording=true;paint(true);$("status").textContent="الميكروفون يعمل الآن";textResult="";try{stream=await navigator.mediaDevices.getUserMedia({audio:true});let opts={};if(MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))opts.mimeType="audio/webm;codecs=opus";rec=new MediaRecorder(stream,opts);let chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);rec.onstop=()=>{let blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});$("audio").src=URL.createObjectURL(blob);$("audio").style.display="block";try{localStorage.setItem("last_audio",URL.createObjectURL(blob))}catch(e){}$("status").textContent=textResult?"تم حفظ الصوت والكتابة بنجاح":"تم حفظ الصوت بنجاح"};rec.start();let R=window.SpeechRecognition||window.webkitSpeechRecognition;if(R){recognition=new R();recognition.lang="ar-EG";recognition.continuous=true;recognition.interimResults=false;recognition.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)textResult+=(e.results[i][0].transcript+" ").trim()};recognition.onerror=e=>{if(e.error==="not-allowed")$("status").textContent="الميكروفون مرفوض من الموقع"};try{recognition.start()}catch(e){}}}catch(e){recording=false;paint(false);$("status").textContent=e.name==="NotAllowedError"?"تم رفض إذن الميكروفون من Chrome للموقع":"تعذر تشغيل الميكروفون: "+e.message}}function stop(){if(!recording)return;recording=false;paint(false);try{recognition&&recognition.stop()}catch(e){}try{rec&&rec.stop()}catch(e){}if(stream)stream.getTracks().forEach(t=>t.stop())}const b=$("mic");b.addEventListener("pointerdown",e=>{e.preventDefault();pointer=true;b.setPointerCapture&&b.setPointerCapture(e.pointerId);start()});b.addEventListener("pointerup",e=>{e.preventDefault();if(pointer){pointer=false;stop()}});b.addEventListener("pointercancel",e=>{pointer=false;stop()});refresh();</script></html>
+<!doctype html><html lang="ar" dir="rtl"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>حضور العمال - أكرو مصر</title><style>body{font-family:Tahoma,Arial;margin:0;background:#f3f6fa;color:#17202a}header{background:#07549b;color:white;padding:20px;text-align:center}main{max-width:800px;margin:auto;padding:14px}.card{background:white;border-radius:16px;padding:18px;margin:12px 0;box-shadow:0 3px 15px #0002}button,input,select{width:100%;box-sizing:border-box;padding:13px;margin:5px 0;border-radius:10px;border:1px solid #ccd5df;font-size:16px}button{background:#07549b;color:white;border:0;font-weight:bold}.mic{width:230px;height:230px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;margin:15px auto;background:#f2c400;color:#17202a;font-size:18px;touch-action:none;user-select:none;-webkit-user-select:none}.mic.on{background:#19a85b;color:#fff}.big{font-size:70px}.status{text-align:center;font-weight:bold;min-height:28px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}</style><header><h2>برنامج حضور العمال — شركة أكرو مصر</h2><div id="clock"></div></header><main><section class="card"><h3>تسجيل الحضور بالصوت</h3><button id="mic" class="mic"><span class="big">🎙️</span><span id="mt">اضغط وتكلم</span></button><div id="status" class="status">جاهز</div><audio id="audio" controls style="width:100%;display:none"></audio></section><section class="card"><h3>إضافة عامل</h3><input id="name" placeholder="اسم العامل"><input id="job" placeholder="المهنة"><select id="type"><option>معين</option><option>يومية</option></select><input id="fp" placeholder="الرقم الثابت / البصمة"><button id="add">حفظ العامل</button></section><section class="card"><h3>تسجيل يدوي</h3><select id="workers"></select><button id="att">تسجيل الحضور</button></section><section class="card"><h3>آخر تسجيلات</h3><div id="list"></div></section></main><script>const $=id=>document.getElementById(id);
+let W=JSON.parse(localStorage.getItem("acrow_workers")||"[]"),A=JSON.parse(localStorage.getItem("acrow_att")||"[]"),rec=null,stream=null,recording=false,recognition=null,textResult="",pointer=false;
+
+function save(){localStorage.setItem("acrow_workers",JSON.stringify(W));localStorage.setItem("acrow_att",JSON.stringify(A))}
+function clock(){let d=new Date();$("clock").textContent=d.toLocaleString("ar-EG",{dateStyle:"full",timeStyle:"short"})}
+setInterval(clock,1000);clock();
+
+function refresh(){
+  $("workers").innerHTML='<option value="">اختر العامل</option>'+W.map(w=>'<option value="'+w.id+'">'+w.name+' — '+(w.job||"")+' — '+w.type+' — '+(w.fp||"")+'</option>').join("");
+  $("list").innerHTML=A.slice(-20).reverse().map(a=>'<div style="padding:8px 0;border-bottom:1px solid #eee">'+a.time+' — '+a.name+' — '+(a.text||"حضور")+'</div>').join("")||"لا يوجد تسجيلات";
+}
+
+function mark(w,text){
+  let day=new Date().toISOString().slice(0,10),time=new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"});
+  if(A.some(x=>x.id===w.id&&x.day===day))return false;
+  A.push({id:w.id,name:w.name,day,time,text:text||"تسجيل يدوي"});
+  save();refresh();return true;
+}
+
+function clean(s){
+  return (s||"").replace(/[،,؛;]/g," ").replace(/\s+/g," ").trim();
+}
+
+function parseVoice(s){
+  s=clean(s);
+  if(!s)return null;
+  let type=/يومية|يوميه/.test(s)?"يومية":/معين/.test(s)?"معين":"معين";
+  let fp="";
+  let m=s.match(/(?:الرقم\s*(?:الثابت)?|رقم\s*(?:الثابت)?|البصمة)\s*[:：-]?\s*(\d{2,6})/i);
+  if(m)fp=m[1];
+  else{let nums=s.match(/\b\d{2,6}\b/g);if(nums&&nums.length)fp=nums[nums.length-1]}
+  let job="";
+  const jobs=["ملاحظ إنتاج","ملاحظ انتاج","عامل إنتاج","عامل انتاج","لحام","لحامين","مراقب جودة","جودة","سائق","فني","نجار","كهربائي","ميكانيكي","مخزن","مخازن","مشرف","مهندس"];
+  for(const j of jobs){if(s.includes(j)){job=j;break}}
+  let name=s;
+  name=name.replace(/^(اسم العامل|العامل)\s*[:：-]?\s*/,"");
+  name=name.split(/\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\b/i)[0];
+  name=name.replace(/\b(?:معين|يومية)\b/g,"").trim();
+  return {name:clean(name),job,type,fp,raw:s};
+}
+
+function saveVoiceResult(){
+  const p=parseVoice(textResult);
+  if(!p||!p.name){
+    $("status").textContent="تم حفظ الصوت، لكن الاسم لم يُفهم. جرّب قول: كريم محمد، المهنة ملاحظ إنتاج، الرقم الثابت 779";
+    return;
+  }
+  let w=W.find(x=>clean(x.name)===clean(p.name));
+  if(!w){
+    w={id:Date.now(),name:p.name,job:p.job,type:p.type,fp:p.fp};
+    W.push(w);
+    save();refresh();
+    $("status").textContent="تم التسجيل: "+w.name;
+  }else{
+    if(p.job&&!w.job)w.job=p.job;
+    if(p.fp&&!w.fp)w.fp=p.fp;
+    if(p.type)w.type=p.type;
+    save();refresh();
+    $("status").textContent="تم حفظ البيانات: "+w.name;
+  }
+  const ok=mark(w,textResult);
+  if(ok)$("status").textContent="تم التسجيل والحضور: "+w.name;
+  $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
+}
+
+$("add").onclick=()=>{
+  let name=$("name").value.trim();
+  if(!name)return alert("اكتب اسم العامل");
+  let w={id:Date.now(),name,job:$("job").value.trim(),type:$("type").value,fp:$("fp").value.trim()};
+  W.push(w);save();refresh();
+  $("status").textContent="تم التسجيل: "+name;
+  $("name").value=$("job").value=$("fp").value="";
+};
+
+$("att").onclick=()=>{
+  let w=W.find(x=>String(x.id)===$("workers").value);
+  if(!w)return;
+  $("status").textContent=mark(w,"تسجيل يدوي")?"تم الحضور: "+w.name:"العامل مسجل حضور اليوم بالفعل";
+};
+
+function paint(on){$("mic").classList.toggle("on",on);$("mt").textContent=on?"جاري التسجيل...":"اضغط وتكلم"}
+
+async function start(){
+  if(recording)return;
+  recording=true;paint(true);$("status").textContent="الميكروفون يعمل الآن";textResult="";
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    let opts={};if(MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))opts.mimeType="audio/webm;codecs=opus";
+    rec=new MediaRecorder(stream,opts);let chunks=[];
+    rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+    rec.onstop=()=>{
+      let blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});
+      $("audio").src=URL.createObjectURL(blob);$("audio").style.display="block";
+      if(textResult){$("status").textContent="تم حفظ الصوت والكتابة بنجاح";saveVoiceResult()}
+      else $("status").textContent="تم حفظ الصوت بنجاح — لم يصل نص الكلام";
+    };
+    rec.start();
+    let R=window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(R){
+      recognition=new R();recognition.lang="ar-EG";recognition.continuous=true;recognition.interimResults=false;
+      recognition.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)textResult+=(e.results[i][0].transcript+" ").trim()};
+      recognition.onerror=e=>{if(e.error==="not-allowed")$("status").textContent="الميكروفون مرفوض من الموقع"};
+      try{recognition.start()}catch(e){}
+    }
+  }catch(e){
+    recording=false;paint(false);
+    $("status").textContent=e.name==="NotAllowedError"?"تم رفض إذن الميكروفون من Chrome للموقع":"تعذر تشغيل الميكروفون: "+e.message
+  }
+}
+
+function stop(){
+  if(!recording)return;
+  recording=false;paint(false);
+  try{recognition&&recognition.stop()}catch(e){}
+  try{rec&&rec.stop()}catch(e){}
+  if(stream)stream.getTracks().forEach(t=>t.stop());
+}
+
+const b=$("mic");
+b.addEventListener("pointerdown",e=>{e.preventDefault();pointer=true;b.setPointerCapture&&b.setPointerCapture(e.pointerId);start()});
+b.addEventListener("pointerup",e=>{e.preventDefault();if(pointer){pointer=false;stop()}});
+b.addEventListener("pointercancel",e=>{pointer=false;stop()});
+refresh();</script></html>
