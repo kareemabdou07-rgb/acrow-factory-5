@@ -112,6 +112,7 @@ async function start(){
       recognition.continuous=true;
       recognition.interimResults=true;
       recognition.maxAlternatives=5;
+      if("processLocally" in recognition) recognition.processLocally=true;
       recognition.onresult=e=>{
         let live="";
         for(let i=e.resultIndex;i<e.results.length;i++){
@@ -127,7 +128,26 @@ async function start(){
       };
       recognition.onend=()=>{
         if(recording){
-          try{recognition.start()}catch(e){}
+          try{
+        if(R.available){
+          R.available({langs:["ar-EG"],processLocally:true,quality:"dictation"}).then(async state=>{
+            if(!recording)return;
+            if(state==="available"){ recognition.start(); return; }
+            if(state==="downloadable" && R.install){
+              $("status").textContent="جاري تجهيز التعرف على الصوت العربي لأول مرة...";
+              const ok=await R.install({langs:["ar-EG"]});
+              if(ok && recording){ $("status").textContent="الميكروفون يعمل الآن"; recognition.start(); return; }
+            }
+            recognition.processLocally=false;
+            recognition.start();
+          }).catch(()=>{recognition.processLocally=false;recognition.start()});
+        }else{
+          recognition.processLocally=false;
+          recognition.start();
+        }
+      }catch(e){
+        try{recognition.processLocally=false;recognition.start()}catch(x){}
+      }
           return;
         }
         if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
