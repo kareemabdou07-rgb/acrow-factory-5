@@ -42,9 +42,12 @@ function parseVoice(s){
 }
 
 function finishVoice(){
-  if(!recDone||!recEnded)return;
+  if(!recDone)return;
   clearTimeout(finalTimer);
-  finalTimer=setTimeout(saveVoiceResult,400);
+  finalTimer=setTimeout(()=>{
+    recEnded=true;
+    saveVoiceResult();
+  },500);
 }
 function saveVoiceResult(){
   const p=parseVoice(textResult);
