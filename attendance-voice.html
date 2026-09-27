@@ -50,6 +50,7 @@ function finishVoice(){
   },500);
 }
 function saveVoiceResult(){
+  if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
   const p=parseVoice(textResult);
   if(!p||!p.name){
     $("status").textContent="تم التسجيل — الصوت محفوظ. اكتب بيانات العامل الآن";
@@ -92,32 +93,77 @@ function paint(on){$("mic").classList.toggle("on",on);$("mt").textContent=on?"ج
 
 async function start(){
   if(recording)return;
-  recording=true;paint(true);$("status").textContent="الميكروفون يعمل الآن";textResult="";recDone=false;recEnded=false;
+  recording=true;paint(true);
+  $("status").textContent="الميكروفون يعمل الآن";
+  textResult="";window.__liveTranscript="";recDone=false;recEnded=false;
+
+  // Start Arabic speech recognition immediately so Chrome does not lose the user gesture.
+  let R=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(R){
+    try{
+      recognition=new R();
+      recognition.lang="ar-EG";
+      recognition.continuous=true;
+      recognition.interimResults=true;
+      recognition.maxAlternatives=3;
+      recognition.onresult=e=>{
+        let live="";
+        for(let i=e.resultIndex;i<e.results.length;i++){
+          const t=(e.results[i][0]?.transcript||"").trim();
+          if(!t)continue;
+          live+=(t+" ");
+          if(e.results[i].isFinal)textResult+=(t+" ");
+        }
+        if(live){
+          window.__liveTranscript=(window.__liveTranscript+" "+live).trim();
+          $("status").textContent="تم سماع الكلام: "+window.__liveTranscript;
+        }
+      };
+      recognition.onend=()=>{
+        if(recording){
+          try{recognition.start();return}catch(e){}
+        }
+        recEnded=true;finishVoice();
+      };
+      recognition.onerror=e=>{
+        if(e.error==="aborted")return;
+        if(recording && (e.error==="no-speech"||e.error==="network")){
+          try{recognition.stop()}catch(x){}
+          return;
+        }
+        recEnded=true;
+        $("status").textContent=e.error==="not-allowed"
+          ?"Chrome لم يسمح بتحويل الصوت إلى كتابة"
+          :"تعذر تحويل الصوت إلى كتابة: "+e.error;
+        finishVoice();
+      };
+      try{recognition.start()}catch(e){}
+    }catch(e){ recognition=null; recEnded=true; }
+  }else{
+    recEnded=true;
+  }
+
   try{
     stream=await navigator.mediaDevices.getUserMedia({audio:true});
-    let opts={};if(MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))opts.mimeType="audio/webm;codecs=opus";
-    rec=new MediaRecorder(stream,opts);let chunks=[];
+    let opts={};
+    if(MediaRecorder.isTypeSupported("audio/webm;codecs=opus"))opts.mimeType="audio/webm;codecs=opus";
+    rec=new MediaRecorder(stream,opts);
+    let chunks=[];
     rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
     rec.onstop=async()=>{
       let blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});
-      $("audio").src=URL.createObjectURL(blob);$("audio").style.display="block";
-      try{await saveAudio(blob);$("status").textContent="تم التسجيل";}catch(e){$("status").textContent="تم التسجيل، لكن تعذر حفظ ملف الصوت";}
+      $("audio").src=URL.createObjectURL(blob);
+      $("audio").style.display="block";
+      try{await saveAudio(blob);$("status").textContent="تم حفظ التسجيل الصوتي";}catch(e){$("status").textContent="تم التسجيل، لكن تعذر حفظ ملف الصوت";}
       recDone=true;finishVoice();
     };
     rec.start();
-    let R=window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(R){
-      recognition=new R();recognition.lang="ar-EG";recognition.continuous=false;recognition.interimResults=true;recognition.maxAlternatives=5;
-      recognition.onresult=e=>{let live="";for(let i=e.resultIndex;i<e.results.length;i++){live+=e.results[i][0].transcript+" ";if(e.results[i].isFinal)textResult+=(e.results[i][0].transcript+" ").trim()+" ";}if(live)$("status").textContent="تم سماع الكلام: "+live.trim();};
-      recognition.onend=()=>{recEnded=true;finishVoice()}; recognition.onerror=e=>{recEnded=true;$("status").textContent=(e.error==="no-speech"?"لم يتم سماع الكلام — اتكلم بوضوح واضغط الميكروفون مرة أخرى":e.error==="not-allowed"?"Chrome لم يسمح بتحويل الصوت إلى كتابة":"تعذر تحويل الصوت إلى كتابة: "+e.error);finishVoice()};
-      setTimeout(()=>{try{recognition.start()}catch(e){$("status").textContent="تعذر تشغيل تحويل الصوت إلى كتابة"}} ,250);
-    }else{
-      recEnded=true;
-      finishVoice();
-    }
   }catch(e){
     recording=false;paint(false);
-    $("status").textContent=e.name==="NotAllowedError"?"تم رفض إذن الميكروفون من Chrome للموقع":"تعذر تشغيل الميكروفون: "+e.message
+    try{recognition&&recognition.stop()}catch(x){}
+    $("status").textContent=e.name==="NotAllowedError"
+      ?"تم رفض إذن الميكروفون من Chrome للموقع"
+      :"تعذر تشغيل الميكروفون: "+e.message;
   }
 }
 
@@ -125,8 +171,13 @@ function stop(){
   if(!recording)return;
   recording=false;paint(false);
   try{rec&&rec.stop()}catch(e){}
-  // Let Arabic speech recognition finish its final result before closing the mic stream.
-  setTimeout(()=>{try{recognition&&recognition.stop()}catch(e){};if(stream)stream.getTracks().forEach(t=>t.stop());},1400);
+  // Give speech recognition time to deliver its final Arabic result.
+  setTimeout(()=>{
+    try{recognition&&recognition.stop()}catch(e){}
+    if(stream)stream.getTracks().forEach(t=>t.stop());
+    if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
+    if(!rec) {recDone=true;recEnded=true;finishVoice();}
+  },1200);
 }
 
 const b=$("mic");
