@@ -108,9 +108,23 @@ async function start(){
   stream=await navigator.mediaDevices.getUserMedia({audio:true});
   rec=new MediaRecorder(stream);let chunks=[];
   rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-  rec.onstop=()=>{let blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});$("audio").src=URL.createObjectURL(blob);$("audio").style.display="block";recDone=true;finishVoice()};
+  rec.onstop=async()=>{let blob=new Blob(chunks,{type:rec.mimeType||"audio/webm"});$("audio").src=URL.createObjectURL(blob);$("audio").style.display="block";recDone=true;await transcribeAudio(blob);finishVoice()};
   rec.start();
  }catch(e){recording=false;paint(false);$("status").textContent="تعذر تشغيل الميكروفون. اسمح للموقع باستخدام الميكروفون من إعدادات Chrome."}
+}
+async function transcribeAudio(blob){
+ const endpoint=localStorage.getItem("acrow_transcribe_endpoint")||"/api/transcribe";
+ try{
+  $("status").textContent="جاري تحويل التسجيل إلى كتابة...";
+  const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":blob.type||"audio/webm"},body:blob});
+  const data=await r.json().catch(()=>({}));
+  if(!r.ok||!data.text) throw new Error(data.error||"تعذر تحويل الصوت");
+  textResult=(data.text||"").trim();
+  window.__liveTranscript=textResult;
+  $("status").textContent="تم تحويل الكلام إلى كتابة: "+textResult;
+ }catch(e){
+  $("status").textContent="تم حفظ التسجيل، لكن خدمة تحويل الصوت غير متصلة الآن.";
+ }
 }
 function finishVoice(){clearTimeout(finalTimer);finalTimer=setTimeout(()=>{if(!textResult.trim()&&window.__liveTranscript)textResult=window.__liveTranscript;saveVoiceResult()},500)}
 function stop(){
