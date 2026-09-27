@@ -55,8 +55,13 @@ function saveVoiceResult(){
   let raw=(textResult||window.__liveTranscript||"").trim();
   const p=parseVoice(raw);
   if(!p||!p.name){
-    $("status").textContent="لم أفهم اسم العامل. اتكلم مرة ثانية";
-    return;
+    const typed=$("name").value.trim();
+    if(typed){
+      p={name:typed,job:$("job").value.trim(),type:$("type").value||"معين",fp:$("fp").value.trim(),raw:raw||"تسجيل يدوي"};
+    }else{
+      $("status").textContent="لم يصل نص عربي من الميكروفون. اكتب الاسم مرة واحدة وسيتم الحفظ والحضور تلقائيًا.";
+      return;
+    }
   }
   let w=W.find(x=>clean(x.name)===clean(p.name));
   if(!w){
@@ -131,7 +136,12 @@ async function start(){
       recognition.onerror=e=>{
         if(e.error==="aborted")return;
         if(recording && (e.error==="no-speech" || e.error==="network")){
+          $("status").textContent=e.error==="network"?"جاري إعادة الاتصال بالتعرف على الصوت...":"اتكلم بوضوح الآن...";
           try{recognition.stop()}catch(x){}
+          setTimeout(()=>{
+            if(!recording||!recognition)return;
+            try{recognition.start()}catch(x){}
+          },350);
           return;
         }
         if(!textResult.trim() && window.__liveTranscript) textResult=window.__liveTranscript;
