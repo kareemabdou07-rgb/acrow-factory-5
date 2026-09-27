@@ -104,10 +104,10 @@ async function start(){
     rec.start();
     let R=window.SpeechRecognition||window.webkitSpeechRecognition;
     if(R){
-      recognition=new R();recognition.lang="ar-EG";recognition.continuous=true;recognition.interimResults=false;
-      recognition.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)textResult+=(e.results[i][0].transcript+" ").trim(); if(textResult)$("status").textContent="تم سماع الكلام: "+textResult};
-      recognition.onend=()=>{recEnded=true;finishVoice()}; recognition.onerror=e=>{if(e.error==="not-allowed")$("status").textContent="تم التسجيل";recEnded=true;finishVoice()};
-      try{recognition.start()}catch(e){}
+      recognition=new R();recognition.lang="ar-EG";recognition.continuous=false;recognition.interimResults=true;recognition.maxAlternatives=5;
+      recognition.onresult=e=>{let live="";for(let i=e.resultIndex;i<e.results.length;i++){live+=e.results[i][0].transcript+" ";if(e.results[i].isFinal)textResult+=(e.results[i][0].transcript+" ").trim()+" ";}if(live)$("status").textContent="تم سماع الكلام: "+live.trim();};
+      recognition.onend=()=>{recEnded=true;finishVoice()}; recognition.onerror=e=>{recEnded=true;$("status").textContent=(e.error==="no-speech"?"لم يتم سماع الكلام — اتكلم بوضوح واضغط الميكروفون مرة أخرى":e.error==="not-allowed"?"Chrome لم يسمح بتحويل الصوت إلى كتابة":"تعذر تحويل الصوت إلى كتابة: "+e.error);finishVoice()};
+      setTimeout(()=>{try{recognition.start()}catch(e){$("status").textContent="تعذر تشغيل تحويل الصوت إلى كتابة"}} ,250);
     }
   }catch(e){
     recording=false;paint(false);
