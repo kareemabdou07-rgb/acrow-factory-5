@@ -155,7 +155,9 @@ function installCloudHandlers(){
   }
   window.W=workers;syncLocalArrays();window.refresh();
   $('name').value=w.name;$('job').value=w.job||'';$('type').value=w.type||'معين';$('fp').value=w.fp||'';
-  window.mark(w,raw||'تسجيل صوتي');
+  saveWorkerCloud(w).then(function(){window.mark(w,raw||'تسجيل صوتي');}).catch(function(e){
+   console.error(e); renderStatus('تم التعرف على العامل، لكن تعذر حفظ بياناته مركزياً الآن.');
+  });
  };
 
  $('add').onclick=async function(){
