@@ -115,10 +115,15 @@ async function start(){
  }catch(e){recording=false;paint(false);$("status").textContent="تعذر تشغيل الميكروفون. اسمح للموقع باستخدام الميكروفون من إعدادات Chrome."}
 }
 async function transcribeAudio(blob){
- const endpoint=localStorage.getItem("acrow_transcribe_endpoint")||"/api/transcribe";
+ const endpoint="https://acrow-attendance.floot.app/_api/transcribe";
  try{
   $("status").textContent="جاري تحويل التسجيل إلى كتابة...";
-  const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":blob.type||"audio/webm"},body:blob});
+  const buf=await blob.arrayBuffer();
+  let binary="",bytes=new Uint8Array(buf);
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode(...bytes.subarray(i,i+chunk));
+  const audioBase64=btoa(binary);
+  const r=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({audioBase64,mimeType:blob.type||"audio/webm"})});
   const data=await r.json().catch(()=>({}));
   if(!r.ok||!data.text) throw new Error(data.error||"تعذر تحويل الصوت");
   textResult=(data.text||"").trim();
