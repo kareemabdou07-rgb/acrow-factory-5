@@ -146,6 +146,10 @@ function installCloudHandlers(){
   var now=new Date();
   var item={id:String(w.id),name:w.name,day:day,time:now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}),text:text||'تسجيل يدوي',audioUrl:window.__attendanceLastAudioUrl||''};
   arr.push(item); window.A=arr; syncLocalArrays(); window.refresh();
+  if(!cloudReady){
+    renderStatus('تم التسجيل والحضور: '+w.name);
+    return true;
+  }
   markCloud(w,item.text,item.audioUrl).then(function(ok){
     if(ok)renderStatus('تم التسجيل والحضور: '+w.name);
     else renderStatus('تم التسجيل بالفعل: '+w.name);
@@ -342,6 +346,7 @@ function boot(){
   try{storage=firebase.storage();}catch(e){storage=null;}
   cloudReady=true;
   installCloudHandlers();installVoice();
+  migrateLocal().catch(console.error);
   renderStatus('جاري الاتصال بقاعدة بيانات الحضور...');
   db.collection(WORKERS).onSnapshot(function(snap){
    var out=[];snap.forEach(function(d){out.push(d.data());});
@@ -376,5 +381,14 @@ function loadFirebase(){
  document.head.appendChild(a);
 }
 
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',loadFirebase);else loadFirebase();
+// Install the voice/local-save layer immediately, even if Firebase scripts are slow or blocked.
+if(document.readyState==='loading'){
+ document.addEventListener('DOMContentLoaded',function(){
+  try{installCloudHandlers();installVoice();}catch(e){console.error(e);}
+  loadFirebase();
+ });
+}else{
+ try{installCloudHandlers();installVoice();}catch(e){console.error(e);}
+ loadFirebase();
+}
 })();
