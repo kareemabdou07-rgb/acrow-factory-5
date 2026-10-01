@@ -41,14 +41,14 @@ function parseAttendanceText(raw){
  if(!s)return null;
  var type=/يومية|يوميه/.test(s)?'يومية':/معين/.test(s)?'معين':'معين';
  var fp='';
- var m=s.match(/(?:الرقم\\s*(?:الثابت)?|رقم\\s*(?:الثابت)?|البصمة)\\s*[:：-]?\\s*(\\d{2,8})/i);
+ var m=s.match(/(?:الرقم\s*(?:الثابت)?|رقم\s*(?:الثابت)?|البصمة)\s*[:：-]?\s*(\\d{2,8})/i);
  if(m)fp=m[1];
  var job='';
  var jobs=['ملاحظ إنتاج','ملاحظ انتاج','عامل إنتاج','عامل انتاج','لحام','لحامين','مراقب جودة','جودة','سائق','فني','نجار','كهربائي','ميكانيكي','مخزن','مخازن','مشرف','مهندس'];
  for(var i=0;i<jobs.length;i++){if(s.indexOf(jobs[i])!==-1){job=jobs[i];break;}}
- var name=s.replace(/^(اسم العامل|العامل)\\s*[:：-]?\\s*/,'');
- name=name.split(/\\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\\b/i)[0];
- name=name.replace(/\\b(?:معين|يومية)\\b/g,'').trim();
+ var name=s.replace(/^(اسم العامل|العامل)\s*[:：-]?\s*/,'');
+ name=name.split(/\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\b/i)[0];
+ name=name.replace(/\b(?:معين|يومية)\b/g,'').trim();
  if(!name)return null;
  return {name:clean(name),job:job,type:type,fp:fp,raw:s};
 }
@@ -177,12 +177,19 @@ function installCloudHandlers(){
   window.W=workers;syncLocalArrays();window.refresh();
   $('name').value=w.name;$('job').value=w.job||'';$('type').value=w.type||'معين';$('fp').value=w.fp||'';
   // Always record attendance locally first. Central Firebase sync must never block attendance.
+  // Hard-save the worker and attendance locally first.
+  try{
+   localStorage.setItem('acrow_workers',JSON.stringify(window.W||[]));
+   localStorage.setItem('acrow_att',JSON.stringify(window.A||[]));
+  }catch(e){console.error('local save',e);}
   var marked=window.mark(w,raw||'تسجيل صوتي');
+  try{
+   localStorage.setItem('acrow_workers',JSON.stringify(window.W||[]));
+   localStorage.setItem('acrow_att',JSON.stringify(window.A||[]));
+  }catch(e){console.error('attendance local save',e);}
   if(marked) renderStatus('تم التسجيل والحضور: '+w.name);
   else renderStatus('العامل مسجل حضور اليوم بالفعل: '+w.name);
-  saveWorkerCloud(w).catch(function(e){
-   console.error('worker cloud save:',e);
-  });
+  saveWorkerCloud(w).catch(function(e){console.error('worker cloud save:',e);});
  };
 
  $('add').onclick=async function(){
@@ -270,13 +277,13 @@ function installVoice(){
      }
      live=live.trim();
      if(live){
-      window.__liveTranscript=(window.__liveTranscript+' '+live).replace(/\\s+/g,' ').trim();
+      window.__liveTranscript=(window.__liveTranscript+' '+live).replace(/\s+/g,' ').trim();
       renderStatus('تم سماع: '+window.__liveTranscript);
      }
      for(var j=e.resultIndex;j<e.results.length;j++){
       if(e.results[j].isFinal){
        var ft=(e.results[j][0]&&e.results[j][0].transcript||'').trim();
-       if(ft)window.textResult=(window.textResult+' '+ft).replace(/\\s+/g,' ').trim();
+       if(ft)window.textResult=(window.textResult+' '+ft).replace(/\s+/g,' ').trim();
       }
      }
     };
