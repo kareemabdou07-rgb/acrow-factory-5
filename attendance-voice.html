@@ -140,9 +140,9 @@ function stop(){
  setTimeout(()=>{if(!recDone){recDone=true;finishVoice()}},1200);
 }
 const b=$("mic");
-b.addEventListener("pointerdown",e=>{e.preventDefault();pointer=true;b.setPointerCapture?.(e.pointerId);start()});
+b.addEventListener("pointerdown",e=>{e.preventDefault();pointer=true;b.setPointerCapture?.(e.pointerId);window.start()});
 b.addEventListener("pointerup",e=>{e.preventDefault();if(pointer){pointer=false;window.stop()}});
-b.addEventListener("pointercancel",()=>{pointer=false;stop()});
+b.addEventListener("pointercancel",()=>{pointer=false;window.stop()});
 
 function showReport(){
  let f=$("from").value||today(),t=$("to").value||today();
@@ -160,4 +160,4 @@ $("report").onclick=showReport;
 $("print").onclick=()=>{showReport();setTimeout(()=>window.print(),100)};
 
 let d=today();$("from").value=d;$("to").value=d;refresh();
-</script><script src="./attendance-cloud.js?v=20261001-4"></script></html>
+</script><script src="./attendance-cloud.js?v=20261001-6"></script></html>
