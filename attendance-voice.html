@@ -72,7 +72,7 @@ function saveVoiceResult(){
  $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
 }
 
-$("saveVoice").onclick=()=>{saveVoiceResult()};
+$("saveVoice").onclick=()=>{window.saveVoiceResult()};
 
 $("add").onclick=()=>{
  let name=$("name").value.trim();if(!name)return alert("اكتب اسم العامل");
@@ -141,7 +141,7 @@ function stop(){
 }
 const b=$("mic");
 b.addEventListener("pointerdown",e=>{e.preventDefault();pointer=true;b.setPointerCapture?.(e.pointerId);start()});
-b.addEventListener("pointerup",e=>{e.preventDefault();if(pointer){pointer=false;stop()}});
+b.addEventListener("pointerup",e=>{e.preventDefault();if(pointer){pointer=false;window.stop()}});
 b.addEventListener("pointercancel",()=>{pointer=false;stop()});
 
 function showReport(){
@@ -160,4 +160,4 @@ $("report").onclick=showReport;
 $("print").onclick=()=>{showReport();setTimeout(()=>window.print(),100)};
 
 let d=today();$("from").value=d;$("to").value=d;refresh();
-</script><script src="./attendance-cloud.js?v=20261001-2"></script></html>
+</script><script src="./attendance-cloud.js?v=20261001-4"></script></html>
