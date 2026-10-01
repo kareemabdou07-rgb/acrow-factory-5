@@ -21,10 +21,10 @@ table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px;bord
 <div class="row"><button id="report">عرض التقرير</button><button id="print">طباعة التقرير</button></div>
 <div id="reportBox"></div>
 </section><section class="card"><h3>آخر تسجيلات</h3><div id="list"></div></section></main><script>
-const $=id=>document.getElementById(id);
+const $=id=>document.getElementById(id); window.$=$;
 let W=JSON.parse(localStorage.getItem("acrow_workers")||"[]"),
 A=JSON.parse(localStorage.getItem("acrow_att")||"[]"),
-rec=null,stream=null,recording=false,recognition=null,textResult="",pointer=false,recDone=false,recEnded=false,finalTimer=null,lastAudioBlob=null;
+rec=null,stream=null,recording=false,recognition=null,textResult="",pointer=false,recDone=false,recEnded=false,finalTimer=null,lastAudioBlob=null; window.W=W; window.A=A;
 
 function save(){localStorage.setItem("acrow_workers",JSON.stringify(W));localStorage.setItem("acrow_att",JSON.stringify(A))}
 function clean(s){return(s||"").replace(/[،,؛;]/g," ").replace(/\\s+/g," ").trim()}
@@ -160,4 +160,4 @@ $("report").onclick=showReport;
 $("print").onclick=()=>{showReport();setTimeout(()=>window.print(),100)};
 
 let d=today();$("from").value=d;$("to").value=d;refresh();
-</script><script src="./attendance-cloud.js?v=20261001-6"></script></html>
+</script><script src="./attendance-cloud.js?v=20261001-8"></script></html>
