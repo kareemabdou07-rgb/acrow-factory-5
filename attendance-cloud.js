@@ -176,8 +176,12 @@ function installCloudHandlers(){
   }
   window.W=workers;syncLocalArrays();window.refresh();
   $('name').value=w.name;$('job').value=w.job||'';$('type').value=w.type||'معين';$('fp').value=w.fp||'';
-  saveWorkerCloud(w).then(function(){window.mark(w,raw||'تسجيل صوتي');}).catch(function(e){
-   console.error(e); renderStatus('تم التعرف على العامل، لكن تعذر حفظ بياناته مركزياً الآن.');
+  // Always record attendance locally first. Central Firebase sync must never block attendance.
+  var marked=window.mark(w,raw||'تسجيل صوتي');
+  if(marked) renderStatus('تم التسجيل والحضور: '+w.name);
+  else renderStatus('العامل مسجل حضور اليوم بالفعل: '+w.name);
+  saveWorkerCloud(w).catch(function(e){
+   console.error('worker cloud save:',e);
   });
  };
 
