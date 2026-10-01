@@ -61,6 +61,19 @@ function installHandlers(){
  $('att').onclick=function(){var w=(window.W||[]).find(function(x){return String(x.id)===$('workers').value;});if(w)window.mark(w,'تسجيل يدوي');};
 }
 
+async function transcribeAudio(blob){
+ try{
+  status('جاري تحويل التسجيل الصوتي إلى كتابة...');
+  var buf=await blob.arrayBuffer(),bytes=new Uint8Array(buf),binary='',chunk=0x8000;
+  for(var i=0;i<bytes.length;i+=chunk)binary+=String.fromCharCode.apply(null,bytes.subarray(i,i+chunk));
+  var r=await fetch('https://acrow-attendance.floot.app/_api/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({audioBase64:btoa(binary),mimeType:blob.type||'audio/webm'})});
+  var data=await r.json().catch(function(){return {};});
+  if(!r.ok||!data.text)throw new Error(data.error||'no transcript');
+  window.textResult=String(data.text).trim();window.__liveTranscript=window.textResult;
+  status('تم تحويل الكلام إلى كتابة: '+window.textResult);
+  return window.textResult;
+ }catch(e){console.warn('transcribeAudio',e);return window.textResult||window.__liveTranscript||'';}
+}
 async function uploadAudio(blob){window.__attendanceLastAudioUrl='';if(!storage||!blob)return '';try{var ref=storage.ref('attendance-audio/'+dayNow()+'/'+Date.now()+'-'+Math.random().toString(36).slice(2)+'.webm');await ref.put(blob,{contentType:blob.type||'audio/webm'});var url=await ref.getDownloadURL();window.__attendanceLastAudioUrl=url;return url;}catch(e){console.warn('audio upload',e);return '';}}
 function installVoice(){
  window.start=async function(){
@@ -68,7 +81,7 @@ function installVoice(){
   window.textResult='';window.__liveTranscript='';window.__attendanceLastAudioUrl='';
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(SR)try{var r=new SR();window.__voiceRecognition=r;r.lang='ar-EG';r.continuous=true;r.interimResults=true;r.onresult=function(e){var finals=[];for(var i=e.resultIndex;i<e.results.length;i++){var t=((e.results[i][0]&&e.results[i][0].transcript)||'').trim();if(t){finals.push(t);}}if(finals.length){window.textResult=finals.join(' ').replace(/\s+/g,' ').trim();window.__liveTranscript=window.textResult;status('تم سماع: '+window.textResult);}};r.onerror=function(e){console.warn('SpeechRecognition',e.error);};r.onend=function(){if(window.recording){try{r.start();}catch(x){}}};r.start();}catch(e){console.warn('SpeechRecognition start',e);}
-  try{window.stream=await navigator.mediaDevices.getUserMedia({audio:true});var mime=(window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))?'audio/webm;codecs=opus':'audio/webm';window.rec=new MediaRecorder(window.stream,{mimeType:mime});var chunks=[];window.rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};window.rec.onstop=async function(){var blob=new Blob(chunks,{type:window.rec.mimeType||'audio/webm'});$('audio').src=URL.createObjectURL(blob);$('audio').style.display='block';uploadAudio(blob).catch(function(){});await new Promise(function(resolve){setTimeout(resolve,1000);});if(!window.textResult.trim()&&window.__liveTranscript.trim())window.textResult=window.__liveTranscript.trim();window.saveVoiceResult();};window.rec.start();}
+  try{window.stream=await navigator.mediaDevices.getUserMedia({audio:true});var mime=(window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))?'audio/webm;codecs=opus':'audio/webm';window.rec=new MediaRecorder(window.stream,{mimeType:mime});var chunks=[];window.rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};window.rec.onstop=async function(){var blob=new Blob(chunks,{type:window.rec.mimeType||'audio/webm'});$('audio').src=URL.createObjectURL(blob);$('audio').style.display='block';uploadAudio(blob).catch(function(){});await transcribeAudio(blob);if(!window.textResult.trim()&&window.__liveTranscript.trim())window.textResult=window.__liveTranscript.trim();window.saveVoiceResult();};window.rec.start();}
   catch(e){console.error(e);try{if(window.__voiceRecognition)window.__voiceRecognition.stop();}catch(x){}window.recording=false;if(typeof window.paint==='function')window.paint(false);status('تعذر تشغيل الميكروفون.');}
  };
  window.stop=function(){if(!window.recording)return;window.recording=false;if(typeof window.paint==='function')window.paint(false);try{if(window.__voiceRecognition)window.__voiceRecognition.stop();}catch(e){}try{if(window.rec&&window.rec.state!=='inactive')window.rec.stop();}catch(e){}if(window.stream)window.stream.getTracks().forEach(function(t){t.stop();});};
