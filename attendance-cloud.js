@@ -36,6 +36,23 @@ function renderStatus(msg){
  try{if(window.$ && $('status')) $('status').textContent=msg;}catch(e){}
 }
 
+function parseAttendanceText(raw){
+ var s=clean(raw);
+ if(!s)return null;
+ var type=/يومية|يوميه/.test(s)?'يومية':/معين/.test(s)?'معين':'معين';
+ var fp='';
+ var m=s.match(/(?:الرقم\\s*(?:الثابت)?|رقم\\s*(?:الثابت)?|البصمة)\\s*[:：-]?\\s*(\\d{2,8})/i);
+ if(m)fp=m[1];
+ var job='';
+ var jobs=['ملاحظ إنتاج','ملاحظ انتاج','عامل إنتاج','عامل انتاج','لحام','لحامين','مراقب جودة','جودة','سائق','فني','نجار','كهربائي','ميكانيكي','مخزن','مخازن','مشرف','مهندس'];
+ for(var i=0;i<jobs.length;i++){if(s.indexOf(jobs[i])!==-1){job=jobs[i];break;}}
+ var name=s.replace(/^(اسم العامل|العامل)\\s*[:：-]?\\s*/,'');
+ name=name.split(/\\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\\b/i)[0];
+ name=name.replace(/\\b(?:معين|يومية)\\b/g,'').trim();
+ if(!name)return null;
+ return {name:clean(name),job:job,type:type,fp:fp,raw:s};
+}
+
 function workerObject(w){
  return {
   id:String(w.id||stableId(w.name,w.fp)),
@@ -138,7 +155,7 @@ function installCloudHandlers(){
 
  window.saveVoiceResult=function(){
   var raw=(window.textResult||window.__liveTranscript||'').trim();
-  var p=(typeof window.parseVoice==='function')?window.parseVoice(raw):null;
+  var p=parseAttendanceText(raw) || ((typeof window.parseVoice==='function')?window.parseVoice(raw):null);
   if(!p||!p.name){
    var typed=$('name').value.trim();
    if(!typed){renderStatus('لم يتم تحويل الكلام إلى كتابة. حاول مرة أخرى أو اكتب الاسم يدوياً.');return;}
@@ -282,7 +299,7 @@ function installVoice(){
     var audioPromise=uploadAudio(blob);
 
     // Give SpeechRecognition a short moment to deliver its final Arabic result.
-    await new Promise(function(resolve){setTimeout(resolve,700);});
+    await new Promise(function(resolve){setTimeout(resolve,1600);});
 
     if(!window.textResult.trim() && window.__liveTranscript.trim()){
      window.textResult=window.__liveTranscript.trim();
