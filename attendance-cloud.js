@@ -217,9 +217,57 @@ async function uploadAudio(blob){
 function installVoice(){
  window.start=async function(){
   if(window.recording)return;
-  window.recording=true; if(typeof window.paint==='function')window.paint(true);
+  window.recording=true;
+  if(typeof window.paint==='function')window.paint(true);
   renderStatus('الميكروفون يعمل الآن — اتكلم بالجملة كاملة');
-  window.textResult='';window.__liveTranscript='';window.__attendanceLastAudioUrl='';
+
+  window.textResult='';
+  window.__liveTranscript='';
+  window.__attendanceLastAudioUrl='';
+  window.__voiceRecognitionDone=false;
+
+  // Android Chrome: use the browser's Arabic SpeechRecognition while also
+  // recording the original audio. This removes the dependency on the old
+  // Floot transcription endpoint.
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){
+   try{
+    window.__voiceRecognition=new SR();
+    window.__voiceRecognition.lang='ar-EG';
+    window.__voiceRecognition.continuous=true;
+    window.__voiceRecognition.interimResults=true;
+    window.__voiceRecognition.onresult=function(e){
+     var live='';
+     for(var i=e.resultIndex;i<e.results.length;i++){
+      var t=(e.results[i][0]&&e.results[i][0].transcript||'').trim();
+      if(!t)continue;
+      live+=(t+' ');
+     }
+     live=live.trim();
+     if(live){
+      window.__liveTranscript=(window.__liveTranscript+' '+live).replace(/\\s+/g,' ').trim();
+      renderStatus('تم سماع: '+window.__liveTranscript);
+     }
+     for(var j=e.resultIndex;j<e.results.length;j++){
+      if(e.results[j].isFinal){
+       var ft=(e.results[j][0]&&e.results[j][0].transcript||'').trim();
+       if(ft)window.textResult=(window.textResult+' '+ft).replace(/\\s+/g,' ').trim();
+      }
+     }
+    };
+    window.__voiceRecognition.onerror=function(e){
+     console.warn('SpeechRecognition:',e.error);
+     if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      renderStatus('الميكروفون يعمل، لكن تحويل الكلام العربي غير متاح من Chrome الآن. أكمل الكلام ثم جرّب مرة أخرى.');
+     }
+    };
+    window.__voiceRecognition.onend=function(){
+     window.__voiceRecognitionDone=true;
+    };
+    window.__voiceRecognition.start();
+   }catch(e){console.warn('SpeechRecognition start failed',e);}
+  }
+
   try{
    window.stream=await navigator.mediaDevices.getUserMedia({audio:true});
    var mime=(window.MediaRecorder&&MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))?'audio/webm;codecs=opus':'audio/webm';
@@ -228,30 +276,47 @@ function installVoice(){
    window.rec.ondataavailable=function(e){if(e.data&&e.data.size)chunks.push(e.data);};
    window.rec.onstop=async function(){
     var blob=new Blob(chunks,{type:window.rec.mimeType||'audio/webm'});
-    $('audio').src=URL.createObjectURL(blob);$('audio').style.display='block';
-    renderStatus('جاري تحويل التسجيل إلى كتابة...');
+    $('audio').src=URL.createObjectURL(blob);
+    $('audio').style.display='block';
+
     var audioPromise=uploadAudio(blob);
-    try{
-     if(typeof window.transcribeAudio==='function')await window.transcribeAudio(blob);
-    }catch(e){console.error(e);}
+
+    // Give SpeechRecognition a short moment to deliver its final Arabic result.
+    await new Promise(function(resolve){setTimeout(resolve,700);});
+
+    if(!window.textResult.trim() && window.__liveTranscript.trim()){
+     window.textResult=window.__liveTranscript.trim();
+    }
+
     await audioPromise;
+
+    if(window.textResult.trim()){
+     renderStatus('تم تحويل الكلام إلى كتابة: '+window.textResult);
+    }else{
+     renderStatus('تم حفظ التسجيل الصوتي. لم يصل نص عربي من Chrome.');
+    }
+
     window.saveVoiceResult();
    };
    window.rec.start();
   }catch(e){
-   console.error(e);window.recording=false;if(typeof window.paint==='function')window.paint(false);
+   console.error(e);
+   try{if(window.__voiceRecognition)window.__voiceRecognition.stop();}catch(x){}
+   window.recording=false;
+   if(typeof window.paint==='function')window.paint(false);
    renderStatus('تعذر تشغيل الميكروفون. اسمح للموقع باستخدام الميكروفون من إعدادات Chrome.');
   }
  };
 
  window.stop=function(){
   if(!window.recording)return;
-  window.recording=false;if(typeof window.paint==='function')window.paint(false);
+  window.recording=false;
+  if(typeof window.paint==='function')window.paint(false);
+  try{if(window.__voiceRecognition)window.__voiceRecognition.stop();}catch(e){}
   try{if(window.rec&&window.rec.state!=='inactive')window.rec.stop();}catch(e){}
   if(window.stream)window.stream.getTracks().forEach(function(t){t.stop();});
  };
 }
-
 function boot(){
  if(!window.firebase)return setTimeout(boot,100);
  try{
