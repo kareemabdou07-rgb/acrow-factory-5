@@ -47,13 +47,13 @@ function mark(w,text){
 function parseVoice(s){
  s=clean(s);if(!s)return null;
  let type=/يومية|يوميه/.test(s)?"يومية":/معين/.test(s)?"معين":"معين",fp="";
- let m=s.match(/(?:الرقم\s*(?:الثابت)?|رقم\s*(?:الثابت)?|البصمة)\s*[:：-]?\s*(\\d{2,6})/i);
- if(m)fp=m[1];else{let nums=s.match(/\b\\d{2,6}\\b/g);if(nums&&nums.length)fp=nums[nums.length-1]}
+ let m=s.match(/(?:الرقم\s*(?:الثابت)?|رقم\s*(?:الثابت)?|البصمة)\s*[:：-]?\s*(\d{2,6})/i);
+ if(m)fp=m[1];else{let nums=s.match(/\b\d{2,6}\b/g);if(nums&&nums.length)fp=nums[nums.length-1]}
  let job="",jobs=["ملاحظ إنتاج","ملاحظ انتاج","عامل إنتاج","عامل انتاج","لحام","لحامين","مراقب جودة","جودة","سائق","فني","نجار","كهربائي","ميكانيكي","مخزن","مخازن","مشرف","مهندس"];
  for(const j of jobs){if(s.includes(j)){job=j;break}}
  let name=s.replace(/^(اسم العامل|العامل)\s*[:：-]?\s*/,"");
- name=name.split(/\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\\b/i)[0];
- name=name.replace(/\b(?:معين|يومية)\\b/g,"").trim();
+ name=name.split(/\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\b/i)[0];
+ name=name.replace(/\b(?:معين|يومية)\b/g,"").trim();
  return{name:clean(name),job,type,fp,raw:s};
 }
 
