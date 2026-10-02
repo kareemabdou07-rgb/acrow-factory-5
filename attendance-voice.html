@@ -57,6 +57,21 @@ function parseVoice(s){
  return{name:clean(name),job,type,fp,raw:s};
 }
 
+function saveAttendanceFromText(raw){
+ raw=(raw||'').trim();
+ let p=parseVoice(raw);
+ if(!p||!p.name){$("status").textContent="لم أتعرف على اسم العامل. قل الاسم والمهنة والنوع والرقم مرة واحدة.";return false;}
+ let w=W.find(x=>clean(x.name)===clean(p.name)||(p.fp&&clean(x.fp)===clean(p.fp)));
+ if(!w){w={id:Date.now(),name:p.name,job:p.job||'',type:p.type||'معين',fp:p.fp||''};W.push(w)}
+ else{if(p.job)w.job=p.job;if(p.type)w.type=p.type;if(p.fp)w.fp=p.fp}
+ save();refresh();
+ $("name").value=w.name;$("job").value=w.job||'';$("type").value=w.type||'معين';$("fp").value=w.fp||'';
+ let ok=window.mark(w,raw||'تسجيل حضور');
+ $("status").textContent=ok?"تم التسجيل والحضور: "+w.name:"العامل مسجل حضور اليوم بالفعل: "+w.name;
+ return ok;
+}
+window.saveAttendanceFromText=saveAttendanceFromText;
+
 function saveVoiceResult(){
  let raw=(textResult||window.__liveTranscript||$("voiceText").value||"").trim(),p=parseVoice(raw);
  if(!p||!p.name){
