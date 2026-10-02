@@ -27,7 +27,7 @@ A=JSON.parse(localStorage.getItem("acrow_att")||"[]"),
 rec=null,stream=null,recording=false,recognition=null,textResult="",pointer=false,recDone=false,recEnded=false,finalTimer=null,lastAudioBlob=null; window.W=W; window.A=A;
 
 function save(){localStorage.setItem("acrow_workers",JSON.stringify(W));localStorage.setItem("acrow_att",JSON.stringify(A))}
-function clean(s){return(s||"").replace(/[،,؛;]/g," ").replace(/\\s+/g," ").trim()}
+function clean(s){return(s||"").replace(/[،,؛;]/g," ").replace(/\s+/g," ").trim()}
 function today(){return new Date().toISOString().slice(0,10)}
 function clock(){let d=new Date();$("clock").textContent=d.toLocaleString("ar-EG",{dateStyle:"full",timeStyle:"short"})}
 setInterval(clock,1000);clock();
@@ -38,22 +38,22 @@ function refresh(){
 }
 
 function mark(w,text){
- let day=today(),time=new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"});
- if(A.some(x=>x.id===w.id&&x.day===day))return false;
- A.push({id:w.id,name:w.name,day,time,text:text||"تسجيل يدوي"});
+ let day=today(),hour=new Date().getHours(),shift=hour<14?1:2,time=new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"});
+ if(A.some(x=>String(x.workerId||x.id)===String(w.id)&&x.day===day&&Number(x.shift||0)===shift))return false;
+ A.push({id:String(w.id)+"_"+day+"_"+shift,workerId:String(w.id),name:w.name,job:w.job||"",type:w.type||"معين",fp:w.fp||"",day,time,shift,text:text||"تسجيل يدوي"});
  save();refresh();return true;
 }
 
 function parseVoice(s){
  s=clean(s);if(!s)return null;
  let type=/يومية|يوميه/.test(s)?"يومية":/معين/.test(s)?"معين":"معين",fp="";
- let m=s.match(/(?:الرقم\\s*(?:الثابت)?|رقم\\s*(?:الثابت)?|البصمة)\\s*[:：-]?\\s*(\\d{2,6})/i);
- if(m)fp=m[1];else{let nums=s.match(/\\b\\d{2,6}\\b/g);if(nums&&nums.length)fp=nums[nums.length-1]}
+ let m=s.match(/(?:الرقم\s*(?:الثابت)?|رقم\s*(?:الثابت)?|البصمة)\s*[:：-]?\s*(\\d{2,6})/i);
+ if(m)fp=m[1];else{let nums=s.match(/\b\\d{2,6}\\b/g);if(nums&&nums.length)fp=nums[nums.length-1]}
  let job="",jobs=["ملاحظ إنتاج","ملاحظ انتاج","عامل إنتاج","عامل انتاج","لحام","لحامين","مراقب جودة","جودة","سائق","فني","نجار","كهربائي","ميكانيكي","مخزن","مخازن","مشرف","مهندس"];
  for(const j of jobs){if(s.includes(j)){job=j;break}}
- let name=s.replace(/^(اسم العامل|العامل)\\s*[:：-]?\\s*/,"");
- name=name.split(/\\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\\b/i)[0];
- name=name.replace(/\\b(?:معين|يومية)\\b/g,"").trim();
+ let name=s.replace(/^(اسم العامل|العامل)\s*[:：-]?\s*/,"");
+ name=name.split(/\s*(?:المهنة|مهنته|وظيفته|الوظيفة|الرقم|رقم|البصمة|الثابت|نوع العامل)\\b/i)[0];
+ name=name.replace(/\b(?:معين|يومية)\\b/g,"").trim();
  return{name:clean(name),job,type,fp,raw:s};
 }
 
@@ -166,17 +166,17 @@ b.addEventListener("pointercancel",()=>{pointer=false;window.stop()});
 function showReport(){
  let f=$("from").value||today(),t=$("to").value||today();
  let rows=A.filter(a=>a.day>=f&&a.day<=t);
- let ids=new Set(rows.map(a=>a.id)),workers=W.filter(w=>ids.has(w.id));
+ let ids=new Set(rows.map(a=>String(a.workerId||a.id))),workers=W.filter(w=>ids.has(String(w.id)));
  let معين=workers.filter(w=>w.type==="معين").length,يومية=workers.filter(w=>w.type==="يومية").length;
  let jobs={};workers.forEach(w=>{let j=w.job||"غير محدد";jobs[j]=(jobs[j]||0)+1});
  let html='<p><b>الفترة:</b> '+f+' إلى '+t+'</p><p><b>إجمالي الحضور:</b> '+rows.length+' | <b>معين:</b> '+معين+' | <b>يومية:</b> '+يومية+'</p>';
  html+='<table><tr><th>المهنة</th><th>العدد</th></tr>'+Object.entries(jobs).map(([j,n])=>'<tr><td>'+j+'</td><td>'+n+'</td></tr>').join("")+'</table>';
  html+='<table><tr><th>التاريخ</th><th>الوقت</th><th>الاسم</th><th>المهنة</th><th>النوع</th><th>الرقم</th></tr>';
- rows.slice().reverse().forEach(a=>{let w=W.find(x=>x.id===a.id)||{};html+='<tr><td>'+a.day+'</td><td>'+a.time+'</td><td>'+a.name+'</td><td>'+(w.job||"")+'</td><td>'+(w.type||"")+'</td><td>'+(w.fp||"")+'</td></tr>'});
+ rows.slice().reverse().forEach(a=>{let w=W.find(x=>String(x.id)===String(a.workerId||a.id))||{};html+='<tr><td>'+a.day+'</td><td>'+a.time+'</td><td>'+a.name+'</td><td>'+(w.job||"")+'</td><td>'+(w.type||"")+'</td><td>'+(w.fp||"")+'</td></tr>'});
  html+='</table>';$("reportBox").innerHTML=html;
 }
 $("report").onclick=showReport;
 $("print").onclick=()=>{showReport();setTimeout(()=>window.print(),100)};
 
 let d=today();$("from").value=d;$("to").value=d;refresh();
-</script><script src="./attendance-cloud.js?v=20261002-03"></script></html>
+</script></html>
