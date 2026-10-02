@@ -72,7 +72,7 @@ function saveVoiceResult(){
  $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
 }
 
-$("saveVoice").onclick=()=>{window.saveVoiceResult()}; $("useKeyboardVoice").onclick=()=>{textResult=$("voiceText").value.trim();window.__liveTranscript=textResult;window.saveVoiceResult();}; $("voiceText").addEventListener("input",()=>{textResult=$("voiceText").value.trim();window.__liveTranscript=textResult;});
+$("saveVoice").onclick=()=>{window.saveVoiceResult()}; $("useKeyboardVoice").onclick=()=>{textResult=$("voiceText").value.trim();window.__liveTranscript=textResult;if(typeof window.saveAttendanceFromText==='function')window.saveAttendanceFromText(textResult);else window.saveVoiceResult();}; $("voiceText").addEventListener("input",()=>{textResult=$("voiceText").value.trim();window.__liveTranscript=textResult;});
 
 $("add").onclick=()=>{
  let name=$("name").value.trim();if(!name)return alert("اكتب اسم العامل");
