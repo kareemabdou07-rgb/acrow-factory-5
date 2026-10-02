@@ -12,7 +12,7 @@ button{background:#07549b;color:white;border:0;font-weight:bold}
 table{width:100%;border-collapse:collapse;margin-top:10px}th,td{padding:8px;border-bottom:1px solid #ddd;text-align:right}th{background:#eef3f8}
 .small{font-size:13px;color:#566}.ok{color:#168447}.warn{color:#a56a00}
 @media print{header,.noPrint,.mic{display:none!important}body{background:#fff}.card{box-shadow:none}}
-</style><header><h2>برنامج حضور العمال — شركة أكرو مصر</h2><div id="clock"></div></header><main><section class="card"><h3>تسجيل الحضور بالصوت</h3><button id="mic" class="mic"><span class="big">🎙️</span><span id="mt">اضغط وتكلم</span></button><div id="status" class="status">جاهز</div><button id="saveVoice" style="background:#19a85b">حفظ التسجيل والبيانات</button><audio id="audio" controls style="width:100%;display:none"></audio></section><section class="card"><h3>إضافة عامل</h3><input id="name" placeholder="اسم العامل"><input id="job" placeholder="المهنة"><select id="type"><option>معين</option><option>يومية</option></select><input id="fp" placeholder="الرقم الثابت / البصمة"><button id="add">حفظ العامل</button></section><section class="card"><h3>تسجيل يدوي</h3>
+</style><header><h2>برنامج حضور العمال — شركة أكرو مصر</h2><div id="clock"></div></header><main><section class="card"><h3>تسجيل الحضور بالصوت</h3><div style="background:#eef7ff;border:1px solid #c9e2f7;border-radius:12px;padding:12px;margin-bottom:10px"><b>الطريقة المضمونة على الموبايل</b><div style="font-size:14px;margin-top:6px">اضغط داخل الخانة ثم اضغط ميكروفون الكيبورد واتكلم بالجملة كاملة.</div><input id="voiceText" autocomplete="off" placeholder="مثال: كريم محمد محمد المهنة ملاحظ إنتاج معين الرقم الثابت 779"><button id="useKeyboardVoice" style="background:#19a85b">اعتماد الكلام وتسجيل الحضور</button></div><button id="mic" class="mic"><span class="big">🎙️</span><span id="mt">اضغط وتكلم</span></button><div id="status" class="status">جاهز</div><button id="saveVoice" style="background:#19a85b">حفظ التسجيل والبيانات</button><audio id="audio" controls style="width:100%;display:none"></audio></section><section class="card"><h3>إضافة عامل</h3><input id="name" placeholder="اسم العامل"><input id="job" placeholder="المهنة"><select id="type"><option>معين</option><option>يومية</option></select><input id="fp" placeholder="الرقم الثابت / البصمة"><button id="add">حفظ العامل</button></section><section class="card"><h3>تسجيل يدوي</h3>
 <select id="workers"></select><button id="att">تسجيل الحضور</button>
 </section>
 <section class="card">
@@ -58,7 +58,7 @@ function parseVoice(s){
 }
 
 function saveVoiceResult(){
- let raw=(textResult||window.__liveTranscript||"").trim(),p=parseVoice(raw);
+ let raw=(textResult||window.__liveTranscript||$("voiceText").value||"").trim(),p=parseVoice(raw);
  if(!p||!p.name){
   const typed=$("name").value.trim();
   if(!typed){$("status").textContent="لم يتم تحويل الكلام إلى كتابة. اكتب الاسم في خانة إضافة عامل ثم اضغط حفظ العامل.";return}
@@ -72,7 +72,7 @@ function saveVoiceResult(){
  $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
 }
 
-$("saveVoice").onclick=()=>{window.saveVoiceResult()};
+$("saveVoice").onclick=()=>{window.saveVoiceResult()}; $("useKeyboardVoice").onclick=()=>{textResult=$("voiceText").value.trim();window.__liveTranscript=textResult;window.saveVoiceResult();}; $("voiceText").addEventListener("input",()=>{textResult=$("voiceText").value.trim();window.__liveTranscript=textResult;});
 
 $("add").onclick=()=>{
  let name=$("name").value.trim();if(!name)return alert("اكتب اسم العامل");
@@ -160,4 +160,4 @@ $("report").onclick=showReport;
 $("print").onclick=()=>{showReport();setTimeout(()=>window.print(),100)};
 
 let d=today();$("from").value=d;$("to").value=d;refresh();
-</script><script src="./attendance-cloud.js?v=20261002-02"></script></html>
+</script><script src="./attendance-cloud.js?v=20261002-03"></script></html>
