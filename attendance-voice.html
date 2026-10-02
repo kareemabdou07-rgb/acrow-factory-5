@@ -58,17 +58,21 @@ function parseVoice(s){
 }
 
 function saveAttendanceFromText(raw){
- raw=(raw||'').trim();
+ raw=(raw||"").trim();
  let p=parseVoice(raw);
- if(!p||!p.name){$("status").textContent="لم أتعرف على اسم العامل. قل الاسم والمهنة والنوع والرقم مرة واحدة.";return false;}
+ if(!p||!p.name){$("status").textContent="اكتب الجملة كاملة في الخانة ثم اضغط اعتماد الكلام وتسجيل الحضور.";return false;}
  let w=W.find(x=>clean(x.name)===clean(p.name)||(p.fp&&clean(x.fp)===clean(p.fp)));
- if(!w){w={id:Date.now(),name:p.name,job:p.job||'',type:p.type||'معين',fp:p.fp||''};W.push(w)}
+ if(!w){w={id:Date.now(),name:p.name,job:p.job||"",type:p.type||"معين",fp:p.fp||""};W.push(w)}
  else{if(p.job)w.job=p.job;if(p.type)w.type=p.type;if(p.fp)w.fp=p.fp}
+ let day=today(), hour=new Date().getHours(), shift=hour<14?1:2;
+ let already=A.some(x=>String(x.workerId||x.id)===String(w.id)&&x.day===day&&Number(x.shift||0)===shift);
+ if(!already){
+   A.push({id:String(w.id)+"_"+day+"_"+shift,workerId:String(w.id),name:w.name,job:w.job||"",type:w.type||"معين",fp:w.fp||"",day:day,time:new Date().toLocaleTimeString("ar-EG",{hour:"2-digit",minute:"2-digit"}),shift:shift,text:raw});
+ }
  save();refresh();
- $("name").value=w.name;$("job").value=w.job||'';$("type").value=w.type||'معين';$("fp").value=w.fp||'';
- let ok=window.mark(w,raw||'تسجيل حضور');
- $("status").textContent=ok?"تم التسجيل والحضور: "+w.name:"العامل مسجل حضور اليوم بالفعل: "+w.name;
- return ok;
+ $("name").value=w.name;$("job").value=w.job||"";$("type").value=w.type||"معين";$("fp").value=w.fp||"";
+ $("status").textContent=already?"العامل مسجل حضور بالفعل: "+w.name:"تم التسجيل والحضور: "+w.name;
+ return !already;
 }
 window.saveAttendanceFromText=saveAttendanceFromText;
 
