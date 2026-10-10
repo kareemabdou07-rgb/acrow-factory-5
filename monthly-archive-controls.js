@@ -40,7 +40,13 @@ function performReset(){
   }catch(e){console.error(e);alert('حصل خطأ أثناء بدء الشهر الجديد. راجع الاتصال قبل تكرار المحاولة.');}
 }
 function openResetConfirm(){
-  var modal=el('acrowResetConfirmModal');if(modal)modal.style.display='flex';
+  var modal=el('acrowResetConfirmModal');
+  var title=el('acrowResetConfirmTitle'),message=el('acrowResetConfirmMessage'),first=el('acrowResetConfirmYes'),final=el('acrowResetConfirmFinal');
+  if(title)title.textContent='تأكيد أول قبل المسح';
+  if(message)message.textContent='هل أنت متأكد إنك حفظت النسخة الاحتياطية على اللابتوب؟ اضغط متابعة لتظهر خطوة تأكيد ثانية. لن يتم المسح الآن.';
+  if(first)first.style.display='block';
+  if(final)final.style.display='none';
+  if(modal)modal.style.display='flex';
 }
 function restoreBackup(file){
   if(!file)return;
@@ -83,7 +89,15 @@ function buildUI(){
  launch.addEventListener('click',function(){panel.style.display=panel.style.display==='block'?'none':'block';});
  el('acrowDownloadBackup').addEventListener('click',downloadBackup);
  el('acrowResetMonth').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();openResetConfirm();});
- el('acrowResetConfirmYes').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();performReset();});
+ el('acrowResetConfirmYes').addEventListener('click',function(e){
+  e.preventDefault();e.stopPropagation();
+  var title=el('acrowResetConfirmTitle'),message=el('acrowResetConfirmMessage'),first=el('acrowResetConfirmYes'),final=el('acrowResetConfirmFinal');
+  if(title)title.textContent='تأكيد ثاني — هل أنت متأكد؟';
+  if(message)message.textContent='هذه خطوة التأكيد الثانية. لم يتم مسح أي بيانات حتى الآن. لو متأكد تمامًا اضغط الزر الأحمر النهائي، أو اضغط إلغاء للرجوع بدون مسح.';
+  if(first)first.style.display='none';
+  if(final)final.style.display='block';
+});
+el('acrowResetConfirmFinal').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();performReset();});
  el('acrowResetConfirmNo').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();var m=el('acrowResetConfirmModal');if(m)m.style.display='none';});
  el('acrowResetConfirmModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
  el('acrowChooseRestore').addEventListener('click',function(){el('acrowRestoreFile').click();});
