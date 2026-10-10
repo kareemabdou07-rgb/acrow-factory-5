@@ -26,19 +26,21 @@ function renderAfterChange(){
   try{if(typeof saveStore==='function')saveStore();}catch(e){console.error('saveStore failed',e);}
   try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}
 }
-function resetMonth(){
+function performReset(){
   var s=currentStore();if(!s){alert('تعذر الوصول إلى بيانات البرنامج. لم يتم مسح أي شيء.');return;}
-  var ok=window.confirm('هل أنت متأكد إنك نسخت النسخة قبل المسح؟\n\nالمسح سيزيل سجلات التشغيل من الشاشة على كل الأجهزة بعد المزامنة، مع الاحتفاظ بإعدادات الماكينات والخطة. لا تضغط موافق إلا بعد التأكد من حفظ ملف النسخة على اللابتوب.\n\nاضغط موافق للمتابعة أو إلغاء للرجوع.');
-  if(!ok)return;
   try{
     s.records={};
     s._recordsResetAt=Date.now();
     if(typeof saveStore==='function')saveStore();
     try{if(typeof window.__acrowCloudSaveNow==='function')window.__acrowCloudSaveNow();}catch(e){}
     renderAfterChange();
-    var status=el('acrowArchiveStatus');if(status)status.textContent='تم بدء شهر جديد. تم مسح سجلات التشغيل من البرنامج مع الاحتفاظ بالإعدادات. احتفظ بملف النسخة القديم على اللابتوب.';
-    alert('تم بدء شهر جديد. لو جهاز آخر ما زال مفتوحًا، اتركه متصلًا بالإنترنت حتى يستقبل التحديث.');
+    var status=el('acrowArchiveStatus');if(status)status.textContent='تم بدء شهر جديد. تم مسح سجلات التشغيل من البرنامج مع الاحتفاظ بالإعدادات.';
+    var modal=el('acrowResetConfirmModal');if(modal)modal.style.display='none';
+    alert('تم بدء شهر جديد. اترك الأجهزة الأخرى متصلة بالإنترنت حتى تستقبل التحديث.');
   }catch(e){console.error(e);alert('حصل خطأ أثناء بدء الشهر الجديد. راجع الاتصال قبل تكرار المحاولة.');}
+}
+function openResetConfirm(){
+  var modal=el('acrowResetConfirmModal');if(modal)modal.style.display='flex';
 }
 function restoreBackup(file){
   if(!file)return;
@@ -75,10 +77,15 @@ function buildUI(){
  var launch=document.createElement('button');launch.id='acrowArchiveLauncher';launch.type='button';launch.textContent='نسخ الشهر / شهر جديد';
  var panel=document.createElement('section');panel.id='acrowArchivePanel';panel.dir='rtl';
  panel.innerHTML='<h3>نسخة الشهر والبدء من جديد</h3><p>نزّل النسخة على نفس الجهاز الذي تفتح منه البرنامج. لو فاتح البرنامج على الموبايل، انقل الملف إلى اللابتوب واحفظه هناك قبل المسح.</p><button type="button" class="acrowArchiveBtn" id="acrowDownloadBackup">حفظ نسخة الشهر القديم</button><button type="button" class="acrowArchiveBtn acrowArchiveDanger" id="acrowResetMonth">بدء شهر جديد ومسح بيانات التشغيل القديمة</button><button type="button" class="acrowArchiveBtn acrowArchiveSecondary" id="acrowChooseRestore">استرجاع سجلات من نسخة محفوظة</button><input id="acrowRestoreFile" type="file" accept=".json,application/json" style="display:none"><button type="button" class="acrowArchiveBtn acrowArchiveSecondary" id="acrowArchiveClose">إغلاق</button><div id="acrowArchiveStatus" role="status"></div>';
- document.body.appendChild(launch);document.body.appendChild(panel);
+ var modal=document.createElement('div');modal.id='acrowResetConfirmModal';modal.dir='rtl';modal.style.cssText='display:none;position:fixed;inset:0;z-index:10050;background:#000c;align-items:center;justify-content:center;padding:18px;font-family:Tajawal,sans-serif;';
+ modal.innerHTML='<div style="width:min(420px,100%);background:#111d2b;color:#fff;border:2px solid #ffd34d;border-radius:16px;padding:20px;box-shadow:0 10px 40px #000"><h3 style="font-size:21px;margin:0 0 12px">تأكيد قبل المسح</h3><p style="font-size:16px;line-height:1.9;margin:0 0 16px">هل أنت متأكد إنك حفظت النسخة على اللابتوب قبل المسح؟<br>لن يتم مسح أي بيانات إلا عند الضغط على زر التأكيد الأصفر بالأسفل. اختيار إلغاء أو الضغط خارج الرسالة لا يمسح شيئًا.</p><button type="button" id="acrowResetConfirmYes" class="acrowArchiveBtn acrowArchiveDanger" style="background:#a92d35">نعم، حفظت النسخة — ابدأ المسح</button><button type="button" id="acrowResetConfirmNo" class="acrowArchiveBtn acrowArchiveSecondary">إلغاء — لا تمسح أي شيء</button></div>';
+ document.body.appendChild(launch);document.body.appendChild(panel);document.body.appendChild(modal);
  launch.addEventListener('click',function(){panel.style.display=panel.style.display==='block'?'none':'block';});
  el('acrowDownloadBackup').addEventListener('click',downloadBackup);
- el('acrowResetMonth').addEventListener('click',resetMonth);
+ el('acrowResetMonth').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();openResetConfirm();});
+ el('acrowResetConfirmYes').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();performReset();});
+ el('acrowResetConfirmNo').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();var m=el('acrowResetConfirmModal');if(m)m.style.display='none';});
+ el('acrowResetConfirmModal').addEventListener('click',function(e){if(e.target===this)this.style.display='none';});
  el('acrowChooseRestore').addEventListener('click',function(){el('acrowRestoreFile').click();});
  el('acrowRestoreFile').addEventListener('change',function(){var f=this.files&&this.files[0];if(f)restoreBackup(f);this.value='';});
  el('acrowArchiveClose').addEventListener('click',function(){panel.style.display='none';});
