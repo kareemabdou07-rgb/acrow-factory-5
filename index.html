@@ -3822,7 +3822,7 @@ renderReport();
 </style>
 
 <style id="v125-entry-fix">#acrowSplash.v125-hidden{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}body.splash-open.v125-ready{overflow:auto!important;}</style>
-<script id="v125-entry-fix-js">(function(){function enter(e){if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}var s=document.getElementById('acrowSplash');if(s){s.classList.add('hidden','v125-hidden');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');}document.body.classList.remove('splash-open');document.body.classList.add('v125-ready');}function bind(){var b=document.getElementById('enterSystemBtn');if(b&&!b.dataset.v125){b.dataset.v125='1';b.addEventListener('click',enter,true);b.onclick=enter;}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();setInterval(bind,300);})();</script>
+<script id="v125-entry-fix-js">(function(){function enter(e){if(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();}var s=document.getElementById('acrowSplash');if(s){s.classList.add('hidden','v125-hidden');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('opacity','0','important');s.style.setProperty('pointer-events','none','important');}document.body.classList.remove('splash-open');document.body.classList.add('v125-ready');}function bind(){var b=document.getElementById('enterSystemBtn');if(b&&!b.dataset.v125){b.dataset.v125='1';b.addEventListener('click',enter,true);b.onclick=enter;}}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();setTimeout(bind, 300);})();</script>
 
 <style id="v127-enter-real-fix">
 #acrowSplash.hidden{display:none !important;visibility:hidden !important;opacity:0 !important;pointer-events:none !important;}
@@ -3886,7 +3886,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
   });
 })();
 </script>
-<style id="v129-final-fix">#acrowSplash.v129-hidden{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}body.splash-open{overflow:auto!important}</style><script id="v129-final-fix-js">(function(){function enter(e){if(e){e.preventDefault();e.stopPropagation();}var s=document.getElementById('acrowSplash');if(s){s.classList.add('hidden','v129-hidden');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('pointer-events','none','important');}document.body.classList.remove('splash-open');var d=document.getElementById('departments');if(d)d.style.display='';try{if(typeof render==='function')render();}catch(x){console.error(x);}}function bind(){var b=document.getElementById('enterSystemBtn');if(b){b.onclick=enter;if(!b.dataset.v129){b.addEventListener('click',enter,true);b.dataset.v129='1';}}}function prints(){['planProductBreakdownWrap','planChartWrap','planParetoWrap'].forEach(function(id){var box=document.getElementById(id);if(!box||box.querySelector('.v129-plan-print'))return;var title=box.querySelector('.chart-title');if(!title)return;var b=document.createElement('button');b.type='button';b.className='select-machines-btn no-print v129-plan-print';b.textContent='طباعة';b.onclick=function(){window.print();};title.appendChild(b);});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){bind();prints();});else{bind();prints();}setInterval(bind,300);setInterval(prints,700);})();</script>
+<style id="v129-final-fix">#acrowSplash.v129-hidden{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}body.splash-open{overflow:auto!important}</style><script id="v129-final-fix-js">(function(){function enter(e){if(e){e.preventDefault();e.stopPropagation();}var s=document.getElementById('acrowSplash');if(s){s.classList.add('hidden','v129-hidden');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('pointer-events','none','important');}document.body.classList.remove('splash-open');var d=document.getElementById('departments');if(d)d.style.display='';try{if(typeof render==='function')render();}catch(x){console.error(x);}}function bind(){var b=document.getElementById('enterSystemBtn');if(b){b.onclick=enter;if(!b.dataset.v129){b.addEventListener('click',enter,true);b.dataset.v129='1';}}}function prints(){['planProductBreakdownWrap','planChartWrap','planParetoWrap'].forEach(function(id){var box=document.getElementById(id);if(!box||box.querySelector('.v129-plan-print'))return;var title=box.querySelector('.chart-title');if(!title)return;var b=document.createElement('button');b.type='button';b.className='select-machines-btn no-print v129-plan-print';b.textContent='طباعة';b.onclick=function(){window.print();};title.appendChild(b);});}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){bind();prints();});else{bind();prints();}setTimeout(bind, 300);setTimeout(prints, 700);})();</script>
 
 <style id="v130-plan-single-print">
 #planChartWrap{position:relative!important;}
@@ -3915,7 +3915,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
     title.appendChild(b);
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
-  setInterval(setup,700);
+  setTimeout(setup, 700);
 })();
 </script>
 
@@ -3984,7 +3984,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
     b.classList.add('clicked-yellow');
   },true);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup); else setup();
-  setInterval(setup,700);
+  setTimeout(setup, 700);
 })();
 </script>
 
@@ -4106,7 +4106,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
   }
   document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.topbar .shift-controls > button, .topbar .shift-controls > .shift-tabs > button');if(b)paint(b);},true);
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
-  setInterval(bind,800);
+  setTimeout(bind, 800);
 })();
 </script>
 <style id="v87-front-building-view">
@@ -4505,7 +4505,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
       b.onclick=function(){window.print();}; title.appendChild(b);
     });
   }
-  setInterval(addPrint,700);
+  setTimeout(addPrint, 700);
 })();
 </script>
 <style id="v131-plan-print-email-one-each">
@@ -4530,7 +4530,7 @@ body.v128-app-open .topbar,body.v128-app-open .container{display:block!important
    var emails=sec.querySelectorAll('.v120-email-box .select-machines-btn');
    emails.forEach(function(b){b.style.background='#ffd400';b.style.color='#111';});
  }
- setInterval(fixPlanButtons,500); fixPlanButtons();
+ setTimeout(fixPlanButtons, 500); fixPlanButtons();
 })();
 </script>
 
@@ -4628,7 +4628,7 @@ body.v139-app-open .summary{visibility:visible !important;opacity:1 !important;}
     });
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
-  setInterval(setup,500);
+  setTimeout(setup, 500);
 })();
 </script>
 
@@ -4652,7 +4652,7 @@ body.v139-app-open .summary{visibility:visible !important;opacity:1 !important;}
 (function(){
  function fix(){var s=document.getElementById('acrowSplash');if(s){s.style.display='flex';s.style.alignItems='center';s.style.justifyContent='center';}}
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fix);else fix();
- setInterval(fix,500);
+ setTimeout(fix, 500);
 })();
 </script>
 <style id="v147-hide-home-in-plan">
@@ -4950,7 +4950,7 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
     });
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
-  setInterval(bind,500);
+  setTimeout(bind, 500);
 })();
 </script>
 
@@ -5023,7 +5023,7 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
     var m=el('maintenanceEmail'); if(m && m.dataset.v180!=='1'){m.dataset.v180='1';m.addEventListener('click',function(e){e.preventDefault();e.stopImmediatePropagation();if(typeof maintenanceEmailReport==='function')maintenanceEmailReport();},true);}
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);else bind();
-  setInterval(bind,500);
+  setTimeout(bind, 500);
 })();
 </script>
 <script src="./daily-machine-chooser-single.js?v=1"></script>
