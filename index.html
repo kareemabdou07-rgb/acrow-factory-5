@@ -5203,3 +5203,39 @@ window.acrowResetFallback = function(ev){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 })();
 </script>
+
+
+<script id="v182-move-reset-into-edit-settings">
+(function(){
+  'use strict';
+  function placeResetButton(){
+    var btn=document.getElementById('resetBtn');
+    var settings=document.getElementById('adminSettingsView');
+    if(!btn||!settings)return false;
+    var holder=document.getElementById('adminResetAction');
+    if(!holder){
+      holder=document.createElement('div');
+      holder.id='adminResetAction';
+      holder.style.cssText='margin:12px 0 4px;padding:12px;border:1px solid #ef9a9a;border-radius:10px;background:rgba(183,28,28,.06);text-align:right;';
+      holder.innerHTML='<div style="font-weight:700;color:#b71c1c;margin-bottom:5px">مسح بيانات البرنامج</div><div style="font-size:12px;line-height:1.8;margin-bottom:8px">إجراء خطير — لن يتم المسح إلا بعد إدخال رمز المدير والتأكيد مرتين.</div>';
+      var actions=settings.querySelector('.modal-actions');
+      if(!actions)return false;
+      settings.insertBefore(holder,actions);
+    }
+    if(btn.parentElement!==holder){
+      btn.textContent='مسح بيانات البرنامج';
+      btn.title='مسح بيانات البرنامج — يتطلب رمز المدير وتأكيدين';
+      btn.style.display='inline-flex';
+      btn.style.margin='0';
+      holder.appendChild(btn);
+    }
+    return true;
+  }
+  function start(){
+    placeResetButton();
+    [300,900,1800].forEach(function(ms){setTimeout(placeResetButton,ms);});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+  else start();
+})();
+</script>
