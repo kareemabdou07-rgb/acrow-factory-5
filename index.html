@@ -3652,9 +3652,15 @@ document.querySelectorAll('.panel-print').forEach(btn=>btn.addEventListener('cli
 
 /* ================= RESET — DOUBLE CONFIRM ================= */
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  const first = confirm('⚠️ تأكيد 1 من 2\nهل أنت متأكد أنك تريد تصفير كل بيانات المصنع؟');
+  const resetCode = prompt('أدخل رمز المدير للسماح بمسح بيانات المصنع:');
+  if (resetCode === null) return;
+  if (resetCode !== ADMIN_PASSWORD) {
+    alert('رمز غير صحيح. لم يتم مسح أي بيانات.');
+    return;
+  }
+  const first = confirm('تأكيد 1 من 2\nهل أنت متأكد أنك تريد تصفير كل بيانات المصنع؟');
   if (!first) return;
-  const second = confirm('🛑 تأكيد أخير 2 من 2\nسيتم تصفير البيانات وقد يتأثر عرضها على جميع الأجهزة. هل تريد المتابعة نهائيًا؟');
+  const second = confirm('تأكيد أخير 2 من 2\nسيتم تصفير البيانات وقد يتأثر عرضها على جميع الأجهزة. هل تريد المتابعة نهائيًا؟');
   if (!second) return;
   store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
   rebuildMachines();
