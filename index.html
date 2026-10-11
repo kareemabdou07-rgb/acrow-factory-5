@@ -3652,21 +3652,58 @@ document.querySelectorAll('.panel-print').forEach(btn=>btn.addEventListener('cli
 
 /* ================= RESET — DOUBLE CONFIRM ================= */
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  const resetCode = prompt('أدخل رمز المدير للسماح بمسح بيانات المصنع:');
-  if (resetCode === null) return;
-  if (resetCode !== ADMIN_PASSWORD) {
-    alert('رمز غير صحيح. لم يتم مسح أي بيانات.');
-    return;
-  }
-  const first = confirm('تأكيد 1 من 2\nهل أنت متأكد أنك تريد تصفير كل بيانات المصنع؟');
-  if (!first) return;
-  const second = confirm('تأكيد أخير 2 من 2\nسيتم تصفير البيانات وقد يتأثر عرضها على جميع الأجهزة. هل تريد المتابعة نهائيًا؟');
-  if (!second) return;
-  store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
-  rebuildMachines();
-  saveStore();
-  render();
-  renderReport();
+  if (document.getElementById('factoryResetGuard')) return;
+  let step = 0;
+  const overlay = document.createElement('div');
+  overlay.id = 'factoryResetGuard';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:999999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:18px;direction:rtl;font-family:Tajawal,sans-serif;';
+  overlay.innerHTML = '<div style="width:min(420px,100%);background:#fff;border-radius:14px;padding:22px;box-shadow:0 12px 40px #0008;color:#222;text-align:right"><h2 id="resetGuardTitle" style="margin:0 0 12px;color:#b71c1c;font-size:21px">حماية مسح بيانات المصنع</h2><p id="resetGuardMessage" style="line-height:1.8;margin:0 0 14px">أدخل رمز المدير أولًا. لن يتم مسح أي بيانات قبل اجتياز التأكيدين.</p><input id="resetGuardCode" type="password" inputmode="numeric" autocomplete="off" placeholder="رمز المدير" style="box-sizing:border-box;width:100%;padding:13px;border:1px solid #999;border-radius:8px;font-size:18px;margin-bottom:10px"><p id="resetGuardError" style="display:none;color:#c62828;margin:0 0 10px;font-weight:700"></p><div style="display:flex;gap:8px"><button id="resetGuardCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:white;font-weight:700">إلغاء</button><button id="resetGuardNext" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c62828;color:white;font-weight:800">تحقق من الرمز</button></div></div>';
+  document.body.appendChild(overlay);
+  const title = overlay.querySelector('#resetGuardTitle');
+  const message = overlay.querySelector('#resetGuardMessage');
+  const input = overlay.querySelector('#resetGuardCode');
+  const error = overlay.querySelector('#resetGuardError');
+  const next = overlay.querySelector('#resetGuardNext');
+  const cancel = overlay.querySelector('#resetGuardCancel');
+  const close = ()=>overlay.remove();
+  cancel.addEventListener('click', close);
+  const finishReset = ()=>{
+    store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
+    rebuildMachines();
+    saveStore();
+    render();
+    renderReport();
+    close();
+    alert('تم تصفير بيانات هذا البرنامج. إذا كانت هناك أجهزة أخرى متصلة بالسحابة، راجع بياناتها قبل المتابعة.');
+  };
+  next.addEventListener('click', ()=>{
+    error.style.display = 'none';
+    if (step === 0) {
+      if (input.value !== ADMIN_PASSWORD) {
+        error.textContent = 'رمز المدير غير صحيح. لم يتم مسح أي بيانات.';
+        error.style.display = 'block';
+        input.value = '';
+        input.focus();
+        return;
+      }
+      step = 1;
+      input.style.display = 'none';
+      title.textContent = 'تأكيد 1 من 2';
+      message.textContent = 'تم قبول الرمز. هل أنت متأكد أنك تريد تصفير كل بيانات المصنع؟ اضغط متابعة للانتقال إلى التأكيد الأخير.';
+      next.textContent = 'متابعة للتأكيد الأخير';
+      return;
+    }
+    if (step === 1) {
+      step = 2;
+      title.textContent = 'التأكيد الأخير 2 من 2';
+      message.textContent = 'تحذير: تصفير البيانات قد يؤثر على عرضها على جميع الأجهزة. هل تريد تنفيذ التصفير الآن؟';
+      next.textContent = 'نعم، صفّر البيانات';
+      return;
+    }
+    finishReset();
+  });
+  input.addEventListener('keydown', e=>{ if(e.key === 'Enter') next.click(); });
+  setTimeout(()=>input.focus(), 50);
 });
 
 bindTopEfficiencySelector();
