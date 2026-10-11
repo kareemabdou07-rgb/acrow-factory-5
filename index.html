@@ -863,7 +863,7 @@ html,body{margin:0 !important;padding:0 !important;}
 
 
 <footer>
-  النسخة الحالية تجريبية — البيانات محفوظة محلياً على هذا الجهاز حتى الربط بالسيرفر · <span class="reset-link" id="resetBtn">تصفير كل البيانات</span>
+  النسخة الحالية تجريبية — البيانات محفوظة محلياً على هذا الجهاز حتى الربط بالسيرفر · <button type="button" id="resetBtn" class="reset-danger-btn" title="تصفير كل بيانات المصنع">🗑️ تصفير كل البيانات</button>
 </footer>
 
 <div class="modal-overlay" id="dashboardChoiceModal">
@@ -3650,15 +3650,17 @@ canvas[id*="production"], canvas[id*="efficiency"], canvas[id*="chart3"] {
 }
 document.querySelectorAll('.panel-print').forEach(btn=>btn.addEventListener('click',()=>printPanel(btn.dataset.printTarget,btn.dataset.printTitle||'تقرير')));
 
-/* ================= RESET ================= */
+/* ================= RESET — DOUBLE CONFIRM ================= */
 document.getElementById('resetBtn').addEventListener('click', ()=>{
-  if(confirm('هل أنت متأكد من تصفير كل بيانات المصنع؟ لا يمكن التراجع عن هذا الإجراء.')){
-    store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
-    rebuildMachines();
-    saveStore();
-    render();
-    renderReport();
-  }
+  const first = confirm('⚠️ تأكيد 1 من 2\nهل أنت متأكد أنك تريد تصفير كل بيانات المصنع؟');
+  if (!first) return;
+  const second = confirm('🛑 تأكيد أخير 2 من 2\nسيتم تصفير البيانات وقد يتأثر عرضها على جميع الأجهزة. هل تريد المتابعة نهائيًا؟');
+  if (!second) return;
+  store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
+  rebuildMachines();
+  saveStore();
+  render();
+  renderReport();
 });
 
 bindTopEfficiencySelector();
@@ -3666,6 +3668,11 @@ render();
 renderReport();
 </script>
 
+<style id="reset-danger-button-style">
+#resetBtn.reset-danger-btn{display:inline-flex;align-items:center;gap:7px;background:#c62828;color:#fff;border:1px solid #ef5350;border-radius:8px;padding:9px 13px;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.2);}
+#resetBtn.reset-danger-btn:hover{background:#a71919;}
+#resetBtn.reset-danger-btn:focus-visible{outline:3px solid #ffd54a;outline-offset:2px;}
+</style>
 <script id="v25-click-yellow-js">
 (function(){
   document.addEventListener('click', function(e){
