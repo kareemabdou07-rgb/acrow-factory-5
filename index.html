@@ -2513,10 +2513,11 @@ function renderFaultList(){
     f.endTime=endTime;
     f.mins=calcMinutesBetween(f.startTime,endTime) || 0;
     f.repairedAt=endTime;
+    rec._faultUpdatedAt=Date.now();
     saveStore(); renderFaultList(); updateSummaryOnly();
   }));
   listDiv.querySelectorAll('.f-del').forEach(btn=>btn.addEventListener('click',e=>{
-    e.stopPropagation(); rec.faults.splice(Number(btn.dataset.idx),1); saveStore(); renderFaultList(); updateSummaryOnly();
+    e.stopPropagation(); rec.faults.splice(Number(btn.dataset.idx),1); rec._faultUpdatedAt=Date.now(); saveStore(); renderFaultList(); updateSummaryOnly();
   }));
 }
 
@@ -2531,6 +2532,7 @@ document.getElementById('addFaultBtn').addEventListener('click',()=>{
   const rec=getRecord(dateInput.value,currentShift,activeMachineId);
   if(!Array.isArray(rec.faults)) rec.faults=[];
   rec.faults.push({reason,description,startTime,endTime,mins:mins===null?0:mins,time:nowTimeHHMM(),date:dateInput.value,shift:currentShift,notes:'',repairedAt:endTime||null});
+  rec._faultUpdatedAt=Date.now();
   saveStore();
   renderFaultList();
   document.getElementById('faultDescription').value='';
