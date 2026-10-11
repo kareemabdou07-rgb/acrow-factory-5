@@ -70,8 +70,8 @@ function restoreBackup(file){
 function addStyle(){
  if(el(STYLE_ID))return;
  var st=document.createElement('style');st.id=STYLE_ID;st.textContent=
- '#acrowArchiveLauncher{position:fixed;z-index:9990;left:12px;bottom:14px;background:#123d63;color:#fff;border:2px solid #20b8ff;border-radius:12px;padding:11px 15px;font:800 15px Tajawal,sans-serif;box-shadow:0 5px 20px #0008;cursor:pointer}'+
- '#acrowArchivePanel{position:fixed;z-index:9991;left:12px;bottom:65px;width:min(360px,calc(100vw - 24px));background:#111d2b;color:#e9edf1;border:1px solid #20b8ff;border-radius:14px;padding:16px;box-shadow:0 8px 30px #000b;display:none;font-family:Tajawal,sans-serif}'+
+ '#acrowArchiveLauncher{display:block;width:100%;box-sizing:border-box;margin:14px 0 0;background:#123d63;color:#fff;border:2px solid #20b8ff;border-radius:10px;padding:12px 15px;font:800 15px Tajawal,sans-serif;cursor:pointer}'+
+ '#acrowArchivePanel{position:relative;width:100%;box-sizing:border-box;margin-top:10px;background:#111d2b;color:#e9edf1;border:1px solid #20b8ff;border-radius:12px;padding:14px;display:none;font-family:Tajawal,sans-serif}'+
  '#acrowArchivePanel h3{font-size:19px;margin:0 0 8px}#acrowArchivePanel p{font-size:13px;line-height:1.7;margin:0 0 12px;color:#d0d9e2}'+
  '.acrowArchiveBtn{display:block;width:100%;margin:8px 0;padding:11px 10px;border:0;border-radius:9px;background:#1676b9;color:#fff;font:800 15px Tajawal,sans-serif;cursor:pointer}'+
  '.acrowArchiveDanger{background:#a92d35!important}.acrowArchiveSecondary{background:#304254!important}#acrowArchiveStatus{font-size:12px;line-height:1.6;color:#ffe17a;margin-top:10px;overflow-wrap:anywhere}';
@@ -80,12 +80,12 @@ function addStyle(){
 function buildUI(){
  if(el('acrowArchiveLauncher'))return;
  addStyle();
- var launch=document.createElement('button');launch.id='acrowArchiveLauncher';launch.type='button';launch.textContent='نسخ الشهر / شهر جديد';
+ var settings=el('adminSettingsView');if(!settings){return;}\n var launch=document.createElement('button');launch.id='acrowArchiveLauncher';launch.type='button';launch.textContent='نسخ الشهر لبرّه / شهر جديد';
  var panel=document.createElement('section');panel.id='acrowArchivePanel';panel.dir='rtl';
  panel.innerHTML='<h3>نسخة الشهر والبدء من جديد</h3><p>نزّل النسخة على نفس الجهاز الذي تفتح منه البرنامج. لو فاتح البرنامج على الموبايل، انقل الملف إلى اللابتوب واحفظه هناك قبل المسح.</p><button type="button" class="acrowArchiveBtn" id="acrowDownloadBackup">حفظ نسخة الشهر القديم</button><button type="button" class="acrowArchiveBtn acrowArchiveDanger" id="acrowResetMonth">بدء شهر جديد ومسح بيانات التشغيل القديمة</button><button type="button" class="acrowArchiveBtn acrowArchiveSecondary" id="acrowChooseRestore">استرجاع سجلات من نسخة محفوظة</button><input id="acrowRestoreFile" type="file" accept=".json,application/json" style="display:none"><button type="button" class="acrowArchiveBtn acrowArchiveSecondary" id="acrowArchiveClose">إغلاق</button><div id="acrowArchiveStatus" role="status"></div>';
  var modal=document.createElement('div');modal.id='acrowResetConfirmModal';modal.dir='rtl';modal.style.cssText='display:none;position:fixed;inset:0;z-index:10050;background:#000c;align-items:center;justify-content:center;padding:18px;font-family:Tajawal,sans-serif;';
  modal.innerHTML='<div style="width:min(420px,100%);background:#111d2b;color:#fff;border:2px solid #ffd34d;border-radius:16px;padding:20px;box-shadow:0 10px 40px #000"><h3 id="acrowResetConfirmTitle" style="font-size:21px;margin:0 0 12px">تأكيد أول قبل المسح</h3><p id="acrowResetConfirmMessage" style="font-size:16px;line-height:1.9;margin:0 0 16px">هل أنت متأكد إنك حفظت النسخة على اللابتوب قبل المسح؟<br>لو ضغطت متابعة، هتظهر رسالة تأكيد ثانية. لن يتم أي تغيير في هذه الخطوة.</p><button type="button" id="acrowResetConfirmYes" class="acrowArchiveBtn acrowArchiveDanger" style="background:#a92d35">نعم، حفظت النسخة — متابعة</button><button type="button" id="acrowResetConfirmFinal" class="acrowArchiveBtn acrowArchiveDanger" style="display:none;background:#a92d35">نعم، متأكد — امسح الآن</button><button type="button" id="acrowResetConfirmNo" class="acrowArchiveBtn acrowArchiveSecondary">إلغاء — لا تمسح أي شيء</button></div>';
- document.body.appendChild(launch);document.body.appendChild(panel);document.body.appendChild(modal);
+ settings.appendChild(launch);settings.appendChild(panel);document.body.appendChild(modal);
  launch.addEventListener('click',function(){panel.style.display=panel.style.display==='block'?'none':'block';});
  el('acrowDownloadBackup').addEventListener('click',downloadBackup);
  el('acrowResetMonth').addEventListener('click',function(e){e.preventDefault();e.stopPropagation();openResetConfirm();});
