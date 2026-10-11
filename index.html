@@ -3712,6 +3712,52 @@ bindTopEfficiencySelector();
 render();
 renderReport();
 </script>
+<script id="reset-guard-reliable-fix">
+(function(){
+  document.addEventListener('click', function(ev){
+    var btn = ev.target && ev.target.closest ? ev.target.closest('#resetBtn') : null;
+    if(!btn) return;
+    ev.preventDefault();
+    ev.stopImmediatePropagation();
+    if(document.getElementById('factoryResetGuard')) return;
+    var overlay=document.createElement('div');
+    overlay.id='factoryResetGuard';
+    overlay.style.cssText='position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;padding:18px;direction:rtl;font-family:Tajawal,sans-serif;';
+    document.body.appendChild(overlay);
+    function panel(title,body,buttons){
+      overlay.innerHTML='<div style="width:min(420px,100%);background:#fff;border-radius:14px;padding:22px;color:#222;text-align:right;box-shadow:0 12px 40px #0008"><h2 style="margin:0 0 12px;color:#b71c1c">'+title+'</h2>'+body+'<div style="display:flex;gap:8px;margin-top:14px">'+buttons+'</div></div>';
+    }
+    function cancel(){overlay.remove();}
+    function firstConfirm(){
+      panel('التأكيد الأول','<p style="line-height:1.9">هل أنت متأكد أنك تريد تصفير بيانات المصنع؟ لا تكمل إلا إذا كنت تقصد ذلك.</p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="rgNext" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c62828;color:#fff;font-weight:900">نعم، متابعة</button>');
+      overlay.querySelector('#rgCancel').onclick=cancel;
+      overlay.querySelector('#rgNext').onclick=finalConfirm;
+    }
+    function finalConfirm(){
+      panel('التأكيد الأخير — مسح البيانات','<p style="line-height:1.9;font-weight:800">هذه آخر خطوة. لن تُمسح البيانات إلا بالضغط على الزر الأحمر الآن.</p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="rgNext" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#b71c1c;color:#fff;font-weight:900">تصفير البيانات نهائيًا</button>');
+      overlay.querySelector('#rgCancel').onclick=cancel;
+      overlay.querySelector('#rgNext').onclick=function(){
+        try {
+          store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
+          rebuildMachines(); saveStore(); render(); renderReport(); overlay.remove();
+        } catch(err) {
+          overlay.innerHTML='<div style="background:#fff;padding:22px;border-radius:12px;direction:rtl;color:#b71c1c;font-weight:800">لم يتم تأكيد نجاح التصفير. لم نغلق النافذة حتى لا نظهر نجاحًا غير مؤكد. أعد تحميل الصفحة وراجع حالة البرنامج.</div>';
+        }
+      };
+    }
+    panel('رمز المدير مطلوب','<p style="line-height:1.8">أدخل رمز المدير. لن يتم التصفير إذا كان الرمز غير صحيح.</p><input id="rgCode" type="password" inputmode="numeric" autocomplete="off" placeholder="أدخل رمز المدير" style="box-sizing:border-box;width:100%;padding:13px;border:1px solid #999;border-radius:8px;font-size:20px;margin-bottom:10px"><p id="rgError" style="display:none;color:#c62828;font-weight:800"></p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="rgNext" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c62828;color:#fff;font-weight:900">التحقق من الرمز</button>');
+    var input=overlay.querySelector('#rgCode'), error=overlay.querySelector('#rgError');
+    overlay.querySelector('#rgCancel').onclick=cancel;
+    function verify(){
+      if(input.value!==ADMIN_PASSWORD){error.textContent='رمز المدير غير صحيح. لم يتم مسح أي بيانات.';error.style.display='block';input.value='';input.focus();return;}
+      firstConfirm();
+    }
+    overlay.querySelector('#rgNext').onclick=verify;
+    input.addEventListener('keydown',function(e){if(e.key==='Enter')verify();});
+    setTimeout(function(){input.focus();},100);
+  }, true);
+})();
+</script>
 
 <style id="reset-danger-button-style">
 #resetBtn.reset-danger-btn{display:inline-flex;align-items:center;gap:7px;background:#c62828;color:#fff;border:1px solid #ef5350;border-radius:8px;padding:9px 13px;font-family:'Tajawal',sans-serif;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 2px 5px rgba(0,0,0,.2);}
