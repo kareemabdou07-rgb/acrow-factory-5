@@ -27,31 +27,49 @@ function style(){if(document.getElementById('fss-stable-style'))return;var x=doc
 function placeButtons(){var host=document.querySelector('.topbar .shift-controls');if(!host)return;var b=document.getElementById('factoryFiveSSafetyBtn');if(!b){b=document.createElement('button');b.type='button';b.id='factoryFiveSSafetyBtn';b.className='select-machines-btn top-main-action';b.textContent='تقييم 5S والسلامة';b.title='تقييم نفس الماكينات المختارة في زر الماكينات الشغالة';var anchor=document.getElementById('maintenanceBtn')||document.getElementById('obstacleDashboardBtn')||document.getElementById('adminMenuBtn');if(anchor&&anchor.parentNode===host)anchor.insertAdjacentElement('afterend',b);else host.appendChild(b);b.onclick=function(e){e.preventDefault();e.stopPropagation();placeReport();var p=document.getElementById('fss-evaluation-modal');if(p){refreshReport();p.style.display='flex';}};}var panel=document.getElementById('fss-evaluation-modal');if(panel&&panel.style.display==='flex')refreshReport();}
 function placeMachineButtons(){
   var cards=document.querySelectorAll('.machine-card');
+  var added=0;
   cards.forEach(function(card){
-    var id=String(card.dataset.machine||card.getAttribute('data-machine-id')||'').trim();
-    if(!id)return;
-    var b=card.querySelector('[data-fss-machine-btn]');
-    if(!b){
-      b=document.createElement('button');
-      b.type='button';b.className='fss-btn';b.setAttribute('data-fss-machine-btn','1');
-      b.textContent='السلامة و5S';b.title='تقييم السلامة والفايف إس لهذه الماكينة';
-      var row=card.querySelector('.mc-bottom')||card;
-      row.appendChild(b);
-    }
-    b.setAttribute('data-fss-id',id);
-    b.setAttribute('data-fss-name',(card.querySelector('.mc-name')?.textContent||id).trim());
-    if(!b.dataset.fssBound){
-      b.dataset.fssBound='1';
-      b.addEventListener('click',function(e){
-        e.preventDefault();e.stopPropagation();
-        open(b.getAttribute('data-fss-id'),b.getAttribute('data-fss-name'));
-      });
-    }
+    try{
+      var id=String(card.dataset.machine||card.getAttribute('data-machine-id')||'').trim();
+      if(!id)return;
+      var b=card.querySelector('[data-fss-machine-btn]');
+      if(!b){
+        b=document.createElement('button');
+        b.type='button';
+        b.className='fss-btn';
+        b.setAttribute('data-fss-machine-btn','1');
+        b.textContent='السلامة و5S';
+        b.title='تقييم السلامة والفايف إس لهذه الماكينة';
+        b.style.cssText='display:block;width:100%;min-height:42px;margin-top:8px;padding:10px 12px;border:1px solid #20b8ff;border-radius:9px;background:#10344a;color:#fff;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;position:relative;z-index:2;';
+        var row=card.querySelector('.mc-bottom')||card;
+        row.appendChild(b);
+        added++;
+      }
+      b.setAttribute('data-fss-id',id);
+      b.setAttribute('data-fss-name',(card.querySelector('.mc-name')?.textContent||id).trim());
+      if(!b.dataset.fssBound){
+        b.dataset.fssBound='1';
+        b.addEventListener('click',function(e){
+          e.preventDefault();e.stopPropagation();
+          open(b.getAttribute('data-fss-id'),b.getAttribute('data-fss-name'));
+        });
+      }
+    }catch(err){console.warn('ACROW 5S button error:',err);}
   });
-  return cards.length;
+  return {cards:cards.length,added:added};
 }
-function boot(){style();placeReport();placeButtons();placeMachineButtons();setTimeout(function(){placeReport();placeButtons();placeMachineButtons();},800);setTimeout(function(){placeButtons();placeMachineButtons();refreshReport();},2000);setTimeout(function(){placeMachineButtons();refreshReport();},4000);}
+function safeRun(fn){try{fn();}catch(err){console.warn('ACROW 5S startup error:',err);}}
+function boot(){
+  safeRun(placeMachineButtons);
+  safeRun(style);
+  safeRun(placeReport);
+  safeRun(placeButtons);
+  safeRun(placeMachineButtons);
+  setTimeout(function(){safeRun(placeMachineButtons);safeRun(placeReport);safeRun(placeButtons);},800);
+  setTimeout(function(){safeRun(placeMachineButtons);safeRun(placeButtons);safeRun(refreshReport);},2000);
+  setTimeout(function(){safeRun(placeMachineButtons);safeRun(refreshReport);},4000);
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot);else boot();
 var cardRoot=document.body;
-if(cardRoot){var mo=new MutationObserver(function(){clearTimeout(window.__fssTimer);window.__fssTimer=setTimeout(function(){placeButtons();placeMachineButtons();var p=document.getElementById('fss-evaluation-modal');if(p&&p.style.display==='flex')refreshReport();},250);});mo.observe(cardRoot,{childList:true,subtree:true});}
+if(cardRoot){var mo=new MutationObserver(function(){clearTimeout(window.__fssTimer);window.__fssTimer=setTimeout(function(){safeRun(placeMachineButtons);safeRun(placeButtons);var p=document.getElementById('fss-evaluation-modal');if(p&&p.style.display==='flex')safeRun(refreshReport);},250);});mo.observe(cardRoot,{childList:true,subtree:true});}
 })();
