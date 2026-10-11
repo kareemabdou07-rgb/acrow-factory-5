@@ -3669,28 +3669,43 @@ canvas[id*="production"], canvas[id*="efficiency"], canvas[id*="chart3"] {
 }
 document.querySelectorAll('.panel-print').forEach(btn=>btn.addEventListener('click',()=>printPanel(btn.dataset.printTarget,btn.dataset.printTitle||'تقرير')));
 
-/* ================= RESET — DOUBLE CONFIRM ================= */
+/* ================= RESET — PASSWORD + TWO CONFIRMATIONS ================= */
 document.getElementById('resetBtn').addEventListener('click', ()=>{
   if (document.getElementById('factoryResetGuard')) return;
   const overlay = document.createElement('div');
   overlay.id = 'factoryResetGuard';
   overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.76);display:flex;align-items:center;justify-content:center;padding:18px;direction:rtl;font-family:Tajawal,sans-serif;';
-  overlay.innerHTML = '<div style="width:min(400px,100%);background:#fff;border-radius:14px;padding:22px;color:#222;text-align:right;box-shadow:0 12px 40px #0008"><h2 style="margin:0 0 12px;color:#b71c1c">تأكيد رمز المدير</h2><p style="line-height:1.8">أدخل رمز المدير للمتابعة. لن يتم المسح إذا كان الرمز غير صحيح.</p><input id="resetGuardCode" type="password" inputmode="numeric" autocomplete="off" placeholder="رمز المدير" style="box-sizing:border-box;width:100%;padding:13px;border:1px solid #999;border-radius:8px;font-size:20px;margin-bottom:10px"><p id="resetGuardError" style="display:none;color:#c62828;font-weight:800"></p><div style="display:flex;gap:8px"><button id="resetGuardCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="resetGuardSubmit" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c62828;color:#fff;font-weight:900">تأكيد الرمز</button></div></div>';
-  document.body.appendChild(overlay);
-  const input=overlay.querySelector('#resetGuardCode'), error=overlay.querySelector('#resetGuardError');
-  overlay.querySelector('#resetGuardCancel').onclick=()=>overlay.remove();
-  const verify=()=>{
-    if(input.value!==ADMIN_PASSWORD){error.textContent='رمز غير صحيح. لم يتم مسح أي بيانات.';error.style.display='block';input.value='';input.focus();return;}
-    store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
-    rebuildMachines();
-    saveStore();
-    render();
-    renderReport();
-    overlay.remove();
+  const showPassword = ()=>{
+    overlay.innerHTML = '<div style="width:min(400px,100%);background:#fff;border-radius:14px;padding:22px;color:#222;text-align:right;box-shadow:0 12px 40px #0008"><h2 style="margin:0 0 12px;color:#b71c1c">رمز المدير مطلوب</h2><p style="line-height:1.8">لن يتم تصفير بيانات المصنع إلا بعد إدخال رمز المدير الصحيح والتأكيد مرتين.</p><input id="resetGuardCode" type="password" inputmode="numeric" autocomplete="off" placeholder="أدخل رمز المدير" style="box-sizing:border-box;width:100%;padding:13px;border:1px solid #999;border-radius:8px;font-size:20px;margin-bottom:10px"><p id="resetGuardError" style="display:none;color:#c62828;font-weight:800"></p><div style="display:flex;gap:8px"><button id="resetGuardCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="resetGuardSubmit" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c62828;color:#fff;font-weight:900">التحقق من الرمز</button></div></div>';
+    const input=overlay.querySelector('#resetGuardCode'), error=overlay.querySelector('#resetGuardError');
+    overlay.querySelector('#resetGuardCancel').onclick=()=>overlay.remove();
+    const verify=()=>{
+      if(input.value!==ADMIN_PASSWORD){error.textContent='رمز المدير غير صحيح. لم يتم مسح أي بيانات.';error.style.display='block';input.value='';input.focus();return;}
+      showFirstConfirmation();
+    };
+    overlay.querySelector('#resetGuardSubmit').onclick=verify;
+    input.addEventListener('keydown',e=>{if(e.key==='Enter')verify();});
+    setTimeout(()=>input.focus(),100);
   };
-  overlay.querySelector('#resetGuardSubmit').onclick=verify;
-  input.addEventListener('keydown',e=>{if(e.key==='Enter')verify();});
-  setTimeout(()=>input.focus(),100);
+  const showFirstConfirmation=()=>{
+    overlay.innerHTML = '<div style="width:min(400px,100%);background:#fff;border-radius:14px;padding:22px;color:#222;text-align:right;box-shadow:0 12px 40px #0008"><h2 style="margin:0 0 12px;color:#b71c1c">التأكيد الأول</h2><p style="line-height:1.9">هل أنت متأكد أنك تريد تصفير بيانات المصنع؟ هذه العملية قد تحذف البيانات المحفوظة من هذا البرنامج.</p><div style="display:flex;gap:8px"><button id="resetGuardCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="resetGuardSubmit" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c62828;color:#fff;font-weight:900">نعم، متابعة</button></div></div>';
+    overlay.querySelector('#resetGuardCancel').onclick=()=>overlay.remove();
+    overlay.querySelector('#resetGuardSubmit').onclick=showFinalConfirmation;
+  };
+  const showFinalConfirmation=()=>{
+    overlay.innerHTML = '<div style="width:min(400px,100%);background:#fff;border-radius:14px;padding:22px;color:#222;text-align:right;box-shadow:0 12px 40px #0008"><h2 style="margin:0 0 12px;color:#b71c1c">التأكيد الأخير — مسح البيانات</h2><p style="line-height:1.9;font-weight:800">تنبيه: لن يبدأ التصفير إلا إذا ضغطت زر «تصفير البيانات نهائيًا» الآن.</p><div style="display:flex;gap:8px"><button id="resetGuardCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="resetGuardSubmit" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#b71c1c;color:#fff;font-weight:900">تصفير البيانات نهائيًا</button></div></div>';
+    overlay.querySelector('#resetGuardCancel').onclick=()=>overlay.remove();
+    overlay.querySelector('#resetGuardSubmit').onclick=()=>{
+      store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
+      rebuildMachines();
+      saveStore();
+      render();
+      renderReport();
+      overlay.remove();
+    };
+  };
+  document.body.appendChild(overlay);
+  showPassword();
 });
 
 bindTopEfficiencySelector();
