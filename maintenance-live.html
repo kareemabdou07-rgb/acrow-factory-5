@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ACROW Factory 5 — شاشة الصيانة المستقلة</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:#071827;font-family:Arial,sans-serif}
+#app{width:100%;height:100%;border:0;display:block;background:#071827}
+#fallback{display:none;color:#fff;padding:20px;text-align:center}
+</style>
+</head>
+<body>
+<iframe id="app" title="شاشة الصيانة والأعطال"></iframe>
+<div id="fallback">تعذر فتح شاشة الصيانة تلقائيًا. افتح <a href="./index.html" style="color:#ffd54a">برنامج المصنع</a> ثم اضغط «إدارة الأعطال».</div>
+<script>
+(function(){
+  var frame=document.getElementById('app'), attempts=0;
+  frame.src='./index.html?standaloneMaintenance=1&v=20261011';
+  function openMaintenance(){
+    attempts++;
+    try{
+      var doc=frame.contentDocument;
+      if(!doc||!doc.getElementById('maintenanceBtn')){
+        if(attempts<8){setTimeout(openMaintenance,350);return;}
+        document.getElementById('fallback').style.display='block';return;
+      }
+      if(!doc.getElementById('acrow-standalone-maintenance-style')){
+        var style=doc.createElement('style');
+        style.id='acrow-standalone-maintenance-style';
+        style.textContent=[
+          '#acrowSplash,.topbar,#summaryStrip,#departments,#analysisSection,#managementDashboard,#obstacleDashboardSection,#planStatusSection,.container>.filter-bar,#adminModal,#printRangeModal{display:none!important}',
+          'body{padding-bottom:0!important;background:var(--bg,#0b1220)!important}',
+          '.container{max-width:none!important;padding:8px 14px!important}',
+          '#maintenanceDashboard{display:block!important;max-width:1400px!important;margin:0 auto!important}',
+          '#maintenanceDashboard #maintenanceLogoutBtn{display:none!important}',
+          '#maintenanceDashboard .no-print{display:none!important}'
+        ].join('');
+        doc.head.appendChild(style);
+      }
+      var btn=doc.getElementById('maintenanceBtn');
+      if(btn && !frame.dataset.maintenanceOpened){
+        frame.dataset.maintenanceOpened='1';
+        btn.click();
+      }
+      var dash=doc.getElementById('maintenanceDashboard');
+      if(dash)dash.style.setProperty('display','block','important');
+    }catch(e){
+      if(attempts<8){setTimeout(openMaintenance,350);return;}
+      document.getElementById('fallback').style.display='block';
+    }
+  }
+  frame.addEventListener('load',function(){setTimeout(openMaintenance,250);});
+})();
+</script>
+</body>
+</html>
