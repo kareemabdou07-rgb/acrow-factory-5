@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 var COLLECTION='acrowFactory5',DOC='store',PHOTO_COLLECTION='faultPhotos',ready=false,applyingRemote=false,firstSnapshot=true,lastSent='',lastRemote='',lastRemoteFavorites='',timer=null,photoRef=null,pendingPhotos={},saveInFlight=false,saveAgain=false;
-var cfg={apiKey:'AIzaSyCGUyuUyu-qG-Z5A1LnnH6oIcbJSwgwS9oc',authDomain:'acrow-factory-5.firebaseapp.com',projectId:'acrow-factory-5',storageBucket:'acrow-factory-5.firebasestorage.app',messagingSenderId:'26128829420',appId:'1:26128829420:web:75e6a0f31edc7e66c44ec9'};
+var cfg={apiKey:'AIzaSyCGUyuOU-q-GZ5A1LnnH6oIcbJSwgwS9oc',authDomain:'acrow-factory-5.firebaseapp.com',projectId:'acrow-factory-5',storageBucket:'acrow-factory-5.firebasestorage.app',messagingSenderId:'26128829420',appId:'1:26128829420:web:75e6a0f31edc7e66c44ec9'};
 function js(v){try{return JSON.stringify(v||{});}catch(e){return '{}';}}
 function favKey(v){try{return JSON.stringify((Array.isArray(v)?v:[]).map(function(x){return String(x==null?'':x).trim();}).filter(Boolean).sort());}catch(e){return '[]';}}
 function localStore(){return typeof store!=='undefined'&&store?store:null;}
