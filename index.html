@@ -863,7 +863,7 @@ html,body{margin:0 !important;padding:0 !important;}
 
 
 <footer>
-  النسخة الحالية تجريبية — البيانات محفوظة محلياً على هذا الجهاز حتى الربط بالسيرفر · <button type="button" id="resetBtn" class="reset-danger-btn" title="تصفير كل بيانات المصنع">🗑️ تصفير كل البيانات</button>
+  النسخة الحالية تجريبية — البيانات محفوظة محلياً على هذا الجهاز حتى الربط بالسيرفر · <button type="button" id="resetBtn" class="reset-danger-btn" title="تصفير كل بيانات المصنع" onclick="return window.acrowResetFallback(event)">🗑️ تصفير كل البيانات</button>
 </footer>
 
 <div class="modal-overlay" id="dashboardChoiceModal">
@@ -5127,3 +5127,32 @@ body:has(#planStatusSection:not(.hidden)) #mainHomeBtn{display:none !important;}
 })();
 </script>
 <script src="./daily-machine-chooser-single.js?v=1"></script>
+
+
+<script id="reset-password-fallback-v2">
+/* Independent fallback: if the custom password dialog fails to initialize, never allow a reset without password + two confirmations. */
+window.acrowResetFallback = function(ev){
+  if(ev){ ev.preventDefault(); ev.stopPropagation(); }
+  if(window.__acrowResetFallbackRunning) return false;
+  window.__acrowResetFallbackRunning = true;
+  try {
+    var code = window.prompt('رمز المدير مطلوب لتصفير بيانات المصنع:');
+    if(code !== '5445') {
+      if(code !== null) window.alert('رمز المدير غير صحيح. لم يتم مسح أي بيانات.');
+      return false;
+    }
+    if(!window.confirm('التأكيد الأول: هل أنت متأكد أنك تريد تصفير بيانات المصنع؟')) return false;
+    if(!window.confirm('التأكيد الأخير: هل تريد مسح كل بيانات المصنع نهائيًا؟')) return false;
+    try {
+      store = { records:{}, favorites:[], settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}}, machineCustom:{}, machineDisabled:{}, deptPasswords:{...store.deptPasswords} };
+      rebuildMachines(); saveStore(); render(); renderReport();
+      window.alert('تم تنفيذ التصفير.');
+    } catch(err) {
+      window.alert('لم يتم التصفير بسبب خطأ. لم نؤكد نجاح العملية.');
+    }
+    return false;
+  } finally {
+    window.__acrowResetFallbackRunning = false;
+  }
+};
+</script>
