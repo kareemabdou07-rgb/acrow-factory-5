@@ -5192,28 +5192,3 @@ window.acrowResetFallback = function(ev){
 </script>
 
 
-<!-- v143 emergency recovery: prevent a stuck opening overlay from hiding the factory app -->
-<style id="v143-emergency-open-css">
-body.splash-open .topbar,body.splash-open .container,body.splash-open .summary,body.splash-open #departments,body.splash-open footer{visibility:visible!important;opacity:1!important}
-#acrowSplash.v143-off{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important}
-</style>
-<script id="v143-emergency-open-js">
-(function(){
- function recover(){
-  try{
-   var b=document.body,s=document.getElementById('acrowSplash');
-   if(s){s.classList.add('hidden','v143-off');s.setAttribute('aria-hidden','true');s.style.setProperty('display','none','important');s.style.setProperty('visibility','hidden','important');s.style.setProperty('pointer-events','none','important');}
-   if(b){b.classList.remove('splash-open');b.style.setProperty('overflow','auto','important');}
-   ['.topbar','.container','#departments','#summaryStrip'].forEach(function(sel){
-    var el=document.querySelector(sel);if(el){el.style.setProperty('visibility','visible','important');el.style.setProperty('opacity','1','important');}
-   });
-   try{if(typeof render==='function')render();}catch(e){console.error('ACROW recovery render:',e);}
-   try{if(typeof renderReport==='function')renderReport();}catch(e){}
-   try{if(typeof renderDashboard==='function')renderDashboard();}catch(e){}
-  }catch(e){console.error('ACROW emergency open:',e);}
- }
- if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',recover);else recover();
- window.addEventListener('load',recover);
- setTimeout(recover,700);
-})();
-</script>
