@@ -3763,16 +3763,18 @@ renderReport();
             rec.obstacles=[];
             /* Keep rec.faults and rec.hours intact. */
           });
+          var expectedSavedText=JSON.stringify(store);
           saveStore();
           var saved=localStorage.getItem(STORE_KEY);
-          if(!saved||JSON.stringify(JSON.parse(saved))!==JSON.stringify(store)) throw new Error('تعذر التحقق من حفظ البيانات');
+          if(!saved||saved!==expectedSavedText) throw new Error('تعذر التحقق من حفظ البيانات في ذاكرة المتصفح');
         }catch(err){
           console.error('Factory monthly reset failed',err);
           if(previousStore){
             store=previousStore;
             try{saveStore();}catch(rollbackError){console.error('Reset rollback failed',rollbackError);}
           }
-          panel('تعذر تنفيذ التصفير','<p>لم يتم تأكيد حفظ التصفير. لم يتم إعلان النجاح. أعد تحميل البرنامج وتحقق من البيانات.</p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إغلاق</button>');
+          var resetErrorText=String(err&&err.message||err||'خطأ غير معروف').replace(/[&<>"]/g,function(ch){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];});
+          panel('تعذر تنفيذ التصفير','<p>سبب الخطأ: '+resetErrorText+'</p><p>لم يتم تأكيد نجاح العملية. أعد تحميل البرنامج وتحقق من البيانات.</p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إغلاق</button>');
           overlay.querySelector('#rgCancel').onclick=cancel;
           return;
         }
