@@ -3750,16 +3750,37 @@ renderReport();
       panel('التأكيد الأخير — مسح البيانات','<p style="line-height:1.9;font-weight:800">تحذير نهائي: سيتم مسح بيانات الإنتاج المحلية والمشتركة. لا تكمل إلا إذا كنت متأكدًا تمامًا.</p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="rgNext" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#b71c1c;color:#fff;font-weight:900">تصفير البيانات نهائيًا</button>');
       overlay.querySelector('#rgCancel').onclick=cancel;
       overlay.querySelector('#rgNext').onclick=function(){
+        var previousStore;
         try{
-          store={records:{},favorites:[],settings:{shiftHours:{'1':8,'2':8},deptOverrides:{},monthlyPlans:{}},machineCustom:{},machineDisabled:{},deptPasswords:Object.assign({},store&&store.deptPasswords||{})};
-          rebuildMachines();saveStore();render();renderReport();
-          overlay.remove();
-          window.alert('تم تنفيذ التصفير بناءً على تأكيدك.');
+          /* Monthly restart: clear production quantities and obstacles, but preserve fault history and all machine/settings configuration. */
+          previousStore=JSON.parse(JSON.stringify(store||{}));
+          if(!store||typeof store!=='object') throw new Error('بيانات البرنامج غير متاحة');
+          if(!store.records||typeof store.records!=='object') store.records={};
+          Object.keys(store.records).forEach(function(key){
+            var rec=store.records[key];
+            if(!rec||typeof rec!=='object') return;
+            rec.actual=null;
+            rec.obstacles=[];
+            /* Keep rec.faults and rec.hours intact. */
+          });
+          saveStore();
+          var saved=localStorage.getItem(STORE_KEY);
+          if(!saved||JSON.stringify(JSON.parse(saved))!==JSON.stringify(store)) throw new Error('تعذر التحقق من حفظ البيانات');
         }catch(err){
-          console.error('Factory reset failed',err);
-          panel('تعذر تنفيذ التصفير','<p>حدث خطأ ولم يتم تأكيد نجاح العملية. أعد تحميل البرنامج وتحقق من البيانات.</p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إغلاق</button>');
+          console.error('Factory monthly reset failed',err);
+          if(previousStore){
+            store=previousStore;
+            try{saveStore();}catch(rollbackError){console.error('Reset rollback failed',rollbackError);}
+          }
+          panel('تعذر تنفيذ التصفير','<p>لم يتم تأكيد حفظ التصفير. لم يتم إعلان النجاح. أعد تحميل البرنامج وتحقق من البيانات.</p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إغلاق</button>');
           overlay.querySelector('#rgCancel').onclick=cancel;
+          return;
         }
+        overlay.remove();
+        try{rebuildMachines();}catch(e){console.error('rebuildMachines after reset',e);}
+        try{render();}catch(e){console.error('render after reset',e);}
+        try{renderReport();}catch(e){console.error('renderReport after reset',e);}
+        window.alert('تم تصفير بيانات الإنتاج والعوائق بنجاح. تم الاحتفاظ بسجل الأعطال وإعدادات المصنع.');
       };
     }
     panel('رمز المدير مطلوب','<p style="line-height:1.8">أدخل رمز المدير أولًا. إذا كان الرمز غير صحيح أو ألغيت العملية فلن يتم مسح أي بيانات.</p><input id="rgCode" type="password" inputmode="numeric" autocomplete="off" placeholder="أدخل رمز المدير" style="box-sizing:border-box;width:100%;padding:13px;border:1px solid #999;border-radius:8px;font-size:20px;margin-bottom:10px"><p id="rgError" style="display:none;color:#c62828;font-weight:800"></p>','<button id="rgCancel" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#777;color:#fff;font-weight:800">إلغاء</button><button id="rgNext" type="button" style="flex:1;padding:12px;border:0;border-radius:8px;background:#c62828;color:#fff;font-weight:900">التحقق من الرمز</button>');
